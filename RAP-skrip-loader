@@ -1,2 +1,2 @@
-local BASE="https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/"
-loadstring(game:HttpGet(toString(BASE) .."rap-skrip"))()
+local BASE="https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/rap-skrip"
+loadstring(game:HttpGet(BASE))()
