@@ -616,7 +616,7 @@ local AutoPickupFilterButton = Instance.new("TextButton")
 AutoPickupFilterButton.Size = UDim2.new(1, -10, 0, 27)
 AutoPickupFilterButton.Position = UDim2.fromOffset(5, 84)
 AutoPickupFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-AutoPickupFilterButton.Text = "-- ▼"
+AutoPickupFilterButton.Text = "  -- ▼"
 AutoPickupFilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
 AutoPickupFilterButton.TextSize = textSize(10)
 AutoPickupFilterButton.Font = Enum.Font.Gotham
@@ -880,8 +880,8 @@ local FilterButtons = {}
 
 local AutoPickupFilterFrame = Instance.new("ScrollingFrame")
 AutoPickupFilterFrame.Name = "AutoPickupFilterFrame"
-AutoPickupFilterFrame.Size = UDim2.new(1, -10, 0, 120)
-AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 242)
+AutoPickupFilterFrame.Size = UDim2.new(1, -10, 0, 176)
+AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 113)
 AutoPickupFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPickupFilterFrame.BorderSizePixel = 0
 AutoPickupFilterFrame.ScrollBarThickness = 3
@@ -923,7 +923,7 @@ local function refreshAutoPickupFilterText()
     end
 
     if #selected==0 then
-        AutoPickupFilterButton.Text="-- ▼"
+        AutoPickupFilterButton.Text="  -- ▼"
     elseif #selected==1 then
         AutoPickupFilterButton.Text=selected[1].." ▼"
     else
@@ -1086,7 +1086,7 @@ local FilterButton = Instance.new("TextButton")
 FilterButton.Size = UDim2.new(1, -10, 0, 27)
 FilterButton.Position = UDim2.fromOffset(5, 102)
 FilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-FilterButton.Text = "-- ▼"
+FilterButton.Text = "  -- ▼"
 FilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
 FilterButton.TextSize = textSize(10)
 FilterButton.Font = Enum.Font.Gotham
