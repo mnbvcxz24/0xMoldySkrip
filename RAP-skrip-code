@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v2.2"
+local ver = "TEST v2.3"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -154,7 +154,7 @@ local function loadConfig()
         AutoDipEnabled = data.autoDipEnabled
     end
 
-    if type(data.movementMode) == "string" and data.movementMode == "Teleport" then
+    if type(data.movementMode) == "string" then
         AutoPickupMovementMode = data.movementMode
     end
 
@@ -518,8 +518,6 @@ local function showPage(page)
     elseif page == SettingsPage then
         SettingsContent2.Visible = true
     end
-    FilterFrame.Visible = false
-    AutoFilterFrame.Visible = false
 end
 
 local function createSidebarButton(text)
@@ -3244,13 +3242,6 @@ for eggName,button in pairs(FilterButtons) do
         end
     end)
 end
-
-FilterButton.MouseButton1Click:Connect(function()
-    FilterFrame.Visible=not FilterFrame.Visible
-    if FilterFrame.Visible then
-        FilterFrame.CanvasPosition=Vector2.new(0,0)
-    end
-end)
 
 ScanButton.MouseButton1Click:Connect(function()
     DebugLines={}
