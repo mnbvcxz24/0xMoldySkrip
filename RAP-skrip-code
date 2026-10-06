@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.6"
+local ver = "TEST v1.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -185,16 +185,16 @@ local TeleportToPlotEvent
 local VolcanoDipEvent
 local VolcanoDipResultEvent
 
-pcall(function()
-    local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-    local GameRemotes = Remotes:WaitForChild("Game")
-
-    EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
-    EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
-    TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
-
-    VolcanoDipEvent = ReplicatedStorage.packages.Net["RE/VolcanoDip"]
-    VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
+task.spawn(function()
+    pcall(function()
+        local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+        local GameRemotes = Remotes:WaitForChild("Game")
+        EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
+        EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
+        TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
+        VolcanoDipEvent = ReplicatedStorage.packages.Net["RE/VolcanoDip"]
+        VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
+    end)
 end)
 --==================================================
 -- 10. GUI ROOT
