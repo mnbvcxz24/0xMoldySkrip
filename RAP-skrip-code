@@ -1235,200 +1235,63 @@ ScanCorner.CornerRadius = UDim.new(0, 7)
 ScanCorner.Parent = ScanButton
 
 ScanButton.MouseButton1Click:Connect(function()
-    DebugLines = {}
-
+    DebugLines={}
     if DebugText then
-        DebugText.Text = ""
+        DebugText.Text=""
     end
-
     if DebugBox then
-        DebugBox.CanvasPosition = Vector2.new(0, 0)
+        DebugBox.CanvasPosition=Vector2.new(0,0)
     end
-
-    AddDebug(
-        "========== EGG SCAN =========="
-    )
-
-    local success, err =
-        pcall(function()
-            local ActiveEggs =
-                getActiveEggs()
-
-            if not ActiveEggs then
-                AddDebug(
-                    "[ERROR] ActiveEggs not found"
-                )
-
-                return
+    AddDebug("========== EGG SCAN ==========")
+    local success,err=pcall(function()
+        local ActiveEggs=getActiveEggs()
+        if not ActiveEggs then
+            AddDebug("[ERROR] ActiveEggs not found")
+            return
+        end
+        local eggs=ActiveEggs:GetChildren()
+        EggCount.Text="Active Eggs: "..tostring(#eggs)
+        local selectedNames=getSelectedEggNames()
+        if #selectedNames==0 then
+            AddDebug("No egg selected")
+        else
+            AddDebug("Selected: "..table.concat(selectedNames,", "))
+        end
+        local counts={}
+        for _,egg in ipairs(eggs) do
+            local eggName=egg:GetAttribute("Egg")
+            if eggName and eggName~="" then
+                counts[eggName]=(counts[eggName] or 0)+1
             end
-
-            local eggs =
-                ActiveEggs:GetChildren()
-
-            EggCount.Text =
-                "Active Eggs: " ..
-                tostring(#eggs)
-
-            local selectedNames =
-                getSelectedEggNames()
-
-            if #selectedNames == 0 then
-                AddDebug(
-                    "No egg selected"
-                )
-            else
-                AddDebug(
-                    "Selected: " ..
-                    table.concat(
-                        selectedNames,
-                        ", "
-                    )
-                )
-            end
-
-            local counts = {}
-
-            for _, egg in ipairs(
-                eggs
-            ) do
-                local eggName =
-                    egg:GetAttribute(
-                        "Egg"
-                    )
-
-                if eggName
-                    and eggName ~= "" then
-
-                    counts[eggName] =
-                        (counts[eggName] or 0) +
-                        1
+        end
+        for eggName,count in pairs(counts) do
+            AddDebug(tostring(eggName).." x "..tostring(count))
+        end
+        for _,selectedName in ipairs(selectedNames) do
+            local selectedWeight
+            for _,egg in ipairs(eggs) do
+                if egg:GetAttribute("Egg")==selectedName then
+                    selectedWeight=tonumber(egg:GetAttribute("Weight"))
+                    break
                 end
             end
-
-            for eggName, count in pairs(
-                counts
-            ) do
-                AddDebug(
-                    tostring(
-                        eggName
-                    ) ..
-                    " x " ..
-                    tostring(
-                        count
-                    )
-                )
+            AddDebug("Egg: "..tostring(selectedName))
+            AddDebug("Weight: "..tostring(selectedWeight))
+            AddDebug("Selected Count: "..tostring(counts[selectedName] or 0))
+        end
+        AddDebug("Total Active Eggs: "..tostring(#eggs))
+        for _,egg in ipairs(eggs) do
+            local eggName=egg:GetAttribute("Egg")
+            if eggName and SelectedEggs[eggName] then
+                local position=egg:GetAttribute("Position")
+                AddDebug(tostring(eggName).." | Position Type: "..typeof(position))
             end
-
-            for _, selectedName in ipairs(
-                selectedNames
-            ) do
-                AddDebug(
-                    "Egg: " ..
-                    tostring(
-                        selectedName
-                    )
-                )
-
-                AddDebug(
-                    "Egg Luck Text: " ..
-                    tostring(
-                        eggLuckText
-                    )
-                )
-
-                AddDebug(
-                    "Egg Luck Value: " ..
-                    tostring(
-                        eggLuck
-                    )
-                )
-
-                local selectedWeight
-
-                for _, egg in ipairs(
-                    eggs
-                ) do
-                    if egg:GetAttribute(
-                        "Egg"
-                    ) == selectedName then
-                        selectedWeight =
-                            tonumber(
-                                egg:GetAttribute(
-                                    "Weight"
-                                )
-                            )
-
-                        break
-                    end
-                end
-
-                AddDebug(
-                    "Weight: " ..
-                    tostring(
-                        selectedWeight
-                    )
-                )
-
-                AddDebug(
-                    "Selected Count: " ..
-                    tostring(
-                        counts[
-                            selectedName
-                        ] or 0
-                    )
-                )
-            end
-
-            AddDebug(
-                "Total Active Eggs: " ..
-                tostring(
-                    #eggs
-                )
-            )
-
-            for _, egg in ipairs(
-                eggs
-            ) do
-                local eggName =
-                    egg:GetAttribute(
-                        "Egg"
-                    )
-
-                if eggName
-                    and SelectedEggs[
-                        eggName
-                    ] then
-
-                    local position =
-                        egg:GetAttribute(
-                            "Position"
-                        )
-
-                    AddDebug(
-                        tostring(
-                            eggName
-                        ) ..
-                        " | Position Type: " ..
-                        typeof(
-                            position
-                        )
-                    )
-                end
-            end
-
-            AddDebug(
-                "========== SCAN COMPLETE =========="
-            )
-        end)
-
+        end
+        AddDebug("========== SCAN COMPLETE ==========")
+    end)
     if not success then
-        AddDebug(
-            "========== LUA ERROR =========="
-        )
-
-        AddDebug(
-            tostring(err)
-        )
+        AddDebug("========== LUA ERROR ==========")
+        AddDebug(tostring(err))
     end
 end)
 --==================================================
