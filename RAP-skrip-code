@@ -2998,7 +2998,7 @@ AutoMovementButton.MouseButton1Click:Connect(function()
     saveConfig()
 end)
 
-AutoDipButton.MouseButton1Click:Connect(function()
+AutoDipToggle.MouseButton1Click:Connect(function()
     AutoDipEnabled=not AutoDipEnabled
     AutoDipButton.Text=AutoDipEnabled and "ON" or "OFF"
     AutoDipButton.BackgroundColor3=AutoDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
