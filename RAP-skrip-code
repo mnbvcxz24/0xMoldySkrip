@@ -3246,7 +3246,7 @@ end)
 -- 26. STARTUP / INITIALIZATION
 --==================================================
 showPage(AutoPage)
-updateActivePageButton(AutoButto
+updateActivePageButton(AutoButton)
 loadConfig()
 
 refreshFilterButtons()
