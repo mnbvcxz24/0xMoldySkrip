@@ -319,7 +319,7 @@ MinimizedCorner.CornerRadius = UDim.new(0, 10)
 MinimizedCorner.Parent = Minimized
 
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.fromOffset(50, 10)
+Sidebar.Size = UDim2.fromOffset(45, 10)
 Sidebar.Position = UDim2.fromOffset(10, 45)
 Sidebar.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 Sidebar.BorderSizePixel = 0
@@ -347,7 +347,7 @@ SidebarPadding.Parent = Sidebar
 local function updateSidebarSize()
     local contentHeight = SidebarLayout.AbsoluteContentSize.Y
     Sidebar.Size = UDim2.fromOffset(
-        50,
+        45,
         contentHeight + 10
     )
 end
@@ -522,7 +522,7 @@ end
 
 local function createSidebarButton(text)
     local button = Instance.new("TextButton")
-    button.Size = UDim2.new(1,-10,0,math.max(36, textSize(12) + 24))
+    button.Size = UDim2.new(1,-10,0,math.max(25, textSize(12) + 24))
     button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
     button.Text = text
     button.TextColor3 = Color3.fromRGB(210, 210, 218)
