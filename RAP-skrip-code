@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v2.4"
+local ver = "TEST v2.5"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1286,26 +1286,6 @@ ScanButton.MouseButton1Click:Connect(function()
                 )
             end
 
-            local ranchLuckText =
-                getRanchLuckText()
-
-            local ranchLuck =
-                getRanchLuck()
-
-            AddDebug(
-                "Ranch Luck Text: " ..
-                tostring(
-                    ranchLuckText
-                )
-            )
-
-            AddDebug(
-                "Ranch Luck Value: " ..
-                tostring(
-                    ranchLuck
-                )
-            )
-
             local counts = {}
 
             for _, egg in ipairs(
@@ -1342,16 +1322,6 @@ ScanButton.MouseButton1Click:Connect(function()
             for _, selectedName in ipairs(
                 selectedNames
             ) do
-                local eggLuckText =
-                    getEggLuckText(
-                        selectedName
-                    )
-
-                local eggLuck =
-                    getEggLuck(
-                        selectedName
-                    )
-
                 AddDebug(
                     "Egg: " ..
                     tostring(
@@ -1374,7 +1344,6 @@ ScanButton.MouseButton1Click:Connect(function()
                 )
 
                 local selectedWeight
-                local calculatedKG
 
                 for _, egg in ipairs(
                     eggs
@@ -1389,13 +1358,6 @@ ScanButton.MouseButton1Click:Connect(function()
                                 )
                             )
 
-                        calculatedKG =
-                            calculateKG(
-                                selectedWeight,
-                                eggLuck,
-                                ranchLuck
-                            )
-
                         break
                     end
                 end
@@ -1404,20 +1366,6 @@ ScanButton.MouseButton1Click:Connect(function()
                     "Weight: " ..
                     tostring(
                         selectedWeight
-                    )
-                )
-
-                AddDebug(
-                    "Calculated KG: " ..
-                    tostring(
-                        calculatedKG
-                    )
-                )
-
-                AddDebug(
-                    "Calculated KG Formatted: " ..
-                    formatKG(
-                        calculatedKG
                     )
                 )
 
