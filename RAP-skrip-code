@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.7"
+local ver = "TEST v3.1"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -324,7 +324,7 @@ MinimizedCorner.Parent = Minimized
 
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.fromOffset(45, 10)
-Sidebar.Position = UDim2.fromOffset(10, 10)
+Sidebar.Position = UDim2.fromOffset(10, 45)
 Sidebar.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 Sidebar.BorderSizePixel = 0
 Sidebar.Active = true
@@ -360,7 +360,7 @@ SidebarLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSide
 
 local Content = Instance.new("Frame")
 Content.Size = UDim2.new(1,-(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 15),1,-65)
-Content.Position = UDim2.fromOffset(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 5,55)
+Content.Position = UDim2.fromOffset(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 5,45)
 Content.BackgroundTransparency = 1
 Content.ClipsDescendants = false
 Content.Parent = Main
