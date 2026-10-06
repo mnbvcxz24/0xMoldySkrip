@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.6"
+local ver = "TEST v3.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -392,7 +392,7 @@ AutoContent2.Parent = Content2
 local AutoTitle2 = Instance.new("TextLabel")
 AutoTitle2.Name = "AutoTitle2"
 AutoTitle2.Size = UDim2.new(1, -10, 0, 25)
-AutoTitle2.Position = UDim2.fromOffset(5, 3)
+AutoTitle2.Position = UDim2.fromOffset(5, 0)
 AutoTitle2.BackgroundTransparency = 1
 AutoTitle2.Text = "Eggs Automation"
 AutoTitle2.TextColor3 = Color3.fromRGB(240, 240, 245)
@@ -404,7 +404,7 @@ AutoTitle2.Parent = AutoContent2
 local AutoPlaceTitle = Instance.new("TextLabel")
 AutoPlaceTitle.Name = "AutoPlaceTitle"
 AutoPlaceTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoPlaceTitle.Position = UDim2.fromOffset(5, 30)
+AutoPlaceTitle.Position = UDim2.fromOffset(5, 27)
 AutoPlaceTitle.BackgroundTransparency = 1
 AutoPlaceTitle.Text = "Auto Place Eggs"
 AutoPlaceTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -416,7 +416,7 @@ AutoPlaceTitle.Parent = AutoContent2
 local AutoPlaceStatus = Instance.new("TextLabel")
 AutoPlaceStatus.Name = "AutoPlaceStatus"
 AutoPlaceStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoPlaceStatus.Position = UDim2.fromOffset(5, 48)
+AutoPlaceStatus.Position = UDim2.fromOffset(5, 43)
 AutoPlaceStatus.BackgroundTransparency = 1
 AutoPlaceStatus.Text = "● Inactive"
 AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
@@ -428,7 +428,7 @@ AutoPlaceStatus.Parent = AutoContent2
 local AutoPlaceToggle = Instance.new("TextButton")
 AutoPlaceToggle.Name = "AutoPlaceToggle"
 AutoPlaceToggle.Size = UDim2.fromOffset(62, 27)
-AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 30)
+AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 27)
 AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoPlaceToggle.Text = "OFF"
 AutoPlaceToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -447,7 +447,7 @@ AutoPlaceToggleCorner.Parent = AutoPlaceToggle
 local AutoPlaceFilterLabel = Instance.new("TextLabel")
 AutoPlaceFilterLabel.Name = "AutoPlaceFilterLabel"
 AutoPlaceFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoPlaceFilterLabel.Position = UDim2.fromOffset(5, 72)
+AutoPlaceFilterLabel.Position = UDim2.fromOffset(5, 67)
 AutoPlaceFilterLabel.BackgroundTransparency = 1
 AutoPlaceFilterLabel.Text = "Egg Filter"
 AutoPlaceFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -557,7 +557,7 @@ task.defer(updateSidebarSize)
 --==================================================
 local AutoTitle = Instance.new("TextLabel")
 AutoTitle.Size = UDim2.new(1, -10, 0, 25)
-AutoTitle.Position = UDim2.fromOffset(5, 3)
+AutoTitle.Position = UDim2.fromOffset(5, 0)
 AutoTitle.BackgroundTransparency = 1
 AutoTitle.Text = "Eggs Automation"
 AutoTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
@@ -568,7 +568,7 @@ AutoTitle.Parent = AutoPage
 
 local AutoPickupTitle = Instance.new("TextLabel")
 AutoPickupTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoPickupTitle.Position = UDim2.fromOffset(5, 28)
+AutoPickupTitle.Position = UDim2.fromOffset(5, 27)
 AutoPickupTitle.BackgroundTransparency = 1
 AutoPickupTitle.Text = "Auto Pickup"
 AutoPickupTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -579,7 +579,7 @@ AutoPickupTitle.Parent = AutoPage
 
 local AutoPickupStatus = Instance.new("TextLabel")
 AutoPickupStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoPickupStatus.Position = UDim2.fromOffset(5, 45)
+AutoPickupStatus.Position = UDim2.fromOffset(5, 40)
 AutoPickupStatus.BackgroundTransparency = 1
 AutoPickupStatus.Text = "● Inactive"
 AutoPickupStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
@@ -590,7 +590,7 @@ AutoPickupStatus.Parent = AutoPage
 
 local AutoPickupToggle = Instance.new("TextButton")
 AutoPickupToggle.Size = UDim2.fromOffset(62, 27)
-AutoPickupToggle.Position = UDim2.new(1, -67, 0, 28)
+AutoPickupToggle.Position = UDim2.new(1, -67, 0, 27)
 AutoPickupToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoPickupToggle.Text = "OFF"
 AutoPickupToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -608,7 +608,7 @@ AutoPickupToggleCorner.Parent = AutoPickupToggle
 
 local AutoPickupFilterLabel = Instance.new("TextLabel")
 AutoPickupFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoPickupFilterLabel.Position = UDim2.fromOffset(5, 66)
+AutoPickupFilterLabel.Position = UDim2.fromOffset(5, 61)
 AutoPickupFilterLabel.BackgroundTransparency = 1
 AutoPickupFilterLabel.Text = "Egg Filter"
 AutoPickupFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -619,7 +619,7 @@ AutoPickupFilterLabel.Parent = AutoPage
 
 local AutoPickupFilterButton = Instance.new("TextButton")
 AutoPickupFilterButton.Size = UDim2.new(1, -10, 0, 27)
-AutoPickupFilterButton.Position = UDim2.fromOffset(5, 84)
+AutoPickupFilterButton.Position = UDim2.fromOffset(5, 81)
 AutoPickupFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
 AutoPickupFilterButton.Text = "  -- ▼"
 AutoPickupFilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -637,7 +637,7 @@ AutoPickupFilterButtonCorner.Parent = AutoPickupFilterButton
 
 local AutoPickupFilterCount = Instance.new("TextLabel")
 AutoPickupFilterCount.Size = UDim2.new(1, -10, 0, 18)
-AutoPickupFilterCount.Position = UDim2.fromOffset(5, 113)
+AutoPickupFilterCount.Position = UDim2.fromOffset(5, 110)
 AutoPickupFilterCount.BackgroundTransparency = 1
 AutoPickupFilterCount.Text = "Selected eggs: 0"
 AutoPickupFilterCount.TextColor3 = Color3.fromRGB(145, 145, 155)
@@ -648,7 +648,7 @@ AutoPickupFilterCount.Parent = AutoPage
 
 local AutoDipTitle = Instance.new("TextLabel")
 AutoDipTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoDipTitle.Position = UDim2.fromOffset(5, 136)
+AutoDipTitle.Position = UDim2.fromOffset(5, 131)
 AutoDipTitle.BackgroundTransparency = 1
 AutoDipTitle.Text = "Auto DIP"
 AutoDipTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -659,7 +659,7 @@ AutoDipTitle.Parent = AutoPage
 
 local AutoDipStatus = Instance.new("TextLabel")
 AutoDipStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoDipStatus.Position = UDim2.fromOffset(5, 153)
+AutoDipStatus.Position = UDim2.fromOffset(5, 150)
 AutoDipStatus.BackgroundTransparency = 1
 AutoDipStatus.Text = "● Inactive"
 AutoDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
@@ -670,7 +670,7 @@ AutoDipStatus.Parent = AutoPage
 
 local AutoDipToggle = Instance.new("TextButton")
 AutoDipToggle.Size = UDim2.fromOffset(62, 27)
-AutoDipToggle.Position = UDim2.new(1, -67, 0, 136)
+AutoDipToggle.Position = UDim2.new(1, -67, 0, 131)
 AutoDipToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoDipToggle.Text = "OFF"
 AutoDipToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -688,7 +688,7 @@ AutoDipToggleCorner.Parent = AutoDipToggle
 
 local AutoMovementLabel = Instance.new("TextLabel")
 AutoMovementLabel.Size = UDim2.new(1, -10, 0, 18)
-AutoMovementLabel.Position = UDim2.fromOffset(5, 174)
+AutoMovementLabel.Position = UDim2.fromOffset(5, 171)
 AutoMovementLabel.BackgroundTransparency = 1
 AutoMovementLabel.Text = "Movement"
 AutoMovementLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -699,7 +699,7 @@ AutoMovementLabel.Parent = AutoPage
 
 local AutoMovementButton = Instance.new("TextButton")
 AutoMovementButton.Size = UDim2.new(1, -10, 0, 27)
-AutoMovementButton.Position = UDim2.fromOffset(5, 192)
+AutoMovementButton.Position = UDim2.fromOffset(5, 187)
 AutoMovementButton.BackgroundColor3 = Color3.fromRGB(55, 85, 60)
 AutoMovementButton.Text = "Teleport"
 AutoMovementButton.TextColor3 = Color3.fromRGB(225, 225, 230)
@@ -716,7 +716,7 @@ AutoMovementCorner.Parent = AutoMovementButton
 
 local AutoMovementInfo = Instance.new("TextLabel")
 AutoMovementInfo.Size = UDim2.new(1, -10, 0, 16)
-AutoMovementInfo.Position = UDim2.fromOffset(5, 220)
+AutoMovementInfo.Position = UDim2.fromOffset(5, 215)
 AutoMovementInfo.BackgroundTransparency = 1
 AutoMovementInfo.Text = "Teleport active"
 AutoMovementInfo.TextColor3 = Color3.fromRGB(130, 180, 140)
@@ -727,7 +727,7 @@ AutoMovementInfo.Parent = AutoPage
 
 local AutoClaimLabel = Instance.new("TextLabel")
 AutoClaimLabel.Size = UDim2.new(1, -10, 0, 18)
-AutoClaimLabel.Position = UDim2.fromOffset(5, 237)
+AutoClaimLabel.Position = UDim2.fromOffset(5, 232)
 AutoClaimLabel.BackgroundTransparency = 1
 AutoClaimLabel.Text = "Claim Delay: 1.5s"
 AutoClaimLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -738,7 +738,7 @@ AutoClaimLabel.Parent = AutoPage
 
 local AutoClaimBar = Instance.new("Frame")
 AutoClaimBar.Size = UDim2.new(1, -10, 0, 6)
-AutoClaimBar.Position = UDim2.fromOffset(5, 257)
+AutoClaimBar.Position = UDim2.fromOffset(5, 250)
 AutoClaimBar.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoClaimBar.BorderSizePixel = 0
 AutoClaimBar.Parent = AutoPage
@@ -950,17 +950,16 @@ local function refreshAutoPickupFilterText()
 
     if #selected==0 then
         AutoPickupFilterButton.Text="  -- ▼"
-        AutoPickupFilterCount.Text="Selected: None"
     elseif #selected==1 then
-        AutoPickupFilterButton.Text="  "  ..selected[1].." ▼"
-        AutoPickupFilterCount.Text="Selected: "..selected[1]
+        AutoPickupFilterButton.Text="  "..selected[1].." ▼"
     elseif #selected==2 then
-        AutoPickupFilterButton.Text="  "  ..selected[1]..", "..selected[2].." ▼"
-        AutoPickupFilterCount.Text="Selected: "..selected[1]..", "..selected[2]
+        AutoPickupFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
     else
-        AutoPickupFilterButton.Text="  "  ..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
-        AutoPickupFilterCount.Text="Selected: "..table.concat(selected,", ")
+        AutoPickupFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
     end
+
+    AutoPickupFilterCount.Text="Selected eggs: "..tostring(#selected)
+    AutoPickupFilterButton.BackgroundColor3=#selected>0 and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
 end
 
 local function createAutoPickupFilterButtons()
