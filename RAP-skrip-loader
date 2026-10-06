@@ -1,3 +1,2 @@
---loader
-local BASE="https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/rap-skrip"
+local BASE="https://raw.githubusercontent.com/mnbvcxz24/0xMoldySkrip/refs/heads/main/RAP-skrip-code"
 loadstring(game:HttpGet(BASE))()
