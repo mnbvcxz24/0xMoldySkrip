@@ -1,1 +1,372 @@
+--==================================================
+-- RAPSkrip
+--==================================================
+-- Main Roblox automation and utility script
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
+--==================================================
+-- 1. VERSION
+--==================================================
+local ver = "TEST v1.1"
+--==================================================
+-- 2. SERVICES
+--==================================================
+pcall(function()
+    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
+    if oldGui then
+        oldGui:Destroy()
+    end
+end)
+pcall(function()
+    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
+    if oldESP then
+        oldESP:Destroy()
+    end
+end)
+--==================================================
+-- 3. CONSTANTS / GENERAL SETTINGS / GLOBAL LOCAL
+--==================================================
+local TEXT_SCALE = 0.80
+local function textSize(size)
+    return math.floor(size * TEXT_SCALE)
+end
+--==================================================
+-- 4. UTILITY FUNCTIONS
+--==================================================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RAPGUIskrip"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Enabled = true
+Gui.Parent = CoreGui
+--==================================================
+-- 5. DEBUG SYSTEM
+--==================================================
+local DebugLines = {"[SYSTEM] ESP UI loaded."}
+local DebugText
+local DebugBox
+local function AddDebug(message)
+    table.insert(DebugLines, tostring(message))
+    if #DebugLines > 150 then
+        table.remove(DebugLines, 1)
+    end
+    if DebugText then
+        DebugText.Text = table.concat(DebugLines, "\n")
+    end
+    if DebugText and DebugBox then
+        task.defer(function()
+            if DebugText and DebugBox then
+                DebugBox.CanvasSize = UDim2.fromOffset(
+                    0,
+                    DebugText.AbsoluteSize.Y + 15
+                )
+                DebugBox.CanvasPosition = Vector2.new(
+                    0,
+                    math.max(
+                        0,
+                        DebugText.AbsoluteSize.Y - DebugBox.AbsoluteSize.Y
+                    )
+                )
+            end
+        end)
+    end
+end
+--==================================================
+-- 6. CONFIGURATION
+--==================================================
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(540, 345)
+Main.Position = UDim2.new(0.5, -270, 0.5, -172.5)
+Main.BackgroundColor3 = Color3.fromRGB(22, 22, 27)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
 
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = Main
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 55)
+Header.BackgroundTransparency = 1
+Header.Active = true
+Header.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -125, 0, 28)
+Title.Position = UDim2.fromOffset(16, 7)
+Title.BackgroundTransparency = 1
+Title.Text = "Ride A Pet"
+Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+Title.TextSize = textSize(18)
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(1, -125, 0, 18)
+Subtitle.Position = UDim2.fromOffset(16, 31)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "RAP SKRIP - 0xMoldy | " .. ver
+Subtitle.TextColor3 = Color3.fromRGB(145, 145, 155)
+Subtitle.TextSize = textSize(11)
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Header
+
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.fromOffset(32, 32)
+Minimize.Position = UDim2.new(1, -82, 0, 11)
+Minimize.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+Minimize.Text = "—"
+Minimize.TextColor3 = Color3.fromRGB(220, 220, 225)
+Minimize.TextSize = textSize(18)
+Minimize.Font = Enum.Font.Gotham
+Minimize.AutoButtonColor = false
+Minimize.Active = true
+Minimize.Selectable = true
+Minimize.ZIndex = 30
+Minimize.Parent = Header
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = Minimize
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(32, 32)
+Close.Position = UDim2.new(1, -42, 0, 11)
+Close.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+Close.Text = "×"
+Close.TextColor3 = Color3.fromRGB(220, 220, 225)
+Close.TextSize = textSize(20)
+Close.Font = Enum.Font.Gotham
+Close.AutoButtonColor = false
+Close.Active = true
+Close.Selectable = true
+Close.ZIndex = 30
+Close.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = Close
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.fromOffset(105, 10)
+Sidebar.Position = UDim2.fromOffset(10, 45)
+Sidebar.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
+Sidebar.BorderSizePixel = 0
+Sidebar.Active = true
+Sidebar.ZIndex = 5
+Sidebar.Parent = Main
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 8)
+SidebarCorner.Parent = Sidebar
+
+local SidebarLayout = Instance.new("UIListLayout")
+SidebarLayout.FillDirection = Enum.FillDirection.Vertical
+SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SidebarLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.Padding = UDim.new(0, 5)
+SidebarLayout.Parent = Sidebar
+
+local SidebarPadding = Instance.new("UIPadding")
+SidebarPadding.PaddingTop = UDim.new(0, 5)
+SidebarPadding.PaddingBottom = UDim.new(0, 5)
+SidebarPadding.Parent = Sidebar
+
+local function updateSidebarSize()
+    local contentHeight = SidebarLayout.AbsoluteContentSize.Y
+    Sidebar.Size = UDim2.fromOffset(105,contentHeight + 10)
+end
+
+SidebarLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSidebarSize)
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1,-(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 15),1,-65)
+Content.Position = UDim2.fromOffset(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 5,55)
+Content.BackgroundTransparency = 1
+Content.ClipsDescendants = false
+Content.Parent = Main
+
+local Content1 = Instance.new("Frame")
+Content1.Name = "Content1"
+Content1.Size = UDim2.new(0.5, -5, 1, 0)
+Content1.Position = UDim2.fromOffset(0, 0)
+Content1.BackgroundTransparency = 1
+Content1.ClipsDescendants = false
+Content1.Parent = Content
+
+local Content2 = Instance.new("Frame")
+Content2.Name = "Content2"
+Content2.Size = UDim2.new(0.5, -5, 1, 0)
+Content2.Position = UDim2.new(0.5, 5, 0, 0)
+Content2.BackgroundTransparency = 1
+Content2.ClipsDescendants = false
+Content2.Parent = Content
+--==================================================
+-- 7. PLAYER / CHARACTER REFERENCES
+--==================================================
+local AntiAFKEnabled = false
+player.Idled:Connect(function()
+    if not AntiAFKEnabled then
+        return
+    end
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new(0, 0))
+    end)
+    AddDebug("[ANTI AFK] Idle activity sent")
+end)
+--==================================================
+-- 8. GAME OBJECT / FOLDER REFERENCES
+--==================================================
+
+
+--==================================================
+-- 9. REMOTES
+--==================================================
+
+
+--==================================================
+-- 10. GUI ROOT
+--==================================================
+
+
+--==================================================
+-- 11. MAIN NAVIGATION
+--==================================================
+
+
+--==================================================
+-- 12. AUTO PAGE
+--==================================================
+
+--==================================================
+-- 12.1 AUTO FARM
+--==================================================
+
+
+--==================================================
+-- 12.2 AUTO PICKUP
+--==================================================
+
+
+--==================================================
+-- 12.3 AUTO DIP
+--==================================================
+
+
+--==================================================
+-- 12.4 AUTO PLACE EGGS
+--==================================================
+
+
+--==================================================
+-- 13. EGG FILTER SYSTEM
+--==================================================
+
+--==================================================
+-- 13.1 AUTO FARM EGG FILTER
+--==================================================
+
+
+--==================================================
+-- 13.2 AUTO PICKUP EGG FILTER
+--==================================================
+
+
+--==================================================
+-- 13.3 AUTO PLACE EGG FILTER
+--==================================================
+
+
+--==================================================
+-- 14. ESP PAGE
+--==================================================
+
+
+--==================================================
+-- 14.1 ESP FILTER
+--==================================================
+
+
+--==================================================
+-- 14.2 ESP RENDERING
+--==================================================
+
+
+--==================================================
+-- 14.3 ESP UPDATE LOOP
+--==================================================
+
+
+--==================================================
+-- 15. DEBUG PAGE
+--==================================================
+
+
+--==================================================
+-- 16. SETTINGS PAGE
+--==================================================
+
+
+--==================================================
+-- 17. ANTI-AFK
+--==================================================
+
+
+--==================================================
+-- 18. HELPER / GAME FUNCTIONS
+--==================================================
+
+
+--==================================================
+-- 19. AUTO FARM LOGIC
+--==================================================
+
+
+--==================================================
+-- 20. AUTO PICKUP LOGIC
+--==================================================
+
+
+--==================================================
+-- 21. AUTO DIP LOGIC
+--==================================================
+
+
+--==================================================
+-- 22. AUTO PLACE LOGIC
+--==================================================
+
+
+--==================================================
+-- 23. ESP LOGIC
+--==================================================
+
+
+--==================================================
+-- 24. EVENT CONNECTIONS
+--==================================================
+
+
+--==================================================
+-- 25. LOOPS / TASKS
+--==================================================
+
+
+--==================================================
+-- 26. STARTUP / INITIALIZATION
+--==================================================
+
+
+--==================================================
+-- END
+--==================================================
