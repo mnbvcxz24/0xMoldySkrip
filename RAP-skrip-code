@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.3"
+local ver = "TEST v1.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -62,6 +62,9 @@ end
 --==================================================
 local CONFIG_FOLDER = "RAPSkrip"
 local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
+
+local SelectedEggs = {}
+local AutoSelectedEggs = {}
 
 local function saveConfig()
     if not writefile then
@@ -131,8 +134,6 @@ local function loadConfig()
         return
     end
 
-    SelectedEggs = {}
-
     if type(data.selectedEggs) == "table" then
         for _, eggName in ipairs(data.selectedEggs) do
             if type(eggName) == "string" and eggName ~= "--" then
@@ -140,8 +141,6 @@ local function loadConfig()
             end
         end
     end
-
-    AutoSelectedEggs = {}
 
     if type(data.autoSelectedEggs) == "table" then
         for _, eggName in ipairs(data.autoSelectedEggs) do
@@ -183,9 +182,20 @@ end
 local EggPickupEvent
 local EggArrivalClaimEvent
 local TeleportToPlotEvent
-
 local VolcanoDipEvent
 local VolcanoDipResultEvent
+
+pcall(function()
+    local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+    local GameRemotes = Remotes:WaitForChild("Game")
+
+    EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
+    EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
+    TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
+
+    VolcanoDipEvent = ReplicatedStorage.packages.Net["RE/VolcanoDip"]
+    VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
+end)
 --==================================================
 -- 10. GUI ROOT
 --==================================================
@@ -2462,14 +2472,15 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
     end
 end)
 
-VolcanoDipResultEvent.OnClientEvent:Connect(function(result)
-    if not AutoDipWaitingForResult then
-        return
-    end
-
-    AutoDipResult=result
-    AutoDipWaitingForResult=false
-end)
+if VolcanoDipResultEvent then
+    VolcanoDipResultEvent.OnClientEvent:Connect(function(result)
+        if not AutoDipWaitingForResult then return end
+        AutoDipResult=result
+        AutoDipWaitingForResult=false
+    end)
+else
+    AddDebug("[AUTO DIP ERROR] VolcanoDipResult remote not found")
+end
 --==================================================
 -- 22. AUTO PLACE LOGIC
 --==================================================
