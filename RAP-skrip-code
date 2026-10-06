@@ -2968,7 +2968,6 @@ function updateESP()
     updateDetectedEggList(detectedLines)
 end
 
-loadConfig()
 rebuildFilter()
 refreshFilterButtons()
 updateFilterText()
@@ -3247,7 +3246,6 @@ end)
 --==================================================
 showPage(AutoPage)
 updateActivePageButton(AutoButton)
-loadConfig()
 
 refreshFilterButtons()
 updateFilterText()
