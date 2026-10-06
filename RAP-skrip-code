@@ -3140,20 +3140,30 @@ UserInputService.InputChanged:Connect(function(input)
     end
 end)
 
+local function updateActivePageButton(activeButton)
+    local buttons={AutoButton,ESPButton,DebugButton,SettingsButton}
+    for _,button in ipairs(buttons) do
+        button.BackgroundColor3=button==activeButton and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
+    end
+end
 AutoButton.MouseButton1Click:Connect(function()
     showPage(AutoPage)
+    updateActivePageButton(AutoButton)
 end)
 
 ESPButton.MouseButton1Click:Connect(function()
     showPage(ESPPage)
+    updateActivePageButton(ESPButton)
 end)
 
 DebugButton.MouseButton1Click:Connect(function()
     showPage(DebugPage)
+    updateActivePageButton(DebugButton)
 end)
 
 SettingsButton.MouseButton1Click:Connect(function()
     showPage(SettingsPage)
+    updateActivePageButton(SettingsButton)
 end)
 
 Minimize.MouseButton1Click:Connect(function()
