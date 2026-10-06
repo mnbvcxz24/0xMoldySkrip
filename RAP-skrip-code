@@ -347,7 +347,7 @@ SidebarPadding.Parent = Sidebar
 local function updateSidebarSize()
     local contentHeight = SidebarLayout.AbsoluteContentSize.Y
     Sidebar.Size = UDim2.fromOffset(
-        105,
+        50,
         contentHeight + 10
     )
 end
