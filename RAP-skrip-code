@@ -880,7 +880,7 @@ local FilterButtons = {}
 
 local AutoPickupFilterFrame = Instance.new("ScrollingFrame")
 AutoPickupFilterFrame.Name = "AutoPickupFilterFrame"
-AutoPickupFilterFrame.Size = UDim2.new(1, -10, 0, 176)
+AutoPickupFilterFrame.Size = UDim2.new(1, -10, 0, 150)
 AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 113)
 AutoPickupFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPickupFilterFrame.BorderSizePixel = 0
@@ -907,12 +907,33 @@ local AutoPlaceFilterLayout = Instance.new("UIListLayout")
 AutoPlaceFilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
 AutoPlaceFilterLayout.Padding = UDim.new(0, 3)
 AutoPlaceFilterLayout.Parent = AutoPlaceFilterFrame
---==================================================
--- 13.1 AUTO FARM EGG FILTER
---==================================================
 
+local FilterFrame = Instance.new("ScrollingFrame")
+FilterFrame.Name = "FilterFrame"
+FilterFrame.Size = UDim2.new(1, -10, 0, 120)
+FilterFrame.Position = UDim2.fromOffset(5, 132)
+FilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
+FilterFrame.BorderSizePixel = 0
+FilterFrame.ScrollBarThickness = 3
+FilterFrame.Visible = false
+FilterFrame.Parent = ESPPage
+
+local FilterLayout = Instance.new("UIListLayout")
+FilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
+FilterLayout.Padding = UDim.new(0, 3)
+FilterLayout.Parent = FilterFrame
+
+local function setupFilterScrolling(frame,layout)
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        frame.CanvasSize=UDim2.fromOffset(0,layout.AbsoluteContentSize.Y+5)
+    end)
+end
+
+setupFilterScrolling(AutoPickupFilterFrame,AutoPickupFilterLayout)
+setupFilterScrolling(AutoPlaceFilterFrame,AutoPlaceFilterLayout)
+setupFilterScrolling(FilterFrame,FilterLayout)
 --==================================================
--- 13.2 AUTO PICKUP EGG FILTER
+-- 13.2 AUTO PICKUP EGG FILTER FUNCTION
 --==================================================
 local function refreshAutoPickupFilterText()
     local selected={}
@@ -927,10 +948,10 @@ local function refreshAutoPickupFilterText()
     elseif #selected==1 then
         AutoPickupFilterButton.Text=selected[1].." ▼"
     else
-        AutoPickupFilterButton.Text=tostring(#selected).." eggs selected ▼"
+        AutoPickupFilterButton.Text=tostring(  #selected).." eggs selected ▼"
     end
 
-    AutoPickupFilterCount.Text="Selected eggs: "..tostring(#selected)
+    AutoPickupFilterCount.Text="  Selected eggs: "..tostring(#selected)
 end
 
 local function createAutoPickupFilterButtons()
@@ -1156,21 +1177,6 @@ local function updateDetectedEggList(lines)
 
     updateDetectedEggFrameSize()
 end
-
-local FilterFrame = Instance.new("ScrollingFrame")
-FilterFrame.Name = "FilterFrame"
-FilterFrame.Size = UDim2.new(1, -10, 0, 120)
-FilterFrame.Position = UDim2.fromOffset(5, 132)
-FilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
-FilterFrame.BorderSizePixel = 0
-FilterFrame.ScrollBarThickness = 3
-FilterFrame.Visible = false
-FilterFrame.Parent = ESPPage
-
-local FilterLayout = Instance.new("UIListLayout")
-FilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
-FilterLayout.Padding = UDim.new(0, 3)
-FilterLayout.Parent = FilterFrame
 --==================================================
 -- 15. DEBUG PAGE
 --==================================================
