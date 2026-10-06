@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v2.5"
+local ver = "TEST v2.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2975,35 +2975,14 @@ end)
 --==================================================
 -- 24. EVENT CONNECTIONS
 --==================================================
-AutoPickupToggle.MouseButton1Click:Connect(function()
-    local enabled = not AutoPickupRunning
-    AutoPickupRunning = enabled
-    AutoPickupToggle.Text = enabled and "ON" or "OFF"
-    AutoPickupToggle.BackgroundColor3 = enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
-    AutoPickupStatus.Text = enabled and "● Active" or "● Inactive"
-    AutoPickupStatus.TextColor3 = enabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
-    AddDebug(enabled and "[AUTO] Enabled" or "[AUTO] Disabled")
-    if not enabled then
-        task.spawn(function()
-            pcall(function()
-                stopAutoPickupFloat()
-            end)
-            AutoPickupBusy = false
-            AutoPickupAwaitingUUID = nil
-            AutoPickupAwaitingPickup = false
-            AutoPickupAwaitingDeposit = false
-            AutoPickupPickupConfirmed = false
-            AutoPickupDepositConfirmed = false
-            AutoDipWaitingForResult = false
-            AutoVolcanoWaitingForMessage = false
-            AutoPickupFloating = false
-            AddDebug("[AUTO] Movement reset")
-        end)
-        return
+AutoPickupFilterButton.MouseButton1Click:Connect(function()
+    AutoPickupFilterFrame.Visible=not AutoPickupFilterFrame.Visible
+    if AutoPickupFilterFrame.Visible then
+        AutoPickupFilterButton.Text="Select Eggs ▲"
+        createAutoPickupFilterButtons()
+    else
+        refreshAutoPickupFilterText()
     end
-    AddDebug("[AUTO] Movement: "..AutoPickupMovementMode)
-    AddDebug(string.format("[AUTO] Claim Delay: %.1fs", AutoPickupClaimDelay))
-    AddDebug("[AUTO] Next Egg Delay: 3.0s")
 end)
 
 AutoMovementButton.MouseButton1Click:Connect(function()
