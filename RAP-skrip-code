@@ -531,6 +531,7 @@ local function createSidebarButton(text)
     button.AutoButtonColor = false
     button.Active = true
     button.Selectable = true
+    button.RichText = true
     button.ZIndex = 10
     button.Parent = Sidebar
 
@@ -3245,7 +3246,7 @@ end)
 -- 26. STARTUP / INITIALIZATION
 --==================================================
 showPage(AutoPage)
-
+updateActivePageButton(AutoButto
 loadConfig()
 
 refreshFilterButtons()
