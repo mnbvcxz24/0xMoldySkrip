@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v2.6"
+local ver = "TEST v2.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -840,6 +840,34 @@ local AutoDipWaitingForResult = false
 local AutoVolcanoMessageReceived = false
 local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
+
+local AutoDipLabel = Instance.new("TextLabel")
+AutoDipLabel.Size = UDim2.new(1, -85, 0, 22)
+AutoDipLabel.Position = UDim2.fromOffset(5, 0)
+AutoDipLabel.BackgroundTransparency = 1
+AutoDipLabel.Text = "Auto DIP"
+AutoDipLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoDipLabel.TextSize = textSize(10)
+AutoDipLabel.Font = Enum.Font.GothamMedium
+AutoDipLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoDipLabel.Parent = AutoPage
+
+local AutoDipButton = Instance.new("TextButton")
+AutoDipButton.Size = UDim2.fromOffset(62, 27)
+AutoDipButton.Position = UDim2.new(1, -67, 0, -3)
+AutoDipButton.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoDipButton.Text = "OFF"
+AutoDipButton.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoDipButton.TextSize = textSize(10)
+AutoDipButton.Font = Enum.Font.GothamBold
+AutoDipButton.AutoButtonColor = false
+AutoDipButton.Active = true
+AutoDipButton.Selectable = true
+AutoDipButton.Parent = AutoPage
+
+local AutoDipCorner = Instance.new("UICorner")
+AutoDipCorner.CornerRadius = UDim.new(0, 6)
+AutoDipCorner.Parent = AutoDipButton
 --==================================================
 -- 12.4 AUTO PLACE EGGS
 --==================================================
@@ -3007,18 +3035,6 @@ AutoDipButton.MouseButton1Click:Connect(function()
     AddDebug(AutoDipEnabled and "[AUTO DIP] Enabled" or "[AUTO DIP] Disabled")
 end)
 
-AutoFilterButton.MouseButton1Click:Connect(function()
-    AutoFilterFrame.Visible=not AutoFilterFrame.Visible
-    if AutoFilterFrame.Visible then
-        AutoSelectedLabel.Visible=false
-        AutoFilterButton.Text="Select Eggs ▲"
-        createAutoFilterButtons()
-    else
-        AutoSelectedLabel.Visible=true
-        refreshAutoFilterText()
-    end
-end)
-
 if EggPickupEvent then
     EggPickupEvent.OnClientEvent:Connect(function(action,...)
         local args={...}
@@ -3064,41 +3080,7 @@ for eggName,button in pairs(FilterButtons) do
     end)
 end
 
-ScanButton.MouseButton1Click:Connect(function()
-    DebugLines={}
-    if DebugText then
-        DebugText.Text=""
-    end
-    if DebugBox then
-        DebugBox.CanvasPosition=Vector2.new(0,0)
-    end
-    AddDebug("========== EGG SCAN ==========")
-    local success,err=pcall(function()
-        local ActiveEggs=getActiveEggs()
-        if not ActiveEggs then
-            AddDebug("[ERROR] ActiveEggs not found")
-            return
-        end
-        local eggs=ActiveEggs:GetChildren()
-        EggCount.Text="Active Eggs: "..tostring(#eggs)
-        local selectedNames=getSelectedEggNames()
-        AddDebug("Total Active Eggs: "..tostring(#eggs))
-        for _,egg in ipairs(eggs) do
-            local eggName=egg:GetAttribute("Egg")
-            if eggName and SelectedEggs[eggName] then
-                local position=egg:GetAttribute("Position")
-                AddDebug(tostring(eggName).." | Position Type: "..typeof(position))
-            end
-        end
-        AddDebug("========== SCAN COMPLETE ==========")
-    end)
-    if not success then
-        AddDebug("========== LUA ERROR ==========")
-        AddDebug(tostring(err))
-    end
-end)
-
-Toggle.MouseButton1Click:Connect(function()
+ESPToggle.MouseButton1Click:Connect(function()
     local enabled=Toggle.Text=="OFF"
     Toggle.Text=enabled and "ON" or "OFF"
     Toggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
@@ -3110,12 +3092,6 @@ Toggle.MouseButton1Click:Connect(function()
         AddDebug("[ESP] Disabled")
         clearESP()
     end
-end)
-
-AntiAFKButton.MouseButton1Click:Connect(function()
-    AntiAFKEnabled=not AntiAFKEnabled
-    updateAntiAFKButton()
-    AddDebug(AntiAFKEnabled and "[ANTI AFK] Enabled" or "[ANTI AFK] Disabled")
 end)
 
 ConfigSaveButton.MouseButton1Click:Connect(function()
