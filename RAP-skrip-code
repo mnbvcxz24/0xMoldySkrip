@@ -22,25 +22,7 @@ end
 --==================================================
 -- 4. UTILITY FUNCTIONS
 --==================================================
-pcall(function()
-    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
-    if oldGui then
-        oldGui:Destroy()
-    end
-end)
-pcall(function()
-    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
-    if oldESP then
-        oldESP:Destroy()
-    end
-end)
 
-local Gui = Instance.new("ScreenGui")
-Gui.Name = "RAPGUIskrip"
-Gui.ResetOnSpawn = false
-Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-Gui.Enabled = true
-Gui.Parent = CoreGui
 --==================================================
 -- 5. DEBUG SYSTEM
 --==================================================
@@ -217,7 +199,25 @@ end)
 --==================================================
 -- 10. GUI ROOT
 --==================================================
+pcall(function()
+    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
+    if oldGui then
+        oldGui:Destroy()
+    end
+end)
+pcall(function()
+    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
+    if oldESP then
+        oldESP:Destroy()
+    end
+end)
 
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RAPGUIskrip"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Enabled = true
+Gui.Parent = CoreGui
 --==================================================
 -- 11. MAIN NAVIGATION
 --==================================================
