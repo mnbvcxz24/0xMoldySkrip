@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.1"
+local ver = "TEST v1.2"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -597,14 +597,33 @@ AutoDipToggleCorner.Parent = AutoDipToggle
 --==================================================
 -- 12.2 AUTO PICKUP
 --==================================================
-
+local AutoPickupRunning = false
+local AutoPickupBusy = false
+local AutoPickupDistance = math.huge
+local AutoPickupMovementMode = "Teleport"
+local AutoPickupClaimDelay = 1.5
+local AutoPickupNextEggDelay = 3
+local AutoPickupFloatHeight = 3
+local AutoPickupFloating = false
+local AutoPickupFloatForce = nil
+local AutoPickupAwaitingUUID = nil
+local AutoPickupAwaitingPickup = false
+local AutoPickupAwaitingDeposit = false
+local AutoPickupPickupConfirmed = false
+local AutoPickupDepositConfirmed = false
 --==================================================
 -- 12.3 AUTO DIP
 --==================================================
-
+local AutoDipEnabled = false
+local AutoDipResult = nil
+local AutoDipWaitingForResult = false
+local AutoVolcanoMessageReceived = false
+local AutoVolcanoMessageText = nil
+local AutoVolcanoWaitingForMessage = false
 --==================================================
 -- 12.4 AUTO PLACE EGGS
 --==================================================
+
 --==================================================
 -- 13. EGG FILTER SYSTEM
 --==================================================
@@ -689,19 +708,163 @@ AutoPlaceFilterLayout.Parent = AutoPlaceFilterFrame
 --==================================================
 -- 13.1 AUTO FARM EGG FILTER
 --==================================================
+local function refreshAutoFarmFilterText()
+    local selected={}
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and AutoSelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
 
+    if #selected==0 then
+        AutoFarmFilterButton.Text="-- ▼"
+    elseif #selected==1 then
+        AutoFarmFilterButton.Text=selected[1].." ▼"
+    else
+        AutoFarmFilterButton.Text=tostring(#selected).." eggs selected ▼"
+    end
+
+    AutoFarmFilterCount.Text="Selected eggs: "..tostring(#selected)
+end
+
+local function createAutoFarmFilterButtons()
+    for _,child in ipairs(AutoFarmFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _,eggName in ipairs(EggTypes) do
+        local button=Instance.new("TextButton")
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundTransparency=1
+        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Parent=AutoFarmFilterFrame
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                AutoSelectedEggs={}
+            else
+                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+            end
+
+            createAutoFarmFilterButtons()
+            refreshAutoFarmFilterText()
+            saveConfig()
+        end)
+    end
+end
 --==================================================
 -- 13.2 AUTO PICKUP EGG FILTER
 --==================================================
+local function refreshAutoPickupFilterText()
+    local selected={}
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and AutoSelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
 
+    if #selected==0 then
+        AutoPickupFilterButton.Text="-- ▼"
+    elseif #selected==1 then
+        AutoPickupFilterButton.Text=selected[1].." ▼"
+    else
+        AutoPickupFilterButton.Text=tostring(#selected).." eggs selected ▼"
+    end
+
+    AutoPickupFilterCount.Text="Selected eggs: "..tostring(#selected)
+end
+
+local function createAutoPickupFilterButtons()
+    for _,child in ipairs(AutoPickupFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _,eggName in ipairs(EggTypes) do
+        local button=Instance.new("TextButton")
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundTransparency=1
+        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Parent=AutoPickupFilterFrame
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                AutoSelectedEggs={}
+            else
+                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+            end
+
+            createAutoPickupFilterButtons()
+            refreshAutoPickupFilterText()
+            saveConfig()
+        end)
+    end
+end
 --==================================================
 -- 13.3 AUTO PLACE EGG FILTER
 --==================================================
+local function refreshAutoPlaceFilterText()
+    local selected={}
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and AutoSelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
 
---==================================================
--- 13.3 AUTO PLACE EGG FILTER
---==================================================
+    if #selected==0 then
+        AutoPlaceFilterButton.Text="-- ▼"
+    elseif #selected==1 then
+        AutoPlaceFilterButton.Text=selected[1].." ▼"
+    else
+        AutoPlaceFilterButton.Text=tostring(#selected).." eggs selected ▼"
+    end
+end
 
+local function createAutoPlaceFilterButtons()
+    for _,child in ipairs(AutoPlaceFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _,eggName in ipairs(EggTypes) do
+        local button=Instance.new("TextButton")
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundTransparency=1
+        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Parent=AutoPlaceFilterFrame
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                AutoSelectedEggs={}
+            else
+                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+            end
+
+            createAutoPlaceFilterButtons()
+            refreshAutoPlaceFilterText()
+            saveConfig()
+        end)
+    end
+end
 --==================================================
 -- 14. ESP PAGE
 --==================================================
@@ -2174,7 +2337,6 @@ end
 --==================================================
 -- 21. AUTO DIP LOGIC
 --==================================================
-
 local GameMessageEvent=game:GetService("ReplicatedStorage").Remotes.Reusable.GameMessage
 
 GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
