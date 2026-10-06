@@ -1142,6 +1142,16 @@ AntiAFKToggleCorner.Parent = AntiAFKToggle
 -- 17. ANTI-AFK
 --==================================================
 local AntiAFKEnabled = false
+player.Idled:Connect(function()
+    if not AntiAFKEnabled then
+        return
+    end
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new(0, 0))
+    end)
+    AddDebug("[ANTI AFK] Idle activity sent")
+end)
 local function setAntiAFK(enabled)
     AntiAFKEnabled = enabled
 
