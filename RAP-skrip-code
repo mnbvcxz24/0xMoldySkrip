@@ -840,34 +840,6 @@ local AutoDipWaitingForResult = false
 local AutoVolcanoMessageReceived = false
 local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
-
-local AutoDipLabel = Instance.new("TextLabel")
-AutoDipLabel.Size = UDim2.new(1, -85, 0, 22)
-AutoDipLabel.Position = UDim2.fromOffset(5, 0)
-AutoDipLabel.BackgroundTransparency = 1
-AutoDipLabel.Text = "Auto DIP"
-AutoDipLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
-AutoDipLabel.TextSize = textSize(10)
-AutoDipLabel.Font = Enum.Font.GothamMedium
-AutoDipLabel.TextXAlignment = Enum.TextXAlignment.Left
-AutoDipLabel.Parent = AutoPage
-
-local AutoDipButton = Instance.new("TextButton")
-AutoDipButton.Size = UDim2.fromOffset(62, 27)
-AutoDipButton.Position = UDim2.new(1, -67, 0, -3)
-AutoDipButton.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-AutoDipButton.Text = "OFF"
-AutoDipButton.TextColor3 = Color3.fromRGB(220, 220, 225)
-AutoDipButton.TextSize = textSize(10)
-AutoDipButton.Font = Enum.Font.GothamBold
-AutoDipButton.AutoButtonColor = false
-AutoDipButton.Active = true
-AutoDipButton.Selectable = true
-AutoDipButton.Parent = AutoPage
-
-local AutoDipCorner = Instance.new("UICorner")
-AutoDipCorner.CornerRadius = UDim.new(0, 6)
-AutoDipCorner.Parent = AutoDipButton
 --==================================================
 -- 12.4 AUTO PLACE EGGS
 --==================================================
