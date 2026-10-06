@@ -223,7 +223,7 @@ Gui.Parent = CoreGui
 --==================================================
 local Main = Instance.new("Frame")
 Main.Name = "Main"
-Main.Size = UDim2.fromOffset(450, 340)
+Main.Size = UDim2.fromOffset(400, 300)
 Main.Position = UDim2.new(0.5, -270, 0.5, -172.5)
 Main.BackgroundColor3 = Color3.fromRGB(22, 22, 27)
 Main.BorderSizePixel = 0
