@@ -12,6 +12,19 @@ local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local VirtualUser = game:GetService("VirtualUser")
 local player = Players.LocalPlayer
+
+pcall(function()
+    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
+    if oldGui then
+        oldGui:Destroy()
+    end
+end)
+pcall(function()
+    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
+    if oldESP then
+        oldESP:Destroy()
+    end
+end)
 --==================================================
 -- 3. CONSTANTS / GENERAL SETTINGS / GLOBAL LOCAL
 --==================================================
@@ -199,19 +212,6 @@ end)
 --==================================================
 -- 10. GUI ROOT
 --==================================================
-pcall(function()
-    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
-    if oldGui then
-        oldGui:Destroy()
-    end
-end)
-pcall(function()
-    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
-    if oldESP then
-        oldESP:Destroy()
-    end
-end)
-
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "RAPGUIskrip"
 Gui.ResetOnSpawn = false
