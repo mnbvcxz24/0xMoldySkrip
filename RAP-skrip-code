@@ -60,7 +60,115 @@ end
 --==================================================
 -- 6. CONFIGURATION
 --==================================================
+local CONFIG_FOLDER = "RAPSkrip"
+local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
 
+local function saveConfig()
+    if not writefile then
+        AddDebug("[CONFIG] writefile unavailable")
+        return
+    end
+
+    local success, err = pcall(function()
+        if makefolder and isfolder and not isfolder(CONFIG_FOLDER) then
+            makefolder(CONFIG_FOLDER)
+        end
+
+        local selected = {}
+        for eggName in pairs(SelectedEggs) do
+            table.insert(selected, eggName)
+        end
+        table.sort(selected)
+
+        local autoSelected = {}
+        for eggName, enabled in pairs(AutoSelectedEggs) do
+            if enabled then
+                table.insert(autoSelected, eggName)
+            end
+        end
+        table.sort(autoSelected)
+
+        writefile(CONFIG_FILE, HttpService:JSONEncode({
+            selectedEggs = selected,
+            autoSelectedEggs = autoSelected,
+            autoDipEnabled = AutoDipEnabled,
+            movementMode = AutoPickupMovementMode,
+            claimDelay = AutoPickupClaimDelay,
+            antiAFK = AntiAFKEnabled
+        }))
+
+        AddDebug("[CONFIG] Saved successfully")
+    end)
+
+    if not success then
+        AddDebug("[CONFIG ERROR] " .. tostring(err))
+    end
+end
+
+local function loadConfig()
+    if not isfile or not readfile then
+        AddDebug("[CONFIG] File functions unavailable")
+        return
+    end
+
+    local exists = false
+
+    local checkSuccess = pcall(function()
+        exists = isfile(CONFIG_FILE)
+    end)
+
+    if not checkSuccess or not exists then
+        AddDebug("[CONFIG] No saved config")
+        return
+    end
+
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile(CONFIG_FILE))
+    end)
+
+    if not success or type(data) ~= "table" then
+        AddDebug("[CONFIG] Invalid config")
+        return
+    end
+
+    SelectedEggs = {}
+
+    if type(data.selectedEggs) == "table" then
+        for _, eggName in ipairs(data.selectedEggs) do
+            if type(eggName) == "string" and eggName ~= "--" then
+                SelectedEggs[eggName] = true
+            end
+        end
+    end
+
+    AutoSelectedEggs = {}
+
+    if type(data.autoSelectedEggs) == "table" then
+        for _, eggName in ipairs(data.autoSelectedEggs) do
+            if type(eggName) == "string" and eggName ~= "--" then
+                AutoSelectedEggs[eggName] = true
+            end
+        end
+    end
+
+    if type(data.autoDipEnabled) == "boolean" then
+        AutoDipEnabled = data.autoDipEnabled
+    end
+
+    if type(data.movementMode) == "string" and data.movementMode == "Teleport" then
+        AutoPickupMovementMode = data.movementMode
+    end
+
+    if type(data.claimDelay) == "number" then
+        AutoPickupClaimDelay = math.clamp(data.claimDelay, 1, 5)
+    end
+
+    if type(data.antiAFK) == "boolean" then
+        AntiAFKEnabled = data.antiAFK
+    end
+
+    AddDebug("[CONFIG] Loaded saved config")
+end
 --==================================================
 -- 7. PLAYER / CHARACTER REFERENCES
 --==================================================
