@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.5"
+local ver = "TEST v1.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -199,6 +199,19 @@ end)
 --==================================================
 -- 10. GUI ROOT
 --==================================================
+pcall(function()
+    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
+    if oldGui then
+        oldGui:Destroy()
+    end
+end)
+pcall(function()
+    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
+    if oldESP then
+        oldESP:Destroy()
+    end
+end)
+
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "RAPGUIskrip"
 Gui.ResetOnSpawn = false
