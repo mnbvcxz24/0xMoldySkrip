@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.4"
+local ver = "TEST v3.5"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -185,7 +185,6 @@ AddDebug("[SYSTEM] RAPSkrip initialized.")
 AddDebug("[SYSTEM] Version: "..tostring(ver))
 AddDebug("[SYSTEM] Ready.")
 loadConfig()
-AddDebug("[CONFIG] Loaded saved config")
 --==================================================
 -- 7. PLAYER / CHARACTER REFERENCES
 --==================================================
