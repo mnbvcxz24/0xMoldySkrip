@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v2.1"
+local ver = "TEST v2.2"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -703,6 +703,136 @@ local AutoPickupAwaitingPickup = false
 local AutoPickupAwaitingDeposit = false
 local AutoPickupPickupConfirmed = false
 local AutoPickupDepositConfirmed = false
+
+local AutoMovementLabel = Instance.new("TextLabel")
+AutoMovementLabel.Size = UDim2.new(1, -10, 0, 18)
+AutoMovementLabel.Position = UDim2.fromOffset(5, 184)
+AutoMovementLabel.BackgroundTransparency = 1
+AutoMovementLabel.Text = "Movement"
+AutoMovementLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoMovementLabel.TextSize = textSize(10)
+AutoMovementLabel.Font = Enum.Font.GothamMedium
+AutoMovementLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoMovementLabel.Parent = AutoPage
+
+local AutoMovementButton = Instance.new("TextButton")
+AutoMovementButton.Size = UDim2.new(1, -10, 0, 27)
+AutoMovementButton.Position = UDim2.fromOffset(5, 203)
+AutoMovementButton.BackgroundColor3 = Color3.fromRGB(55, 85, 60)
+AutoMovementButton.Text = "Teleport"
+AutoMovementButton.TextColor3 = Color3.fromRGB(225, 225, 230)
+AutoMovementButton.TextSize = textSize(10)
+AutoMovementButton.Font = Enum.Font.GothamMedium
+AutoMovementButton.AutoButtonColor = false
+AutoMovementButton.Active = true
+AutoMovementButton.Selectable = true
+AutoMovementButton.Parent = AutoPage
+
+local AutoMovementCorner = Instance.new("UICorner")
+AutoMovementCorner.CornerRadius = UDim.new(0, 6)
+AutoMovementCorner.Parent = AutoMovementButton
+
+local AutoMovementInfo = Instance.new("TextLabel")
+AutoMovementInfo.Size = UDim2.new(1, -10, 0, 16)
+AutoMovementInfo.Position = UDim2.fromOffset(5, 232)
+AutoMovementInfo.BackgroundTransparency = 1
+AutoMovementInfo.Text = "Teleport active"
+AutoMovementInfo.TextColor3 = Color3.fromRGB(130, 180, 140)
+AutoMovementInfo.TextSize = textSize(8)
+AutoMovementInfo.Font = Enum.Font.Gotham
+AutoMovementInfo.TextXAlignment = Enum.TextXAlignment.Left
+AutoMovementInfo.Parent = AutoPage
+
+local AutoClaimLabel = Instance.new("TextLabel")
+AutoClaimLabel.Size = UDim2.new(1, -10, 0, 18)
+AutoClaimLabel.Position = UDim2.fromOffset(5, 251)
+AutoClaimLabel.BackgroundTransparency = 1
+AutoClaimLabel.Text = "Claim Delay: 1.5s"
+AutoClaimLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoClaimLabel.TextSize = textSize(10)
+AutoClaimLabel.Font = Enum.Font.GothamMedium
+AutoClaimLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoClaimLabel.Parent = AutoPage
+
+local AutoClaimBar = Instance.new("Frame")
+AutoClaimBar.Size = UDim2.new(1, -10, 0, 6)
+AutoClaimBar.Position = UDim2.fromOffset(5, 271)
+AutoClaimBar.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoClaimBar.BorderSizePixel = 0
+AutoClaimBar.Parent = AutoPage
+
+local AutoClaimBarCorner = Instance.new("UICorner")
+AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
+AutoClaimBarCorner.Parent = AutoClaimBar
+
+local initialAlpha = (AutoPickupClaimDelay - 1) / 4
+
+local AutoClaimFill = Instance.new("Frame")
+AutoClaimFill.Size = UDim2.new(initialAlpha, 0, 1, 0)
+AutoClaimFill.BackgroundColor3 = Color3.fromRGB(75, 130, 85)
+AutoClaimFill.BorderSizePixel = 0
+AutoClaimFill.Parent = AutoClaimBar
+
+local AutoClaimFillCorner = Instance.new("UICorner")
+AutoClaimFillCorner.CornerRadius = UDim.new(1, 0)
+AutoClaimFillCorner.Parent = AutoClaimFill
+
+local AutoClaimKnob = Instance.new("TextButton")
+AutoClaimKnob.Size = UDim2.fromOffset(14, 14)
+AutoClaimKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+AutoClaimKnob.Position = UDim2.new(initialAlpha, 0, 0.5, 0)
+AutoClaimKnob.BackgroundColor3 = Color3.fromRGB(220, 220, 225)
+AutoClaimKnob.Text = ""
+AutoClaimKnob.AutoButtonColor = false
+AutoClaimKnob.Active = true
+AutoClaimKnob.Selectable = true
+AutoClaimKnob.Parent = AutoClaimBar
+
+local AutoClaimKnobCorner = Instance.new("UICorner")
+AutoClaimKnobCorner.CornerRadius = UDim.new(1, 0)
+AutoClaimKnobCorner.Parent = AutoClaimKnob
+
+local claimDragging = false
+
+local function updateClaimDelayFromX(x)
+    local width = AutoClaimBar.AbsoluteSize.X
+    if width <= 0 then
+        return
+    end
+
+    local relative = math.clamp((x - AutoClaimBar.AbsolutePosition.X) / width, 0, 1)
+    AutoPickupClaimDelay = math.floor((1 + relative * 4) * 10 + 0.5) / 10
+
+    local alpha = (AutoPickupClaimDelay - 1) / 4
+    AutoClaimFill.Size = UDim2.new(alpha, 0, 1, 0)
+    AutoClaimKnob.Position = UDim2.new(alpha, 0, 0.5, 0)
+    AutoClaimLabel.Text = string.format("Claim Delay: %.1fs", AutoPickupClaimDelay)
+end
+
+AutoClaimKnob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        claimDragging = true
+    end
+end)
+
+AutoClaimBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        claimDragging = true
+        updateClaimDelayFromX(input.Position.X)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if claimDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateClaimDelayFromX(input.Position.X)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        claimDragging = false
+    end
+end)
 --==================================================
 -- 12.3 AUTO DIP
 --==================================================
@@ -1047,44 +1177,314 @@ FilterLayout.Parent = FilterFrame
 -- 15. DEBUG PAGE
 --==================================================
 local DebugTitle = Instance.new("TextLabel")
-DebugTitle.Size = UDim2.new(1, -10, 0, 25)
-DebugTitle.Position = UDim2.fromOffset(5, 3)
+DebugTitle.Size = UDim2.new(1, -10, 0, 30)
+DebugTitle.Position = UDim2.fromOffset(5, 5)
 DebugTitle.BackgroundTransparency = 1
-DebugTitle.Text = "Debug"
+DebugTitle.Text = "Debug Console"
 DebugTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
-DebugTitle.TextSize = textSize(15)
+DebugTitle.TextSize = textSize(16)
 DebugTitle.Font = Enum.Font.GothamBold
 DebugTitle.TextXAlignment = Enum.TextXAlignment.Left
 DebugTitle.Parent = DebugPage
 
 DebugBox = Instance.new("ScrollingFrame")
-DebugBox.Name = "DebugBox"
-DebugBox.Size = UDim2.new(1, -10, 1, -35)
-DebugBox.Position = UDim2.fromOffset(5, 30)
-DebugBox.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
+DebugBox.Size = UDim2.new(1, -10, 1, -95)
+DebugBox.Position = UDim2.fromOffset(5, 40)
+DebugBox.BackgroundColor3 = Color3.fromRGB(17, 17, 21)
 DebugBox.BorderSizePixel = 0
 DebugBox.ScrollBarThickness = 3
 DebugBox.CanvasSize = UDim2.fromOffset(0, 0)
-DebugBox.AutomaticCanvasSize = Enum.AutomaticSize.None
 DebugBox.Parent = DebugPage
 
 local DebugCorner = Instance.new("UICorner")
-DebugCorner.CornerRadius = UDim.new(0, 6)
+DebugCorner.CornerRadius = UDim.new(0, 7)
 DebugCorner.Parent = DebugBox
 
 DebugText = Instance.new("TextLabel")
 DebugText.Size = UDim2.new(1, -10, 0, 0)
 DebugText.Position = UDim2.fromOffset(5, 5)
 DebugText.BackgroundTransparency = 1
-DebugText.Text = table.concat(DebugLines, "\n")
-DebugText.TextColor3 = Color3.fromRGB(190, 190, 198)
-DebugText.TextSize = textSize(9)
+DebugText.Text = ""
+DebugText.TextColor3 = Color3.fromRGB(180, 180, 190)
+DebugText.TextSize = textSize(11)
 DebugText.Font = Enum.Font.Code
 DebugText.TextXAlignment = Enum.TextXAlignment.Left
 DebugText.TextYAlignment = Enum.TextYAlignment.Top
-DebugText.TextWrapped = false
+DebugText.TextWrapped = true
 DebugText.AutomaticSize = Enum.AutomaticSize.Y
 DebugText.Parent = DebugBox
+
+AddDebug(
+    "[SYSTEM] Egg filter initialized"
+)
+
+local ScanButton = Instance.new("TextButton")
+ScanButton.Size = UDim2.new(1, -10, 0, 35)
+ScanButton.Position = UDim2.new(0, 5, 1, -40)
+ScanButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+ScanButton.Text = "Scan Active Eggs"
+ScanButton.TextColor3 = Color3.fromRGB(225, 225, 230)
+ScanButton.TextSize = textSize(12)
+ScanButton.Font = Enum.Font.GothamMedium
+ScanButton.AutoButtonColor = false
+ScanButton.Active = true
+ScanButton.Selectable = true
+ScanButton.ZIndex = 10
+ScanButton.Parent = DebugPage
+
+local ScanCorner = Instance.new("UICorner")
+ScanCorner.CornerRadius = UDim.new(0, 7)
+ScanCorner.Parent = ScanButton
+
+ScanButton.MouseButton1Click:Connect(function()
+    DebugLines = {}
+
+    if DebugText then
+        DebugText.Text = ""
+    end
+
+    if DebugBox then
+        DebugBox.CanvasPosition = Vector2.new(0, 0)
+    end
+
+    AddDebug(
+        "========== EGG SCAN =========="
+    )
+
+    local success, err =
+        pcall(function()
+            local ActiveEggs =
+                getActiveEggs()
+
+            if not ActiveEggs then
+                AddDebug(
+                    "[ERROR] ActiveEggs not found"
+                )
+
+                return
+            end
+
+            local eggs =
+                ActiveEggs:GetChildren()
+
+            EggCount.Text =
+                "Active Eggs: " ..
+                tostring(#eggs)
+
+            local selectedNames =
+                getSelectedEggNames()
+
+            if #selectedNames == 0 then
+                AddDebug(
+                    "No egg selected"
+                )
+            else
+                AddDebug(
+                    "Selected: " ..
+                    table.concat(
+                        selectedNames,
+                        ", "
+                    )
+                )
+            end
+
+            local ranchLuckText =
+                getRanchLuckText()
+
+            local ranchLuck =
+                getRanchLuck()
+
+            AddDebug(
+                "Ranch Luck Text: " ..
+                tostring(
+                    ranchLuckText
+                )
+            )
+
+            AddDebug(
+                "Ranch Luck Value: " ..
+                tostring(
+                    ranchLuck
+                )
+            )
+
+            local counts = {}
+
+            for _, egg in ipairs(
+                eggs
+            ) do
+                local eggName =
+                    egg:GetAttribute(
+                        "Egg"
+                    )
+
+                if eggName
+                    and eggName ~= "" then
+
+                    counts[eggName] =
+                        (counts[eggName] or 0) +
+                        1
+                end
+            end
+
+            for eggName, count in pairs(
+                counts
+            ) do
+                AddDebug(
+                    tostring(
+                        eggName
+                    ) ..
+                    " x " ..
+                    tostring(
+                        count
+                    )
+                )
+            end
+
+            for _, selectedName in ipairs(
+                selectedNames
+            ) do
+                local eggLuckText =
+                    getEggLuckText(
+                        selectedName
+                    )
+
+                local eggLuck =
+                    getEggLuck(
+                        selectedName
+                    )
+
+                AddDebug(
+                    "Egg: " ..
+                    tostring(
+                        selectedName
+                    )
+                )
+
+                AddDebug(
+                    "Egg Luck Text: " ..
+                    tostring(
+                        eggLuckText
+                    )
+                )
+
+                AddDebug(
+                    "Egg Luck Value: " ..
+                    tostring(
+                        eggLuck
+                    )
+                )
+
+                local selectedWeight
+                local calculatedKG
+
+                for _, egg in ipairs(
+                    eggs
+                ) do
+                    if egg:GetAttribute(
+                        "Egg"
+                    ) == selectedName then
+                        selectedWeight =
+                            tonumber(
+                                egg:GetAttribute(
+                                    "Weight"
+                                )
+                            )
+
+                        calculatedKG =
+                            calculateKG(
+                                selectedWeight,
+                                eggLuck,
+                                ranchLuck
+                            )
+
+                        break
+                    end
+                end
+
+                AddDebug(
+                    "Weight: " ..
+                    tostring(
+                        selectedWeight
+                    )
+                )
+
+                AddDebug(
+                    "Calculated KG: " ..
+                    tostring(
+                        calculatedKG
+                    )
+                )
+
+                AddDebug(
+                    "Calculated KG Formatted: " ..
+                    formatKG(
+                        calculatedKG
+                    )
+                )
+
+                AddDebug(
+                    "Selected Count: " ..
+                    tostring(
+                        counts[
+                            selectedName
+                        ] or 0
+                    )
+                )
+            end
+
+            AddDebug(
+                "Total Active Eggs: " ..
+                tostring(
+                    #eggs
+                )
+            )
+
+            for _, egg in ipairs(
+                eggs
+            ) do
+                local eggName =
+                    egg:GetAttribute(
+                        "Egg"
+                    )
+
+                if eggName
+                    and SelectedEggs[
+                        eggName
+                    ] then
+
+                    local position =
+                        egg:GetAttribute(
+                            "Position"
+                        )
+
+                    AddDebug(
+                        tostring(
+                            eggName
+                        ) ..
+                        " | Position Type: " ..
+                        typeof(
+                            position
+                        )
+                    )
+                end
+            end
+
+            AddDebug(
+                "========== SCAN COMPLETE =========="
+            )
+        end)
+
+    if not success then
+        AddDebug(
+            "========== LUA ERROR =========="
+        )
+
+        AddDebug(
+            tostring(err)
+        )
+    end
+end)
 --==================================================
 -- 16. SETTINGS PAGE
 --==================================================
@@ -2767,11 +3167,16 @@ AutoPickupToggle.MouseButton1Click:Connect(function()
 end)
 
 AutoMovementButton.MouseButton1Click:Connect(function()
-    AutoPickupMovementMode="Teleport"
-    AutoMovementButton.Text="Teleport"
-    AutoMovementButton.BackgroundColor3=Color3.fromRGB(55,85,60)
-    AutoMovementInfo.Text="Teleport active • Glide reserved"
-    AddDebug("[AUTO] Movement mode: Teleport")
+    if AutoPickupMovementMode == "Teleport" then
+        AutoPickupMovementMode = "Walk"
+        AutoMovementButton.Text = "Walk"
+        AutoMovementInfo.Text = "Walk active"
+    else
+        AutoPickupMovementMode = "Teleport"
+        AutoMovementButton.Text = "Teleport"
+        AutoMovementInfo.Text = "Teleport active"
+    end
+    saveConfig()
 end)
 
 AutoDipButton.MouseButton1Click:Connect(function()
