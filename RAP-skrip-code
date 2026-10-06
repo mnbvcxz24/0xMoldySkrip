@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.9"
+local ver = "TEST v2"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -500,13 +500,27 @@ local DebugPage = createPage()
 local SettingsPage = createPage()
 
 local function showPage(page)
-    AutoPage.Visible = page == AutoPage
-    ESPPage.Visible = page == ESPPage
-    DebugPage.Visible = page == DebugPage
-    SettingsPage.Visible = page == SettingsPage
+    AutoPage.Visible = false
+    ESPPage.Visible = false
+    DebugPage.Visible = false
+    SettingsPage.Visible = false
+    AutoContent2.Visible = false
+    ESPContent2.Visible = false
+    DebugContent2.Visible = false
+    SettingsContent2.Visible = false
+    page.Visible = true
+    if page == AutoPage then
+        AutoContent2.Visible = true
+    elseif page == ESPPage then
+        ESPContent2.Visible = true
+    elseif page == DebugPage then
+        DebugContent2.Visible = true
+    elseif page == SettingsPage then
+        SettingsContent2.Visible = true
+    end
+    FilterFrame.Visible = false
+    AutoFilterFrame.Visible = false
 end
-
-showPage(AutoPage)
 
 local function createSidebarButton(text)
     local button = Instance.new("TextButton")
@@ -734,9 +748,7 @@ local EggTypes = {
     "Volcanic Egg"
 }
 
-local SelectedEggs = {}
 local FilterButtons = {}
-local AutoSelectedEggs = {}
 
 local AutoPickupFilterFrame = Instance.new("ScrollingFrame")
 AutoPickupFilterFrame.Name = "AutoPickupFilterFrame"
@@ -3012,9 +3024,6 @@ end)
 -- 26. STARTUP / INITIALIZATION
 --==================================================
 showPage(AutoPage)
-showPage(ESPPage)
-showPage(DebugPage)
-showPage(SettingsPage)
 
 loadConfig()
 
@@ -3029,3 +3038,13 @@ updateAntiAFKButton()
 AddDebug("[SYSTEM] RAPSkrip initialized.")
 AddDebug("[SYSTEM] Version: "..tostring(ver))
 AddDebug("[SYSTEM] Ready.")
+AddDebug("[SYSTEM] Source: ServerData.ActiveEggs")
+AddDebug("[SYSTEM] Filter uses Egg attribute")
+AddDebug("[SYSTEM] ESP uses Position attribute")
+AddDebug("[SYSTEM] ESP displays EggName | Weight")
+AddDebug("[SYSTEM] Ranch Luck source: Upgrade.CurrentUpgrade")
+AddDebug("[SYSTEM] Egg Luck source: EggTracker.EggsHolder")
+AddDebug("[SYSTEM] Config autosave enabled")
+AddDebug("[SYSTEM] Auto filter initialized")
+AddDebug("[SYSTEM] Auto TP pickup flow initialized")
+AddDebug("[SYSTEM] EggArrivalClaim enabled")
