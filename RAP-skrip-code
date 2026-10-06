@@ -205,6 +205,8 @@ Gui.ResetOnSpawn = false
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Gui.Enabled = true
 Gui.Parent = CoreGui
+Gui.DisplayOrder = 999
+Gui.IgnoreGuiInset = true
 --==================================================
 -- 11. MAIN NAVIGATION
 --==================================================
