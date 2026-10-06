@@ -741,33 +741,6 @@ AutoClaimBar.Parent = AutoPage
 local AutoClaimBarCorner = Instance.new("UICorner")
 AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
 AutoClaimBarCorner.Parent = AutoClaimBar
-
-local initialAlpha = (AutoPickupClaimDelay - 1) / 4
-
-local AutoClaimFill = Instance.new("Frame")
-AutoClaimFill.Size = UDim2.new(initialAlpha, 0, 1, 0)
-AutoClaimFill.BackgroundColor3 = Color3.fromRGB(75, 130, 85)
-AutoClaimFill.BorderSizePixel = 0
-AutoClaimFill.Parent = AutoClaimBar
-
-local AutoClaimFillCorner = Instance.new("UICorner")
-AutoClaimFillCorner.CornerRadius = UDim.new(1, 0)
-AutoClaimFillCorner.Parent = AutoClaimFill
-
-local AutoClaimKnob = Instance.new("TextButton")
-AutoClaimKnob.Size = UDim2.fromOffset(14, 14)
-AutoClaimKnob.AnchorPoint = Vector2.new(0.5, 0.5)
-AutoClaimKnob.Position = UDim2.new(initialAlpha, 0, 0.5, 0)
-AutoClaimKnob.BackgroundColor3 = Color3.fromRGB(220, 220, 225)
-AutoClaimKnob.Text = ""
-AutoClaimKnob.AutoButtonColor = false
-AutoClaimKnob.Active = true
-AutoClaimKnob.Selectable = true
-AutoClaimKnob.Parent = AutoClaimBar
-
-local AutoClaimKnobCorner = Instance.new("UICorner")
-AutoClaimKnobCorner.CornerRadius = UDim.new(1, 0)
-AutoClaimKnobCorner.Parent = AutoClaimKnob
 --==================================================
 -- 12.1 AUTO FARM
 --==================================================
