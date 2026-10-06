@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.8"
+local ver = "TEST v1.9"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -298,6 +298,26 @@ local CloseCorner = Instance.new("UICorner")
 CloseCorner.CornerRadius = UDim.new(0, 8)
 CloseCorner.Parent = Close
 
+local Minimized = Instance.new("TextButton")
+Minimized.Name = "Minimized"
+Minimized.Size = UDim2.fromOffset(45, 45)
+Minimized.Position = UDim2.new(0, 15, 1, -60)
+Minimized.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+Minimized.Text = "RAP"
+Minimized.TextColor3 = Color3.fromRGB(220, 220, 225)
+Minimized.TextSize = textSize(10)
+Minimized.Font = Enum.Font.GothamBold
+Minimized.AutoButtonColor = false
+Minimized.Active = true
+Minimized.Selectable = true
+Minimized.Visible = false
+Minimized.ZIndex = 30
+Minimized.Parent = Gui
+
+local MinimizedCorner = Instance.new("UICorner")
+MinimizedCorner.CornerRadius = UDim.new(0, 10)
+MinimizedCorner.Parent = Minimized
+
 local Sidebar = Instance.new("Frame")
 Sidebar.Size = UDim2.fromOffset(105, 10)
 Sidebar.Position = UDim2.fromOffset(10, 45)
@@ -479,7 +499,14 @@ local ESPPage = createPage()
 local DebugPage = createPage()
 local SettingsPage = createPage()
 
-AutoPage.Visible = true
+local function showPage(page)
+    AutoPage.Visible = page == AutoPage
+    ESPPage.Visible = page == ESPPage
+    DebugPage.Visible = page == DebugPage
+    SettingsPage.Visible = page == SettingsPage
+end
+
+showPage(AutoPage)
 
 local function createSidebarButton(text)
     local button = Instance.new("TextButton")
@@ -2985,6 +3012,9 @@ end)
 -- 26. STARTUP / INITIALIZATION
 --==================================================
 showPage(AutoPage)
+showPage(ESPPage)
+showPage(DebugPage)
+showPage(SettingsPage)
 
 loadConfig()
 
