@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v1.4"
+local ver = "TEST v1.5"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -509,89 +509,9 @@ AutoTitle.Font = Enum.Font.GothamBold
 AutoTitle.TextXAlignment = Enum.TextXAlignment.Left
 AutoTitle.Parent = AutoPage
 
-local AutoFarmTitle = Instance.new("TextLabel")
-AutoFarmTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoFarmTitle.Position = UDim2.fromOffset(5, 30)
-AutoFarmTitle.BackgroundTransparency = 1
-AutoFarmTitle.Text = "Auto Farm"
-AutoFarmTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
-AutoFarmTitle.TextSize = textSize(10)
-AutoFarmTitle.Font = Enum.Font.GothamMedium
-AutoFarmTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoFarmTitle.Parent = AutoPage
-
-local AutoStatus = Instance.new("TextLabel")
-AutoStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoStatus.Position = UDim2.fromOffset(5, 48)
-AutoStatus.BackgroundTransparency = 1
-AutoStatus.Text = "● Inactive"
-AutoStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
-AutoStatus.TextSize = textSize(10)
-AutoStatus.Font = Enum.Font.Gotham
-AutoStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoStatus.Parent = AutoPage
-
-local AutoToggle = Instance.new("TextButton")
-AutoToggle.Size = UDim2.fromOffset(62, 27)
-AutoToggle.Position = UDim2.new(1, -67, 0, 30)
-AutoToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-AutoToggle.Text = "OFF"
-AutoToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
-AutoToggle.TextSize = textSize(10)
-AutoToggle.Font = Enum.Font.GothamBold
-AutoToggle.AutoButtonColor = false
-AutoToggle.Active = true
-AutoToggle.Selectable = true
-AutoToggle.ZIndex = 10
-AutoToggle.Parent = AutoPage
-
-local AutoToggleCorner = Instance.new("UICorner")
-AutoToggleCorner.CornerRadius = UDim.new(0, 6)
-AutoToggleCorner.Parent = AutoToggle
-
-local AutoFarmFilterLabel = Instance.new("TextLabel")
-AutoFarmFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoFarmFilterLabel.Position = UDim2.fromOffset(5, 72)
-AutoFarmFilterLabel.BackgroundTransparency = 1
-AutoFarmFilterLabel.Text = "Egg Filter"
-AutoFarmFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
-AutoFarmFilterLabel.TextSize = textSize(10)
-AutoFarmFilterLabel.Font = Enum.Font.GothamMedium
-AutoFarmFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
-AutoFarmFilterLabel.Parent = AutoPage
-
-local AutoFarmFilterButton = Instance.new("TextButton")
-AutoFarmFilterButton.Size = UDim2.new(1, -10, 0, 27)
-AutoFarmFilterButton.Position = UDim2.fromOffset(5, 92)
-AutoFarmFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-AutoFarmFilterButton.Text = "-- ▼"
-AutoFarmFilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
-AutoFarmFilterButton.TextSize = textSize(10)
-AutoFarmFilterButton.Font = Enum.Font.Gotham
-AutoFarmFilterButton.TextXAlignment = Enum.TextXAlignment.Left
-AutoFarmFilterButton.AutoButtonColor = false
-AutoFarmFilterButton.Active = true
-AutoFarmFilterButton.Selectable = true
-AutoFarmFilterButton.Parent = AutoPage
-
-local AutoFarmFilterButtonCorner = Instance.new("UICorner")
-AutoFarmFilterButtonCorner.CornerRadius = UDim.new(0, 6)
-AutoFarmFilterButtonCorner.Parent = AutoFarmFilterButton
-
-local AutoFarmFilterCount = Instance.new("TextLabel")
-AutoFarmFilterCount.Size = UDim2.new(1, -10, 0, 18)
-AutoFarmFilterCount.Position = UDim2.fromOffset(5, 122)
-AutoFarmFilterCount.BackgroundTransparency = 1
-AutoFarmFilterCount.Text = "Selected eggs: 0"
-AutoFarmFilterCount.TextColor3 = Color3.fromRGB(145, 145, 155)
-AutoFarmFilterCount.TextSize = textSize(9)
-AutoFarmFilterCount.Font = Enum.Font.Gotham
-AutoFarmFilterCount.TextXAlignment = Enum.TextXAlignment.Left
-AutoFarmFilterCount.Parent = AutoPage
-
 local AutoPickupTitle = Instance.new("TextLabel")
 AutoPickupTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoPickupTitle.Position = UDim2.fromOffset(5, 150)
+AutoPickupTitle.Position = UDim2.fromOffset(5, 30)
 AutoPickupTitle.BackgroundTransparency = 1
 AutoPickupTitle.Text = "Auto Pickup"
 AutoPickupTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -602,7 +522,7 @@ AutoPickupTitle.Parent = AutoPage
 
 local AutoPickupStatus = Instance.new("TextLabel")
 AutoPickupStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoPickupStatus.Position = UDim2.fromOffset(5, 168)
+AutoPickupStatus.Position = UDim2.fromOffset(5, 48)
 AutoPickupStatus.BackgroundTransparency = 1
 AutoPickupStatus.Text = "● Inactive"
 AutoPickupStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
@@ -613,7 +533,7 @@ AutoPickupStatus.Parent = AutoPage
 
 local AutoPickupToggle = Instance.new("TextButton")
 AutoPickupToggle.Size = UDim2.fromOffset(62, 27)
-AutoPickupToggle.Position = UDim2.new(1, -67, 0, 150)
+AutoPickupToggle.Position = UDim2.new(1, -67, 0, 30)
 AutoPickupToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoPickupToggle.Text = "OFF"
 AutoPickupToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -631,7 +551,7 @@ AutoPickupToggleCorner.Parent = AutoPickupToggle
 
 local AutoPickupFilterLabel = Instance.new("TextLabel")
 AutoPickupFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoPickupFilterLabel.Position = UDim2.fromOffset(5, 192)
+AutoPickupFilterLabel.Position = UDim2.fromOffset(5, 72)
 AutoPickupFilterLabel.BackgroundTransparency = 1
 AutoPickupFilterLabel.Text = "Egg Filter"
 AutoPickupFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -642,7 +562,7 @@ AutoPickupFilterLabel.Parent = AutoPage
 
 local AutoPickupFilterButton = Instance.new("TextButton")
 AutoPickupFilterButton.Size = UDim2.new(1, -10, 0, 27)
-AutoPickupFilterButton.Position = UDim2.fromOffset(5, 212)
+AutoPickupFilterButton.Position = UDim2.fromOffset(5, 92)
 AutoPickupFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
 AutoPickupFilterButton.Text = "-- ▼"
 AutoPickupFilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -660,7 +580,7 @@ AutoPickupFilterButtonCorner.Parent = AutoPickupFilterButton
 
 local AutoPickupFilterCount = Instance.new("TextLabel")
 AutoPickupFilterCount.Size = UDim2.new(1, -10, 0, 18)
-AutoPickupFilterCount.Position = UDim2.fromOffset(5, 242)
+AutoPickupFilterCount.Position = UDim2.fromOffset(5, 122)
 AutoPickupFilterCount.BackgroundTransparency = 1
 AutoPickupFilterCount.Text = "Selected eggs: 0"
 AutoPickupFilterCount.TextColor3 = Color3.fromRGB(145, 145, 155)
@@ -671,7 +591,7 @@ AutoPickupFilterCount.Parent = AutoPage
 
 local AutoDipTitle = Instance.new("TextLabel")
 AutoDipTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoDipTitle.Position = UDim2.fromOffset(5, 268)
+AutoDipTitle.Position = UDim2.fromOffset(5, 148)
 AutoDipTitle.BackgroundTransparency = 1
 AutoDipTitle.Text = "Auto DIP"
 AutoDipTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -682,7 +602,7 @@ AutoDipTitle.Parent = AutoPage
 
 local AutoDipStatus = Instance.new("TextLabel")
 AutoDipStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoDipStatus.Position = UDim2.fromOffset(5, 286)
+AutoDipStatus.Position = UDim2.fromOffset(5, 166)
 AutoDipStatus.BackgroundTransparency = 1
 AutoDipStatus.Text = "● Inactive"
 AutoDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
@@ -693,7 +613,7 @@ AutoDipStatus.Parent = AutoPage
 
 local AutoDipToggle = Instance.new("TextButton")
 AutoDipToggle.Size = UDim2.fromOffset(62, 27)
-AutoDipToggle.Position = UDim2.new(1, -67, 0, 268)
+AutoDipToggle.Position = UDim2.new(1, -67, 0, 148)
 AutoDipToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoDipToggle.Text = "OFF"
 AutoDipToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -776,23 +696,7 @@ local EggTypes = {
 
 local SelectedEggs = {}
 local FilterButtons = {}
-
 local AutoSelectedEggs = {}
-
-local AutoFarmFilterFrame = Instance.new("ScrollingFrame")
-AutoFarmFilterFrame.Name = "AutoFarmFilterFrame"
-AutoFarmFilterFrame.Size = UDim2.new(1, -10, 0, 120)
-AutoFarmFilterFrame.Position = UDim2.fromOffset(5, 122)
-AutoFarmFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
-AutoFarmFilterFrame.BorderSizePixel = 0
-AutoFarmFilterFrame.ScrollBarThickness = 3
-AutoFarmFilterFrame.Visible = false
-AutoFarmFilterFrame.Parent = AutoPage
-
-local AutoFarmFilterLayout = Instance.new("UIListLayout")
-AutoFarmFilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
-AutoFarmFilterLayout.Padding = UDim.new(0, 3)
-AutoFarmFilterLayout.Parent = AutoFarmFilterFrame
 
 local AutoPickupFilterFrame = Instance.new("ScrollingFrame")
 AutoPickupFilterFrame.Name = "AutoPickupFilterFrame"
@@ -826,57 +730,7 @@ AutoPlaceFilterLayout.Parent = AutoPlaceFilterFrame
 --==================================================
 -- 13.1 AUTO FARM EGG FILTER
 --==================================================
-local function refreshAutoFarmFilterText()
-    local selected={}
-    for _,eggName in ipairs(EggTypes) do
-        if eggName~="--" and AutoSelectedEggs[eggName] then
-            table.insert(selected,eggName)
-        end
-    end
 
-    if #selected==0 then
-        AutoFarmFilterButton.Text="-- ▼"
-    elseif #selected==1 then
-        AutoFarmFilterButton.Text=selected[1].." ▼"
-    else
-        AutoFarmFilterButton.Text=tostring(#selected).." eggs selected ▼"
-    end
-
-    AutoFarmFilterCount.Text="Selected eggs: "..tostring(#selected)
-end
-
-local function createAutoFarmFilterButtons()
-    for _,child in ipairs(AutoFarmFilterFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-
-    for _,eggName in ipairs(EggTypes) do
-        local button=Instance.new("TextButton")
-        button.Size=UDim2.new(1,-10,0,22)
-        button.BackgroundTransparency=1
-        button.TextColor3=Color3.fromRGB(190,190,198)
-        button.TextSize=textSize(10)
-        button.Font=Enum.Font.Gotham
-        button.TextXAlignment=Enum.TextXAlignment.Left
-        button.AutoButtonColor=false
-        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
-        button.Parent=AutoFarmFilterFrame
-
-        button.MouseButton1Click:Connect(function()
-            if eggName=="--" then
-                AutoSelectedEggs={}
-            else
-                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
-            end
-
-            createAutoFarmFilterButtons()
-            refreshAutoFarmFilterText()
-            saveConfig()
-        end)
-    end
-end
 --==================================================
 -- 13.2 AUTO PICKUP EGG FILTER
 --==================================================
@@ -2872,40 +2726,6 @@ if EggPickupEvent then
 else
     AddDebug("[AUTO ERROR] EggPickup remote not found")
 end
-
-AutoToggle.MouseButton1Click:Connect(function()
-    local enabled=not AutoPickupRunning
-    AutoPickupRunning=enabled
-    AutoToggle.Text=enabled and "ON" or "OFF"
-    AutoToggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
-    AutoStatus.Text=enabled and "● Active" or "● Inactive"
-    AutoStatus.TextColor3=enabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
-    AutoInfo.Text=enabled and "Automation is active.\n\nTeleporting to selected eggs and returning to your plot." or "Automation is currently inactive.\n\nSelect an egg and enable Auto Pickup."
-    AddDebug(enabled and "[AUTO] Enabled" or "[AUTO] Disabled")
-
-    if not enabled then
-        task.spawn(function()
-            pcall(function()
-                stopAutoPickupFloat()
-            end)
-            AutoPickupBusy=false
-            AutoPickupAwaitingUUID=nil
-            AutoPickupAwaitingPickup=false
-            AutoPickupAwaitingDeposit=false
-            AutoPickupPickupConfirmed=false
-            AutoPickupDepositConfirmed=false
-            AutoDipWaitingForResult=false
-            AutoVolcanoWaitingForMessage=false
-            AutoPickupFloating=false
-            AddDebug("[AUTO] Movement reset")
-        end)
-        return
-    end
-
-    AddDebug("[AUTO] Movement: "..AutoPickupMovementMode)
-    AddDebug(string.format("[AUTO] Claim Delay: %.1fs",AutoPickupClaimDelay))
-    AddDebug("[AUTO] Next Egg Delay: 3.0s")
-end)
 
 for eggName,button in pairs(FilterButtons) do
     button.MouseButton1Click:Connect(function()
