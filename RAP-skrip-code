@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.5"
+local ver = "TEST v3.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -937,10 +937,11 @@ setupFilterScrolling(AutoPickupFilterFrame,AutoPickupFilterLayout)
 setupFilterScrolling(AutoPlaceFilterFrame,AutoPlaceFilterLayout)
 setupFilterScrolling(FilterFrame,FilterLayout)
 --==================================================
--- 13.2 AUTO PICKUP EGG FILTER FUNCTION
+-- 13.1 AUTO PICKUP EGG FILTER FUNCTION
 --==================================================
 local function refreshAutoPickupFilterText()
     local selected={}
+
     for _,eggName in ipairs(EggTypes) do
         if eggName~="--" and AutoSelectedEggs[eggName] then
             table.insert(selected,eggName)
@@ -949,13 +950,17 @@ local function refreshAutoPickupFilterText()
 
     if #selected==0 then
         AutoPickupFilterButton.Text="  -- ▼"
+        AutoPickupFilterCount.Text="Selected: None"
     elseif #selected==1 then
-        AutoPickupFilterButton.Text=selected[1].." ▼"
+        AutoPickupFilterButton.Text="  "  ..selected[1].." ▼"
+        AutoPickupFilterCount.Text="Selected: "..selected[1]
+    elseif #selected==2 then
+        AutoPickupFilterButton.Text="  "  ..selected[1]..", "..selected[2].." ▼"
+        AutoPickupFilterCount.Text="Selected: "..selected[1]..", "..selected[2]
     else
-        AutoPickupFilterButton.Text=tostring(  #selected).." eggs selected ▼"
+        AutoPickupFilterButton.Text="  "  ..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
+        AutoPickupFilterCount.Text="Selected: "..table.concat(selected,", ")
     end
-
-    AutoPickupFilterCount.Text="  Selected eggs: "..tostring(#selected)
 end
 
 local function createAutoPickupFilterButtons()
@@ -966,15 +971,17 @@ local function createAutoPickupFilterButtons()
     end
 
     for _,eggName in ipairs(EggTypes) do
+        local isSelected=eggName~="--" and AutoSelectedEggs[eggName]==true
         local button=Instance.new("TextButton")
         button.Size=UDim2.new(1,-10,0,22)
-        button.BackgroundTransparency=1
-        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
+        button.BackgroundTransparency=isSelected and 0 or 1
+        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
         button.TextSize=textSize(10)
         button.Font=Enum.Font.Gotham
         button.TextXAlignment=Enum.TextXAlignment.Left
         button.AutoButtonColor=false
-        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Text=(AutoSelectedEggs[eggName] and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
         button.Parent=AutoPickupFilterFrame
 
         button.MouseButton1Click:Connect(function()
