@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.1"
+local ver = "TEST v3.2"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -742,11 +742,7 @@ local AutoClaimBarCorner = Instance.new("UICorner")
 AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
 AutoClaimBarCorner.Parent = AutoClaimBar
 --==================================================
--- 12.1 AUTO FARM
---==================================================
-
---==================================================
--- 12.2 AUTO PICKUP
+-- 12.1 AUTO PICKUP
 --==================================================
 local AutoPickupRunning = false
 local AutoPickupBusy = false
@@ -832,7 +828,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 --==================================================
--- 12.3 AUTO DIP
+-- 12.2 AUTO DIP
 --==================================================
 local AutoDipEnabled = false
 local AutoDipResult = nil
@@ -885,6 +881,7 @@ AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 113)
 AutoPickupFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPickupFilterFrame.BorderSizePixel = 0
 AutoPickupFilterFrame.ScrollBarThickness = 3
+AutoPickupFilterFrame.ZIndex = 20
 AutoPickupFilterFrame.Visible = false
 AutoPickupFilterFrame.Parent = AutoPage
 
@@ -900,6 +897,7 @@ AutoPlaceFilterFrame.Position = UDim2.fromOffset(5, 93)
 AutoPlaceFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPlaceFilterFrame.BorderSizePixel = 0
 AutoPlaceFilterFrame.ScrollBarThickness = 3
+AutoPlaceFilterFrame.ZIndex = 20
 AutoPlaceFilterFrame.Visible = false
 AutoPlaceFilterFrame.Parent = AutoContent2
 
@@ -915,6 +913,7 @@ FilterFrame.Position = UDim2.fromOffset(5, 132)
 FilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 FilterFrame.BorderSizePixel = 0
 FilterFrame.ScrollBarThickness = 3
+FilterFrame.ZIndex = 20
 FilterFrame.Visible = false
 FilterFrame.Parent = ESPPage
 
