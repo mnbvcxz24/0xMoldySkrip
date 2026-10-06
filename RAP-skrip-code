@@ -319,7 +319,7 @@ MinimizedCorner.CornerRadius = UDim.new(0, 10)
 MinimizedCorner.Parent = Minimized
 
 local Sidebar = Instance.new("Frame")
-Sidebar.Size = UDim2.fromOffset(105, 10)
+Sidebar.Size = UDim2.fromOffset(75, 10)
 Sidebar.Position = UDim2.fromOffset(10, 45)
 Sidebar.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 Sidebar.BorderSizePixel = 0
