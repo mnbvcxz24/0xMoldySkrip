@@ -1103,7 +1103,7 @@ ESPFilterButton.TextXAlignment=Enum.TextXAlignment.Left
 ESPFilterButton.AutoButtonColor=false
 ESPFilterButton.Active=true
 ESPFilterButton.Selectable=true
-ESPFilterButton.ZIndex=25
+ESPFilterButton.ZIndex=10
 ESPFilterButton.Parent=ESPPage
 
 local ESPFilterButtonCorner=Instance.new("UICorner")
