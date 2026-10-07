@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.3"
+local ver = "TEST v4.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2127,24 +2127,28 @@ local waitForDroppedEgg
 -- 19. AUTO FARM LOGIC
 --==================================================
 local function tryAutoPickup(egg)
-    if not AutoPickupRunning or AutoPickupBusy then return end
+    if not AutoPickupRunning or AutoPickupBusy then
+        return
+    end
+
     AutoPickupBusy=true
 
     local MAX_RETRIES=3
 
     for attempt=1,MAX_RETRIES do
         if not AutoPickupRunning then
+            AutoPickupStage="Idle"
             AutoPickupBusy=false
             return
         end
 
         AddDebug("[AUTO] Attempt "..tostring(attempt).."/"..tostring(MAX_RETRIES))
 
-        if not egg then
-            egg=findNextAutoPickupEgg()
-        end
+        egg=egg or findNextAutoPickupEgg()
 
         if not egg then
+            AddDebug("[AUTO] No selected egg found")
+            AutoPickupStage="Idle"
             AutoPickupBusy=false
             return
         end
@@ -2162,6 +2166,10 @@ local function tryAutoPickup(egg)
         end
 
         AddDebug("[AUTO] Pickup: "..tostring(eggName))
+
+        ------------------------------------------------------------
+        -- GO TO ORIGINAL EGG
+        ------------------------------------------------------------
 
         local reachedEgg=false
 
@@ -2182,6 +2190,10 @@ local function tryAutoPickup(egg)
 
         task.wait(1)
 
+        ------------------------------------------------------------
+        -- GET ORIGINAL UUID
+        ------------------------------------------------------------
+
         local pickupUUID=getEggUUID(egg)
 
         if not pickupUUID then
@@ -2192,6 +2204,11 @@ local function tryAutoPickup(egg)
         end
 
         pickupUUID=tostring(pickupUUID)
+
+        ------------------------------------------------------------
+        -- PICKUP ORIGINAL EGG
+        ------------------------------------------------------------
+
         AutoPickupStage="InitialPickup"
         AutoPickupAwaitingUUID=pickupUUID
         AutoPickupAwaitingPickup=true
@@ -2199,24 +2216,23 @@ local function tryAutoPickup(egg)
 
         AddDebug("[AUTO] Pickup original egg")
 
-        local pickupStart=os.clock()
-
-        while AutoPickupRunning
-            and not AutoPickupPickupConfirmed
-            and os.clock()-pickupStart<8 do
-            EggPickupEvent:FireServer(pickupUUID)
-            task.wait(1)
-        end
-
-        AutoPickupAwaitingPickup=false
+        EggPickupEvent:FireServer(pickupUUID)
+        task.wait(1)
 
         if not AutoPickupRunning then
+            AutoPickupStage="Idle"
             AutoPickupBusy=false
             return
         end
 
         if not AutoPickupPickupConfirmed then
             AddDebug("[AUTO] Original pickup failed - restarting")
+
+            AutoPickupStage="Idle"
+            AutoPickupAwaitingUUID=nil
+            AutoPickupAwaitingPickup=false
+            AutoPickupPickupConfirmed=false
+
             egg=nil
             task.wait(1)
             continue
@@ -2224,7 +2240,15 @@ local function tryAutoPickup(egg)
 
         AddDebug("[AUTO] Original pickup confirmed")
 
+        AutoPickupAwaitingPickup=false
+        AutoPickupPickupConfirmed=false
+        AutoPickupAwaitingUUID=nil
+
         stopAutoPickupFloat()
+
+        ------------------------------------------------------------
+        -- MAGMA DIP
+        ------------------------------------------------------------
 
         if shouldAutoMagmaDip then
             AddDebug("[AUTO MAGMA DIP] Starting")
@@ -2239,11 +2263,14 @@ local function tryAutoPickup(egg)
             end
 
             root.CFrame=CFrame.new(VolcanoDropPosition)
+
             AddDebug("[AUTO MAGMA DIP] TP -> Volcano")
+
             task.wait(1)
 
             AutoMagmaDipResult=nil
             AutoMagmaDipWaitingForResult=true
+
             AutoVolcanoMessageReceived=false
             AutoVolcanoMessageText=nil
             AutoVolcanoWaitingForMessage=true
@@ -2253,8 +2280,10 @@ local function tryAutoPickup(egg)
                 task.wait(1)
             else
                 AddDebug("[AUTO MAGMA DIP ERROR] Remote not found")
+
                 AutoMagmaDipWaitingForResult=false
                 AutoVolcanoWaitingForMessage=false
+
                 egg=nil
                 task.wait(1)
                 continue
@@ -2265,12 +2294,14 @@ local function tryAutoPickup(egg)
             while AutoPickupRunning
                 and AutoMagmaDipWaitingForResult
                 and os.clock()-mutationStart<15 do
+
                 task.wait(0.1)
             end
 
             AutoMagmaDipWaitingForResult=false
 
             if not AutoPickupRunning then
+                AutoPickupStage="Idle"
                 AutoPickupBusy=false
                 return
             end
@@ -2286,12 +2317,14 @@ local function tryAutoPickup(egg)
             while AutoPickupRunning
                 and not AutoVolcanoMessageReceived
                 and os.clock()-messageStart<15 do
+
                 task.wait(0.1)
             end
 
             AutoVolcanoWaitingForMessage=false
 
             if not AutoPickupRunning then
+                AutoPickupStage="Idle"
                 AutoPickupBusy=false
                 return
             end
@@ -2306,7 +2339,13 @@ local function tryAutoPickup(egg)
 
             stopAutoPickupFloat()
 
+            --------------------------------------------------------
+            -- MAGMA DIP OUTSIDE POSITION
+            --------------------------------------------------------
+
             local reachedOutside=false
+
+            AddDebug("[AUTO MAGMA DIP] Calculating outside position from Volcano")
 
             while AutoPickupRunning and not reachedOutside do
                 if teleportOutsidePlot(VolcanoDropPosition) then
@@ -2317,6 +2356,7 @@ local function tryAutoPickup(egg)
             end
 
             if not AutoPickupRunning then
+                AutoPickupStage="Idle"
                 AutoPickupBusy=false
                 return
             end
@@ -2325,6 +2365,10 @@ local function tryAutoPickup(egg)
             task.wait(1)
 
         elseif isVolcanic then
+            --------------------------------------------------------
+            -- VOLCANIC WITHOUT MAGMA DIP
+            --------------------------------------------------------
+
             AddDebug("[AUTO] Volcanic route without Magma Dip")
 
             exitVolcanicEgg()
@@ -2341,6 +2385,7 @@ local function tryAutoPickup(egg)
             end
 
             if not AutoPickupRunning then
+                AutoPickupStage="Idle"
                 AutoPickupBusy=false
                 return
             end
@@ -2349,6 +2394,10 @@ local function tryAutoPickup(egg)
             task.wait(1)
 
         else
+            --------------------------------------------------------
+            -- NORMAL WITHOUT MAGMA DIP
+            --------------------------------------------------------
+
             AddDebug("[AUTO] Normal route without Magma Dip")
 
             stopAutoPickupFloat()
@@ -2364,6 +2413,7 @@ local function tryAutoPickup(egg)
             end
 
             if not AutoPickupRunning then
+                AutoPickupStage="Idle"
                 AutoPickupBusy=false
                 return
             end
@@ -2372,11 +2422,14 @@ local function tryAutoPickup(egg)
             task.wait(1)
         end
 
-        ----------------------------------------------------------------
-        -- DROP + PICKUP VERIFICATION
-        ----------------------------------------------------------------
+        ------------------------------------------------------------
+        -- DROP
+        ------------------------------------------------------------
 
-        local BasketDropEvent=ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Game"):WaitForChild("BasketDrop")
+        local BasketDropEvent=ReplicatedStorage
+            :WaitForChild("Remotes")
+            :WaitForChild("Game")
+            :WaitForChild("BasketDrop")
 
         local previousDroppedUUIDs={}
         local activeEggsBeforeDrop=getActiveEggs()
@@ -2384,6 +2437,7 @@ local function tryAutoPickup(egg)
         if activeEggsBeforeDrop then
             for _,existingEgg in ipairs(activeEggsBeforeDrop:GetChildren()) do
                 local existingUUID=getEggUUID(existingEgg)
+
                 if existingUUID then
                     previousDroppedUUIDs[tostring(existingUUID)]=true
                 end
@@ -2394,22 +2448,23 @@ local function tryAutoPickup(egg)
 
         if not root then
             AddDebug("[AUTO] Root missing before drop")
+
             AutoPickupStage="Idle"
             egg=nil
+
             task.wait(1)
             continue
         end
 
         local dropPosition=root.Position
 
-        ----------------------------------------------------------------
-        -- DROP
-        ----------------------------------------------------------------
-
         AutoPickupStage="Drop"
 
         AddDebug("[AUTO] BasketDrop")
+        AddDebug("[AUTO] Drop position: "..tostring(dropPosition))
+
         BasketDropEvent:FireServer()
+
         task.wait(1)
 
         if not AutoPickupRunning then
@@ -2418,9 +2473,11 @@ local function tryAutoPickup(egg)
             return
         end
 
-        ----------------------------------------------------------------
-        -- WAIT FOR NEW DROPPED EGG
-        ----------------------------------------------------------------
+        ------------------------------------------------------------
+        -- FIND NEW DROPPED EGG
+        ------------------------------------------------------------
+
+        AddDebug("[AUTO] Checking for new dropped egg")
 
         local droppedEgg=nil
         local dropStart=os.clock()
@@ -2449,22 +2506,41 @@ local function tryAutoPickup(egg)
 
         if not droppedEgg then
             AddDebug("[AUTO] DROP FAILED - restarting")
+
             AutoPickupStage="Idle"
             AutoPickupAwaitingUUID=nil
             AutoPickupAwaitingPickup=false
             AutoPickupPickupConfirmed=false
+
             egg=nil
+
             task.wait(1)
             continue
         end
 
-        local droppedUUID=tostring(droppedEgg.UUID)
+        local droppedUUID=getEggUUID(droppedEgg)
+
+        if not droppedUUID then
+            AddDebug("[AUTO] Dropped egg UUID missing")
+
+            AutoPickupStage="Idle"
+            AutoPickupAwaitingUUID=nil
+            AutoPickupAwaitingPickup=false
+            AutoPickupPickupConfirmed=false
+
+            egg=nil
+
+            task.wait(1)
+            continue
+        end
+
+        droppedUUID=tostring(droppedUUID)
 
         AddDebug("[AUTO] Drop confirmed: "..droppedUUID)
 
-        ----------------------------------------------------------------
-        -- PICK UP DROPPED EGG
-        ----------------------------------------------------------------
+        ------------------------------------------------------------
+        -- PICKUP DROPPED EGG
+        ------------------------------------------------------------
 
         AutoPickupStage="DroppedPickup"
         AutoPickupAwaitingUUID=droppedUUID
@@ -2474,6 +2550,7 @@ local function tryAutoPickup(egg)
         AddDebug("[AUTO] Pickup dropped egg")
 
         EggPickupEvent:FireServer(droppedUUID)
+
         task.wait(1)
 
         if not AutoPickupRunning then
@@ -2489,6 +2566,7 @@ local function tryAutoPickup(egg)
             AutoPickupAwaitingUUID=nil
             AutoPickupAwaitingPickup=false
             AutoPickupPickupConfirmed=false
+
             egg=nil
 
             task.wait(1)
@@ -2501,11 +2579,13 @@ local function tryAutoPickup(egg)
         AutoPickupPickupConfirmed=false
         AutoPickupAwaitingUUID=nil
 
-        ----------------------------------------------------------------
-        -- GO TO PLOT
-        ----------------------------------------------------------------
+        ------------------------------------------------------------
+        -- GO BACK TO BASE PLOT
+        ------------------------------------------------------------
 
         AutoPickupStage="GoingToPlot"
+
+        AddDebug("[AUTO] Going back to base plot")
 
         local reachedPlot=false
 
@@ -2524,11 +2604,12 @@ local function tryAutoPickup(egg)
         end
 
         AddDebug("[AUTO] TP -> Plot")
+
         task.wait(1)
 
-        ----------------------------------------------------------------
+        ------------------------------------------------------------
         -- DEPOSIT
-        ----------------------------------------------------------------
+        ------------------------------------------------------------
 
         AutoPickupStage="Deposit"
         AutoPickupAwaitingDeposit=true
@@ -2538,11 +2619,14 @@ local function tryAutoPickup(egg)
 
         if not ranchCFrame then
             AddDebug("[AUTO] Ranch CFrame not found")
+
             AutoPickupStage="Idle"
             AutoPickupAwaitingDeposit=false
-            AutoPickupAwaitingUUID=nil
             AutoPickupDepositConfirmed=false
+            AutoPickupAwaitingUUID=nil
+
             egg=nil
+
             task.wait(1)
             continue
         end
@@ -2560,11 +2644,14 @@ local function tryAutoPickup(egg)
             )
         else
             AddDebug("[AUTO ERROR] EggArrivalClaim remote not found")
+
             AutoPickupStage="Idle"
             AutoPickupAwaitingDeposit=false
             AutoPickupDepositConfirmed=false
             AutoPickupAwaitingUUID=nil
+
             egg=nil
+
             task.wait(1)
             continue
         end
@@ -2595,10 +2682,15 @@ local function tryAutoPickup(egg)
         AutoPickupAwaitingDeposit=false
         AutoPickupDepositConfirmed=false
         AutoPickupAwaitingUUID=nil
+
         egg=nil
 
         task.wait(1)
     end
+
+    ------------------------------------------------------------
+    -- MAX RETRIES
+    ------------------------------------------------------------
 
     AddDebug("[AUTO ERROR] Maximum retries reached")
 
