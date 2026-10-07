@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.7"
+local ver = "TEST v5.8"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -110,7 +110,6 @@ local function saveConfig()
         writefile(CONFIG_FILE, HttpService:JSONEncode({
             selectedEggs = selected,
             autoSelectedEggs = autoSelected,
-            AutoMagmaDipEnabled = AutoMagmaDipEnabled,
             movementMode = AutoPickupMovementMode,
             claimDelay = AutoPickupClaimDelay,
             antiAFK = AntiAFKEnabled
@@ -164,10 +163,6 @@ local function loadConfig()
                 AutoSelectedEggs[eggName] = true
             end
         end
-    end
-
-    if type(data.autoMagmaDipEnabled) == "boolean" then
-        AutoMagmaDipEnabled = data.autoMagmaDipEnabled
     end
 
     if type(data.movementMode) == "string" then
@@ -1275,10 +1270,7 @@ local function createESPFilterButtons()
             refreshESPFilterButtons()
             refreshESPFilterText()
             saveConfig()
-
-            if ESPEnabled then
-                updateESP()
-            end
+            updateESP()
         end)
     end
 
@@ -1313,12 +1305,7 @@ ESPToggle.MouseButton1Click:Connect(function()
         and "[ESP] Enabled"
         or "[ESP] Disabled"
     )
-
-    if ESPEnabled then
-        updateESP()
-    else
-        clearESP()
-    end
+    updateESP()
 end)
 
 ESPFilterButton.MouseButton1Click:Connect(function()
@@ -2351,7 +2338,7 @@ local function tryAutoPickup(egg)
 
         local resultStart=os.clock()
 
-        while AutoPickupRunning and AutoMagmaDipWaitingForResult and os.clock()-resultStart<15 do
+        while AutoPickupRunning and AutoMagmaDipWaitingForResult and os.clock()-resultStart<10 do
             task.wait(0.1)
         end
 
@@ -2371,7 +2358,7 @@ local function tryAutoPickup(egg)
 
         local messageStart=os.clock()
 
-        while AutoPickupRunning and AutoVolcanoWaitingForMessage and os.clock()-messageStart<15 do
+        while AutoPickupRunning and AutoVolcanoWaitingForMessage and os.clock()-messageStart<10 do
             task.wait(0.1)
         end
 
@@ -2389,9 +2376,6 @@ local function tryAutoPickup(egg)
         end
 
         AddDebug("[AUTO MAGMA DIP] Mutation: "..tostring(AutoVolcanoMessageText))
-
-        task.wait(3)
-
         stopAutoPickupFloat()
 
         -- Use volcano position for the post-dip outside position
@@ -3314,12 +3298,11 @@ end)
 --==================================================
 task.spawn(function()
     while Gui.Parent do
-        if Toggle.Text=="ON" then
+        if ESPEnabled then
             pcall(function()
                 updateESP()
             end)
         end
-        task.wait(1)
     end
 end)
 
@@ -3347,9 +3330,6 @@ end)
 --==================================================
 showPage(AutoPage)
 updateActivePageButton(AutoButton)
-
-refreshFilterButtons()
-updateFilterText()
 
 createAutoPickupFilterButtons()
 refreshAutoPickupFilterText()
