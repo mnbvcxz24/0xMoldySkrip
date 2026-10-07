@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.8"
+local ver = "TEST v4.9"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2102,7 +2102,7 @@ local function teleportOutsidePlot(eggPosition)
     local outsidePosition =
         center -
         direction *
-        (edge + 100)
+        (edge + 50)
 
     local success = pcall(function()
         root.CFrame =
@@ -2116,7 +2116,7 @@ local function teleportOutsidePlot(eggPosition)
     end
 
     AddDebug(
-        "[AUTO] TP -> 100 studs outside plot"
+        "[AUTO] TP -> 50 studs outside plot"
     )
 
     return true
@@ -2323,7 +2323,7 @@ local function tryAutoPickup(egg)
                 reachedOutside=true
                 AddDebug("[AUTO VOLCANO] TP -> Outside")
             else
-                task.wait(0.1)
+                task.wait(0.25)
             end
         end
 
@@ -2389,7 +2389,7 @@ local function tryAutoPickup(egg)
 
     BasketDropEvent:FireServer()
 
-    task.wait(1)
+    task.wait(0.25)
 
     -- 9. Find newly dropped egg
     local droppedEgg=nil
