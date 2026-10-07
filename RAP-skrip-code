@@ -2763,7 +2763,7 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
         AutoVolcanoMessageText=message
         AddDebug("[AUTO MAGMA DIP] Mutation FAILED detected")
         AddDebug("[AUTO MAGMA DIP] "..message)
-    elseif string.find(message,"Every Egg You Carry",1,true) then
+    else string.find(message,"Every Egg You Carry",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
         AddDebug("[AUTO MAGMA DIP] The Egg was Already Dip")
