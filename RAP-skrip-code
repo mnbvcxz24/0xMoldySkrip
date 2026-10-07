@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.7"
+local ver = "TEST v4.8"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2102,7 +2102,7 @@ local function teleportOutsidePlot(eggPosition)
     local outsidePosition =
         center -
         direction *
-        (edge + 35)
+        (edge + 100)
 
     local success = pcall(function()
         root.CFrame =
@@ -2116,7 +2116,7 @@ local function teleportOutsidePlot(eggPosition)
     end
 
     AddDebug(
-        "[AUTO] TP -> 50 studs outside plot"
+        "[AUTO] TP -> 100 studs outside plot"
     )
 
     return true
@@ -3115,10 +3115,13 @@ end)
 
 AutoMagmaDipToggle.MouseButton1Click:Connect(function()
     AutoMagmaDipEnabled=not AutoMagmaDipEnabled
-    AutoMagmaDipButton.Text=AutoMagmaDipEnabled and "ON" or "OFF"
-    AutoMagmaDipButton.BackgroundColor3=AutoMagmaDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+
+    AutoMagmaDipToggle.Text=AutoMagmaDipEnabled and "ON" or "OFF"
+    AutoMagmaDipToggle.BackgroundColor3=AutoMagmaDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+
     AutoMagmaDipStatus.Text=AutoMagmaDipEnabled and "● Active" or "● Inactive"
     AutoMagmaDipStatus.TextColor3=AutoMagmaDipEnabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
+
     AddDebug(AutoMagmaDipEnabled and "[AUTO MAGMA DIP] Enabled" or "[AUTO MAGMA DIP] Disabled")
 end)
 
