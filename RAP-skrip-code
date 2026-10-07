@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.6"
+local ver = "TEST v5.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2889,81 +2889,6 @@ local function updateFilterText()
     ESPFilterCount.Text="Detected eggs: "..tostring(total)
 end
 
-local function refreshFilterButtons()
-    for name, button in pairs(ESPFilterButtons) do
-        if SelectedEggs[name] then
-            button.Text="☑ "..name
-            button.TextColor3=Color3.fromRGB(100,200,130)
-        else
-            button.Text="☐ "..name
-            button.TextColor3=Color3.fromRGB(190,190,198)
-        end
-    end
-
-    if ESPFilterButtons["--"] then
-        ESPFilterButtons["--"].Text="☐ Clear Selection"
-        ESPFilterButtons["--"].TextColor3=Color3.fromRGB(190,190,198)
-    end
-end
-
-local function rebuildFilter()
-    for _, child in ipairs(ESPFilterFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
-    end
-
-    table.clear(ESPFilterButtons)
-
-    for index, eggName in ipairs(EggTypes) do
-        local button=Instance.new("TextButton")
-        button.Size=UDim2.new(1,-10,0,22)
-        button.Position=UDim2.fromOffset(5,5+((index-1)*22))
-        button.BackgroundTransparency=1
-        button.TextColor3=Color3.fromRGB(190,190,198)
-        button.TextSize=textSize(10)
-        button.Font=Enum.Font.Gotham
-        button.TextXAlignment=Enum.TextXAlignment.Left
-        button.AutoButtonColor=false
-        button.Active=true
-        button.Selectable=true
-        button.ZIndex=21
-        button.Parent=ESPFilterFrame
-
-        ESPFilterButtons[eggName]=button
-
-        if eggName=="--" then
-            button.Text="☐ Clear Selection"
-        elseif SelectedEggs[eggName] then
-            button.Text="☑ "..eggName
-            button.TextColor3=Color3.fromRGB(100,200,130)
-        else
-            button.Text="☐ "..eggName
-        end
-
-        button.MouseButton1Click:Connect(function()
-            if eggName=="--" then
-                SelectedEggs={}
-            else
-                if SelectedEggs[eggName] then
-                    SelectedEggs[eggName]=nil
-                else
-                    SelectedEggs[eggName]=true
-                end
-            end
-
-            refreshFilterButtons()
-            updateFilterText()
-
-            if Toggle.Text=="ON" then
-                updateESP()
-            end
-        end)
-    end
-
-    ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
-end
-
 local ESPFolder=Instance.new("Folder")
 ESPFolder.Name="EggESP"
 ESPFolder.Parent=workspace
@@ -3124,10 +3049,6 @@ function updateESP()
     updateDetectedEggList(detectedLines)
 end
 
-rebuildFilter()
-refreshFilterButtons()
-updateFilterText()
-
 ESPFilterButton.MouseButton1Click:Connect(function()
     ESPFilterFrame.Visible=not ESPFilterFrame.Visible
 
@@ -3259,39 +3180,6 @@ if EggPickupEvent then
 else
     AddDebug("[AUTO ERROR] EggPickup remote not found")
 end
-
-for eggName,button in pairs(FilterButtons) do
-    button.MouseButton1Click:Connect(function()
-        if eggName=="--" then
-            SelectedEggs={}
-        else
-            if SelectedEggs[eggName] then
-                SelectedEggs[eggName]=nil
-            else
-                SelectedEggs[eggName]=true
-            end
-        end
-        refreshFilterButtons()
-        updateFilterText()
-        if Toggle.Text=="ON" then
-            updateESP()
-        end
-    end)
-end
-
-ESPToggle.MouseButton1Click:Connect(function()
-    local enabled=Toggle.Text=="OFF"
-    Toggle.Text=enabled and "ON" or "OFF"
-    Toggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
-    Status.Text=enabled and "ESP Status: Enabled" or "ESP Status: Disabled"
-    if enabled then
-        AddDebug("[ESP] Enabled")
-        updateESP()
-    else
-        AddDebug("[ESP] Disabled")
-        clearESP()
-    end
-end)
 
 ConfigSaveButton.MouseButton1Click:Connect(function()
     saveConfig()
