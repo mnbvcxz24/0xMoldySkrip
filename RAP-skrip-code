@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.8"
+local ver = "TEST v5.9"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1266,11 +1266,13 @@ local function createESPFilterButtons()
             else
                 SelectedEggs[eggName]=not SelectedEggs[eggName] or nil
             end
-
             refreshESPFilterButtons()
             refreshESPFilterText()
             saveConfig()
-            updateESP()
+            updateFilterText()
+            if ESPEnabled then
+                updateESP()
+            end
         end)
     end
 
@@ -2841,10 +2843,10 @@ end
 
 local function updateFilterText()
     local selectedNames=getSelectedEggNames()
-
     if #selectedNames==0 then
         ESPFilterButton.Text="-- ▼"
         ESPFilterCount.Text="Detected eggs: 0"
+        updateDetectedEggList({})
         return
     end
 
@@ -2857,9 +2859,11 @@ local function updateFilterText()
     local ActiveEggs=getActiveEggs()
     if not ActiveEggs then
         ESPFilterCount.Text="Detected eggs: 0"
+        updateDetectedEggList({})
         return
     end
 
+    local lines={}
     local total=0
 
     for _,egg in ipairs(ActiveEggs:GetChildren()) do
@@ -2867,10 +2871,18 @@ local function updateFilterText()
 
         if eggName and SelectedEggs[eggName] then
             total=total+1
+
+            local weight=tonumber(egg:GetAttribute("Weight"))
+            if weight then
+                table.insert(lines,string.format("%s - %.2f",eggName,weight))
+            else
+                table.insert(lines,eggName.." - --")
+            end
         end
     end
 
     ESPFilterCount.Text="Detected eggs: "..tostring(total)
+    updateDetectedEggList(lines)
 end
 
 local ESPFolder=Instance.new("Folder")
@@ -3303,8 +3315,12 @@ task.spawn(function()
             pcall(function()
                 updateESP()
             end)
+        else
+            pcall(function()
+                updateFilterText()
+            end)
         end
-        task.wait(0.25)
+        task.wait(0.5)
     end
 end)
 
