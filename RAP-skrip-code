@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.6"
+local ver = "TEST v4.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2414,14 +2414,14 @@ local function tryAutoPickup(egg)
         return
     end
 
-    local droppedUUID=getEggUUID(droppedEgg)
-
+    local droppedUUID=droppedEgg.UUID
+    
     if not droppedUUID then
         AddDebug("[AUTO ERROR] Dropped egg UUID not found")
         AutoPickupBusy=false
         return
     end
-
+    
     droppedUUID=tostring(droppedUUID)
 
     AddDebug("[AUTO] Dropped egg: "..tostring(eggName))
