@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.9"
+local ver = "TEST v6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -913,22 +913,6 @@ AutoPlaceFilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
 AutoPlaceFilterLayout.Padding = UDim.new(0, 3)
 AutoPlaceFilterLayout.Parent = AutoPlaceFilterFrame
 
-local FilterFrame = Instance.new("ScrollingFrame")
-FilterFrame.Name = "FilterFrame"
-FilterFrame.Size = UDim2.new(1, -10, 0, 120)
-FilterFrame.Position = UDim2.fromOffset(5, 132)
-FilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
-FilterFrame.BorderSizePixel = 0
-FilterFrame.ScrollBarThickness = 3
-FilterFrame.ZIndex = 20
-FilterFrame.Visible = false
-FilterFrame.Parent = ESPPage
-
-local FilterLayout = Instance.new("UIListLayout")
-FilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
-FilterLayout.Padding = UDim.new(0, 3)
-FilterLayout.Parent = FilterFrame
-
 local function setupFilterScrolling(frame,layout)
     layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         frame.CanvasSize=UDim2.fromOffset(0,layout.AbsoluteContentSize.Y+5)
@@ -937,7 +921,6 @@ end
 
 setupFilterScrolling(AutoPickupFilterFrame,AutoPickupFilterLayout)
 setupFilterScrolling(AutoPlaceFilterFrame,AutoPlaceFilterLayout)
-setupFilterScrolling(FilterFrame,FilterLayout)
 --==================================================
 -- 13.1 AUTO PICKUP EGG FILTER FUNCTION
 --==================================================
@@ -1174,7 +1157,7 @@ ESPFilterFrame.Position=UDim2.fromOffset(5,110)
 ESPFilterFrame.BackgroundColor3=Color3.fromRGB(27,27,33)
 ESPFilterFrame.BorderSizePixel=0
 ESPFilterFrame.Visible=false
-ESPFilterFrame.ZIndex=20
+ESPFilterFrame.ZIndex=25
 ESPFilterFrame.ScrollBarThickness=3
 ESPFilterFrame.ScrollBarImageTransparency=0.3
 ESPFilterFrame.CanvasSize=UDim2.fromOffset(0,0)
@@ -1307,17 +1290,19 @@ ESPToggle.MouseButton1Click:Connect(function()
         and "[ESP] Enabled"
         or "[ESP] Disabled"
     )
+    updateFilterText()
     updateESP()
 end)
 
 ESPFilterButton.MouseButton1Click:Connect(function()
     ESPFilterFrame.Visible=not ESPFilterFrame.Visible
-
     if ESPFilterFrame.Visible then
+        refreshESPFilterButtons()
+        refreshESPFilterText()
+        updateFilterText()
         ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
     end
 end)
-
 createESPFilterButtons()
 --==================================================
 -- 15. DEBUG PAGE
@@ -2979,15 +2964,11 @@ function updateESP()
 
     local eggs=ActiveEggs:GetChildren()
     local activeEggSet={}
-    local detectedLines={}
-    local totalSelected=0
 
     for _, egg in ipairs(eggs) do
         local currentEggName=egg:GetAttribute("Egg")
 
         if currentEggName and SelectedEggs[currentEggName] then
-            totalSelected=totalSelected+1
-
             local weight=tonumber(egg:GetAttribute("Weight"))
             local position=getEggPosition(egg)
 
@@ -3020,11 +3001,6 @@ function updateESP()
             if weight~=nil then
                 weightText=string.format("%.2f",weight)
             end
-
-            table.insert(
-                detectedLines,
-                tostring(currentEggName).." - "..weightText
-            )
         end
     end
 
@@ -3041,8 +3017,6 @@ function updateESP()
     end
 
     EggCount.Text="Active Eggs: "..tostring(#eggs)
-    ESPFilterCount.Text="Detected eggs: "..tostring(totalSelected)
-    updateDetectedEggList(detectedLines)
 end
 
 ESPFilterButton.MouseButton1Click:Connect(function()
@@ -3311,16 +3285,17 @@ end)
 --==================================================
 task.spawn(function()
     while Gui.Parent do
+        pcall(function()
+            updateFilterText()
+        end)
+        
         if ESPEnabled then
             pcall(function()
                 updateESP()
             end)
-        else
-            pcall(function()
-                updateFilterText()
-            end)
         end
-        task.wait(0.5)
+        
+        task.wait(0.25)
     end
 end)
 
