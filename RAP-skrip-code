@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5"
+local ver = "TEST v5.1"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -37,7 +37,7 @@ local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198
 local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
 local VolcanoInside2Position = Vector3.new(-5085.847656,41253.742188,-3509.459473)
 local VolcanoEggPosition = Vector3.new(-5330.669922,40912.410156,-3575.845215)
-local VolcanoDropPosition = Vector3.new(-5067.05859375,41419.12890625,-3471.73583984375)
+local VolcanoDropPosition = Vector3.new(-5067.05859375,41424.12890625,-3471.73583984375)
 --==================================================
 -- 4. UTILITY FUNCTIONS
 --==================================================
@@ -558,6 +558,8 @@ task.defer(updateSidebarSize)
 --==================================================
 -- 12. AUTO PAGE
 --==================================================
+local ESPEnabled=false
+
 local AutoTitle = Instance.new("TextLabel")
 AutoTitle.Size = UDim2.new(1, -10, 0, 25)
 AutoTitle.Position = UDim2.fromOffset(5, 0)
@@ -1050,145 +1052,255 @@ local function createAutoPlaceFilterButtons()
         end)
     end
 end
---==================================================
--- 14. ESP PAGE
---==================================================
-local PageTitle = Instance.new("TextLabel")
-PageTitle.Size = UDim2.new(1, -10, 0, 25)
-PageTitle.Position = UDim2.fromOffset(5, 3)
-PageTitle.BackgroundTransparency = 1
-PageTitle.Text = "Egg ESP"
-PageTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
-PageTitle.TextSize = textSize(15)
-PageTitle.Font = Enum.Font.GothamBold
-PageTitle.TextXAlignment = Enum.TextXAlignment.Left
-PageTitle.Parent = ESPPage
+-- ============================================================
+-- #14 ESP PAGE
+-- ============================================================
 
-local ESPStatus = Instance.new("TextLabel")
-ESPStatus.Size = UDim2.new(1, -85, 0, 22)
-ESPStatus.Position = UDim2.fromOffset(5, 30)
-ESPStatus.BackgroundTransparency = 1
-ESPStatus.Text = "ESP Status: Disabled"
-ESPStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
-ESPStatus.TextSize = textSize(10)
-ESPStatus.Font = Enum.Font.Gotham
-ESPStatus.TextXAlignment = Enum.TextXAlignment.Left
-ESPStatus.Parent = ESPPage
+local ESPTitle=Instance.new("TextLabel")
+ESPTitle.Name="ESPTitle"
+ESPTitle.Size=UDim2.new(1,-10,0,25)
+ESPTitle.Position=UDim2.fromOffset(5,3)
+ESPTitle.BackgroundTransparency=1
+ESPTitle.Text="Egg ESP"
+ESPTitle.TextColor3=Color3.fromRGB(240,240,245)
+ESPTitle.TextSize=textSize(15)
+ESPTitle.Font=Enum.Font.GothamBold
+ESPTitle.TextXAlignment=Enum.TextXAlignment.Left
+ESPTitle.Parent=ESPPage
 
-local ESPToggle = Instance.new("TextButton")
-ESPToggle.Size = UDim2.fromOffset(62, 27)
-ESPToggle.Position = UDim2.new(1, -67, 0, 27)
-ESPToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-ESPToggle.Text = "OFF"
-ESPToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
-ESPToggle.TextSize = textSize(10)
-ESPToggle.Font = Enum.Font.GothamBold
-ESPToggle.AutoButtonColor = false
-ESPToggle.Active = true
-ESPToggle.Selectable = true
-ESPToggle.ZIndex = 10
-ESPToggle.Parent = ESPPage
+local ESPStatus=Instance.new("TextLabel")
+ESPStatus.Name="ESPStatus"
+ESPStatus.Size=UDim2.new(1,-85,0,22)
+ESPStatus.Position=UDim2.fromOffset(5,30)
+ESPStatus.BackgroundTransparency=1
+ESPStatus.Text="● Inactive"
+ESPStatus.TextColor3=Color3.fromRGB(150,150,158)
+ESPStatus.TextSize=textSize(10)
+ESPStatus.Font=Enum.Font.Gotham
+ESPStatus.TextXAlignment=Enum.TextXAlignment.Left
+ESPStatus.Parent=ESPPage
 
-local ESPToggleCorner = Instance.new("UICorner")
-ESPToggleCorner.CornerRadius = UDim.new(0, 6)
-ESPToggleCorner.Parent = ESPToggle
+local ESPToggle=Instance.new("TextButton")
+ESPToggle.Name="ESPToggle"
+ESPToggle.Size=UDim2.fromOffset(62,27)
+ESPToggle.Position=UDim2.new(1,-67,0,30)
+ESPToggle.BackgroundColor3=Color3.fromRGB(45,45,53)
+ESPToggle.Text="OFF"
+ESPToggle.TextColor3=Color3.fromRGB(220,220,225)
+ESPToggle.TextSize=textSize(10)
+ESPToggle.Font=Enum.Font.GothamBold
+ESPToggle.AutoButtonColor=false
+ESPToggle.Active=true
+ESPToggle.Selectable=true
+ESPToggle.ZIndex=10
+ESPToggle.Parent=ESPPage
 
-local EggCount = Instance.new("TextLabel")
-EggCount.Size = UDim2.new(1, -10, 0, 20)
-EggCount.Position = UDim2.fromOffset(5, 58)
-EggCount.BackgroundTransparency = 1
-EggCount.Text = "Active Eggs: 0"
-EggCount.TextColor3 = Color3.fromRGB(190, 190, 198)
-EggCount.TextSize = textSize(10)
-EggCount.Font = Enum.Font.GothamMedium
-EggCount.TextXAlignment = Enum.TextXAlignment.Left
-EggCount.Parent = ESPPage
+local ESPToggleCorner=Instance.new("UICorner")
+ESPToggleCorner.CornerRadius=UDim.new(0,6)
+ESPToggleCorner.Parent=ESPToggle
 
-local FilterLabel = Instance.new("TextLabel")
-FilterLabel.Size = UDim2.new(1, -10, 0, 19)
-FilterLabel.Position = UDim2.fromOffset(5, 82)
-FilterLabel.BackgroundTransparency = 1
-FilterLabel.Text = "Egg Filter"
-FilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
-FilterLabel.TextSize = textSize(10)
-FilterLabel.Font = Enum.Font.GothamMedium
-FilterLabel.TextXAlignment = Enum.TextXAlignment.Left
-FilterLabel.Parent = ESPPage
+local ESPFilterLabel=Instance.new("TextLabel")
+ESPFilterLabel.Name="ESPFilterLabel"
+ESPFilterLabel.Size=UDim2.new(1,-10,0,19)
+ESPFilterLabel.Position=UDim2.fromOffset(5,60)
+ESPFilterLabel.BackgroundTransparency=1
+ESPFilterLabel.Text="Egg Filter"
+ESPFilterLabel.TextColor3=Color3.fromRGB(210,210,218)
+ESPFilterLabel.TextSize=textSize(10)
+ESPFilterLabel.Font=Enum.Font.GothamMedium
+ESPFilterLabel.TextXAlignment=Enum.TextXAlignment.Left
+ESPFilterLabel.Parent=ESPPage
 
-local FilterButton = Instance.new("TextButton")
-FilterButton.Size = UDim2.new(1, -10, 0, 27)
-FilterButton.Position = UDim2.fromOffset(5, 102)
-FilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-FilterButton.Text = "  -- ▼"
-FilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
-FilterButton.TextSize = textSize(10)
-FilterButton.Font = Enum.Font.Gotham
-FilterButton.TextXAlignment = Enum.TextXAlignment.Left
-FilterButton.AutoButtonColor = false
-FilterButton.Active = true
-FilterButton.Selectable = true
-FilterButton.Parent = ESPPage
+local ESPFilterButton=Instance.new("TextButton")
+ESPFilterButton.Name="ESPFilterButton"
+ESPFilterButton.Size=UDim2.new(1,-10,0,30)
+ESPFilterButton.Position=UDim2.fromOffset(5,80)
+ESPFilterButton.BackgroundColor3=Color3.fromRGB(35,35,42)
+ESPFilterButton.Text="  -- ▼"
+ESPFilterButton.TextColor3=Color3.fromRGB(220,220,225)
+ESPFilterButton.TextSize=textSize(10)
+ESPFilterButton.Font=Enum.Font.Gotham
+ESPFilterButton.TextXAlignment=Enum.TextXAlignment.Left
+ESPFilterButton.AutoButtonColor=false
+ESPFilterButton.Active=true
+ESPFilterButton.Selectable=true
+ESPFilterButton.ZIndex=25
+ESPFilterButton.Parent=ESPPage
 
-local FilterButtonCorner = Instance.new("UICorner")
-FilterButtonCorner.CornerRadius = UDim.new(0, 6)
-FilterButtonCorner.Parent = FilterButton
+local ESPFilterButtonCorner=Instance.new("UICorner")
+ESPFilterButtonCorner.CornerRadius=UDim.new(0,6)
+ESPFilterButtonCorner.Parent=ESPFilterButton
 
-local FilterCount = Instance.new("TextLabel")
-FilterCount.Size = UDim2.new(1, -10, 0, 18)
-FilterCount.Position = UDim2.fromOffset(5, 132)
-FilterCount.BackgroundTransparency = 1
-FilterCount.Text = "Detected eggs: 0"
-FilterCount.TextColor3 = Color3.fromRGB(145, 145, 155)
-FilterCount.TextSize = textSize(9)
-FilterCount.Font = Enum.Font.Gotham
-FilterCount.TextXAlignment = Enum.TextXAlignment.Left
-FilterCount.Parent = ESPPage
+local ESPFilterCount=Instance.new("TextLabel")
+ESPFilterCount.Name="ESPFilterCount"
+ESPFilterCount.Size=UDim2.new(1,-10,0,20)
+ESPFilterCount.Position=UDim2.fromOffset(5,113)
+ESPFilterCount.BackgroundTransparency=1
+ESPFilterCount.Text="Selected eggs: 0"
+ESPFilterCount.TextColor3=Color3.fromRGB(175,175,185)
+ESPFilterCount.TextSize=textSize(9)
+ESPFilterCount.Font=Enum.Font.Gotham
+ESPFilterCount.TextXAlignment=Enum.TextXAlignment.Left
+ESPFilterCount.Parent=ESPPage
 
-local DetectedEggFrame = Instance.new("ScrollingFrame")
-DetectedEggFrame.Name = "DetectedEggFrame"
-DetectedEggFrame.Size = UDim2.new(1, -10, 0, 70)
-DetectedEggFrame.Position = UDim2.fromOffset(5, 154)
-DetectedEggFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
-DetectedEggFrame.BorderSizePixel = 0
-DetectedEggFrame.ScrollBarThickness = 3
-DetectedEggFrame.CanvasSize = UDim2.fromOffset(0, 0)
-DetectedEggFrame.Parent = ESPPage
+local ESPFilterFrame=Instance.new("ScrollingFrame")
+ESPFilterFrame.Name="ESPFilterFrame"
+ESPFilterFrame.Size=UDim2.new(1,-10,0,155)
+ESPFilterFrame.Position=UDim2.fromOffset(5,110)
+ESPFilterFrame.BackgroundColor3=Color3.fromRGB(27,27,33)
+ESPFilterFrame.BorderSizePixel=0
+ESPFilterFrame.Visible=false
+ESPFilterFrame.ZIndex=20
+ESPFilterFrame.ScrollBarThickness=3
+ESPFilterFrame.ScrollBarImageTransparency=0.3
+ESPFilterFrame.CanvasSize=UDim2.fromOffset(0,0)
+ESPFilterFrame.Active=true
+ESPFilterFrame.Parent=ESPPage
 
-local DetectedEggLayout = Instance.new("UIListLayout")
-DetectedEggLayout.SortOrder = Enum.SortOrder.LayoutOrder
-DetectedEggLayout.Padding = UDim.new(0, 3)
-DetectedEggLayout.Parent = DetectedEggFrame
+local ESPFilterFrameCorner=Instance.new("UICorner")
+ESPFilterFrameCorner.CornerRadius=UDim.new(0,7)
+ESPFilterFrameCorner.Parent=ESPFilterFrame
 
-local function updateDetectedEggFrameSize()
-    DetectedEggFrame.CanvasSize = UDim2.fromOffset(
-        0,
-        DetectedEggLayout.AbsoluteContentSize.Y + 5
-    )
+local ESPFilterLayout=Instance.new("UIListLayout")
+ESPFilterLayout.Padding=UDim.new(0,1)
+ESPFilterLayout.SortOrder=Enum.SortOrder.LayoutOrder
+ESPFilterLayout.Parent=ESPFilterFrame
+
+local ESPFilterButtons={}
+
+local function refreshESPFilterButtons()
+    for eggName,button in pairs(ESPFilterButtons) do
+        if eggName=="--" then
+            button.Text="☐ Clear Selection"
+            button.TextColor3=Color3.fromRGB(190,190,198)
+        elseif SelectedEggs[eggName] then
+            button.Text="☑ "..eggName
+            button.TextColor3=Color3.fromRGB(100,200,130)
+        else
+            button.Text="☐ "..eggName
+            button.TextColor3=Color3.fromRGB(190,190,198)
+        end
+    end
 end
 
-DetectedEggLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateDetectedEggFrameSize)
+local function refreshESPFilterText()
+    local selected={}
 
-local function updateDetectedEggList(lines)
-    for _, child in ipairs(DetectedEggFrame:GetChildren()) do
-        if child:IsA("TextLabel") then
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and SelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
+
+    if #selected==0 then
+        ESPFilterButton.Text="  -- ▼"
+    elseif #selected==1 then
+        ESPFilterButton.Text="  "..selected[1].." ▼"
+    elseif #selected==2 then
+        ESPFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
+    else
+        ESPFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
+    end
+
+    ESPFilterCount.Text="Selected eggs: "..tostring(#selected)
+
+    ESPFilterButton.BackgroundColor3=
+        #selected>0
+        and Color3.fromRGB(55,85,60)
+        or Color3.fromRGB(35,35,42)
+end
+
+local function createESPFilterButtons()
+    for _,child in ipairs(ESPFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
             child:Destroy()
         end
     end
 
-    for _, line in ipairs(lines) do
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, -8, 0, 18)
-        label.BackgroundTransparency = 1
-        label.Text = tostring(line)
-        label.TextColor3 = Color3.fromRGB(205, 205, 212)
-        label.TextSize = textSize(9)
-        label.Font = Enum.Font.Gotham
-        label.TextXAlignment = Enum.TextXAlignment.Left
-        label.Parent = DetectedEggFrame
+    table.clear(ESPFilterButtons)
+
+    for _,eggName in ipairs(EggTypes) do
+        local button=Instance.new("TextButton")
+        button.Name="ESPFilter_"..eggName
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundTransparency=1
+        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Active=true
+        button.Selectable=true
+        button.ZIndex=21
+        button.Parent=ESPFilterFrame
+
+        ESPFilterButtons[eggName]=button
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                SelectedEggs={}
+            else
+                SelectedEggs[eggName]=not SelectedEggs[eggName] or nil
+            end
+
+            refreshESPFilterButtons()
+            refreshESPFilterText()
+            saveConfig()
+
+            if ESPEnabled then
+                updateESP()
+            end
+        end)
     end
 
-    updateDetectedEggFrameSize()
+    refreshESPFilterButtons()
+    refreshESPFilterText()
 end
+
+ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ESPFilterFrame.CanvasSize=UDim2.fromOffset(
+        0,
+        ESPFilterLayout.AbsoluteContentSize.Y+5
+    )
+end)
+
+ESPToggle.MouseButton1Click:Connect(function()
+    ESPEnabled=not ESPEnabled
+
+    ESPToggle.Text=ESPEnabled and "ON" or "OFF"
+    ESPToggle.BackgroundColor3=
+        ESPEnabled
+        and Color3.fromRGB(55,120,75)
+        or Color3.fromRGB(45,45,53)
+
+    ESPStatus.Text=ESPEnabled and "● Active" or "● Inactive"
+    ESPStatus.TextColor3=
+        ESPEnabled
+        and Color3.fromRGB(130,180,140)
+        or Color3.fromRGB(150,150,158)
+
+    AddDebug(
+        ESPEnabled
+        and "[ESP] Enabled"
+        or "[ESP] Disabled"
+    )
+
+    if ESPEnabled then
+        updateESP()
+    else
+        clearESP()
+    end
+end)
+
+ESPFilterButton.MouseButton1Click:Connect(function()
+    ESPFilterFrame.Visible=not ESPFilterFrame.Visible
+
+    if ESPFilterFrame.Visible then
+        ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
+    end
+end)
+
+createESPFilterButtons()
 --==================================================
 -- 15. DEBUG PAGE
 --==================================================
