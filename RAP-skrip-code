@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.2"
+local ver = "TEST v4.3"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2101,7 +2101,7 @@ local function teleportOutsidePlot(eggPosition)
     local outsidePosition =
         center -
         direction *
-        (edge + 50)
+        (edge + 35)
 
     local success = pcall(function()
         root.CFrame =
@@ -2127,327 +2127,419 @@ local waitForDroppedEgg
 --==================================================
 local function tryAutoPickup(egg)
     if not AutoPickupRunning or AutoPickupBusy then return end
-    if not egg then
-        egg=findNextAutoPickupEgg()
-    end
-    if not egg then return end
-
     AutoPickupBusy=true
 
-    local eggName=egg:GetAttribute("Egg")
-    local eggPosition=getEggPosition(egg)
-    local isVolcanic=eggName=="Volcanic Egg"
-    local shouldAutoMagmaDip=AutoMagmaDipEnabled==true
+    local MAX_RETRIES=3
 
-    if not eggName or not eggPosition then
-        AutoPickupBusy=false
-        return
-    end
-
-    AddDebug("[AUTO] Pickup: "..tostring(eggName))
-
-    if isVolcanic then
-        AddDebug("[AUTO] Route: Volcanic Egg")
-        if not enterVolcanicEgg(egg) then
+    for attempt=1,MAX_RETRIES do
+        if not AutoPickupRunning then
             AutoPickupBusy=false
             return
         end
-    else
-        AddDebug("[AUTO] Route: Normal Egg")
-        if not teleportToEgg(egg) then
+
+        AddDebug("[AUTO] Attempt "..tostring(attempt).."/"..tostring(MAX_RETRIES))
+
+        if not egg then
+            egg=findNextAutoPickupEgg()
+        end
+
+        if not egg then
             AutoPickupBusy=false
             return
         end
-    end
 
-    task.wait(1)
+        local eggName=egg:GetAttribute("Egg")
+        local eggPosition=getEggPosition(egg)
+        local isVolcanic=eggName=="Volcanic Egg"
+        local shouldAutoMagmaDip=AutoMagmaDipEnabled==true
 
-    local pickupUUID=getEggUUID(egg)
+        if not eggName or not eggPosition then
+            AddDebug("[AUTO] Invalid egg")
+            egg=nil
+            task.wait(1)
+            continue
+        end
 
-    if not pickupUUID then
-        AutoPickupBusy=false
-        return
-    end
+        AddDebug("[AUTO] Pickup: "..tostring(eggName))
 
-    pickupUUID=tostring(pickupUUID)
+        local reachedEgg=false
 
-    AutoPickupAwaitingUUID=pickupUUID
-    AutoPickupAwaitingPickup=true
-    AutoPickupPickupConfirmed=false
+        if isVolcanic then
+            AddDebug("[AUTO] Route: Volcanic Egg")
+            reachedEgg=enterVolcanicEgg(egg)
+        else
+            AddDebug("[AUTO] Route: Normal Egg")
+            reachedEgg=teleportToEgg(egg)
+        end
 
-    while AutoPickupRunning and not AutoPickupPickupConfirmed do
-        EggPickupEvent:FireServer(pickupUUID)
+        if not reachedEgg then
+            AddDebug("[AUTO] Failed to reach egg")
+            egg=nil
+            task.wait(1)
+            continue
+        end
+
         task.wait(1)
-    end
 
-    AutoPickupAwaitingPickup=false
+        local pickupUUID=getEggUUID(egg)
 
-    if not AutoPickupRunning then
-        AutoPickupBusy=false
-        return
-    end
+        if not pickupUUID then
+            AddDebug("[AUTO] Egg UUID not found")
+            egg=nil
+            task.wait(1)
+            continue
+        end
 
-    stopAutoPickupFloat()
+        pickupUUID=tostring(pickupUUID)
 
-    if shouldAutoMagmaDip then
-        AddDebug("[AUTO MAGMA DIP] Starting")
+        AutoPickupAwaitingUUID=pickupUUID
+        AutoPickupAwaitingPickup=true
+        AutoPickupPickupConfirmed=false
+
+        AddDebug("[AUTO] Pickup original egg")
+
+        local pickupStart=os.clock()
+
+        while AutoPickupRunning
+            and not AutoPickupPickupConfirmed
+            and os.clock()-pickupStart<8 do
+            EggPickupEvent:FireServer(pickupUUID)
+            task.wait(1)
+        end
+
+        AutoPickupAwaitingPickup=false
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        if not AutoPickupPickupConfirmed then
+            AddDebug("[AUTO] Original pickup failed - restarting")
+            egg=nil
+            task.wait(1)
+            continue
+        end
+
+        AddDebug("[AUTO] Original pickup confirmed")
+
+        stopAutoPickupFloat()
+
+        if shouldAutoMagmaDip then
+            AddDebug("[AUTO MAGMA DIP] Starting")
+
+            local root=getCharacterRoot()
+
+            if not root then
+                AddDebug("[AUTO MAGMA DIP ERROR] Root not found")
+                egg=nil
+                task.wait(1)
+                continue
+            end
+
+            root.CFrame=CFrame.new(VolcanoDropPosition)
+            AddDebug("[AUTO MAGMA DIP] TP -> Volcano")
+            task.wait(1)
+
+            AutoMagmaDipResult=nil
+            AutoMagmaDipWaitingForResult=true
+            AutoVolcanoMessageReceived=false
+            AutoVolcanoMessageText=nil
+            AutoVolcanoWaitingForMessage=true
+
+            if VolcanoDipEvent then
+                VolcanoDipEvent:FireServer()
+                task.wait(1)
+            else
+                AddDebug("[AUTO MAGMA DIP ERROR] Remote not found")
+                AutoMagmaDipWaitingForResult=false
+                AutoVolcanoWaitingForMessage=false
+                egg=nil
+                task.wait(1)
+                continue
+            end
+
+            local mutationStart=os.clock()
+
+            while AutoPickupRunning
+                and AutoMagmaDipWaitingForResult
+                and os.clock()-mutationStart<15 do
+                task.wait(0.1)
+            end
+
+            AutoMagmaDipWaitingForResult=false
+
+            if not AutoPickupRunning then
+                AutoPickupBusy=false
+                return
+            end
+
+            if AutoMagmaDipResult==nil then
+                AddDebug("[AUTO MAGMA DIP] Result not received")
+            else
+                AddDebug("[AUTO MAGMA DIP] Result: "..tostring(AutoMagmaDipResult))
+            end
+
+            local messageStart=os.clock()
+
+            while AutoPickupRunning
+                and not AutoVolcanoMessageReceived
+                and os.clock()-messageStart<15 do
+                task.wait(0.1)
+            end
+
+            AutoVolcanoWaitingForMessage=false
+
+            if not AutoPickupRunning then
+                AutoPickupBusy=false
+                return
+            end
+
+            if AutoVolcanoMessageReceived then
+                AddDebug("[AUTO MAGMA DIP] Mutation: "..tostring(AutoVolcanoMessageText))
+            else
+                AddDebug("[AUTO MAGMA DIP] Mutation message not received")
+            end
+
+            task.wait(3)
+
+            stopAutoPickupFloat()
+
+            local reachedOutside=false
+
+            while AutoPickupRunning and not reachedOutside do
+                if teleportOutsidePlot(eggPosition) then
+                    reachedOutside=true
+                else
+                    task.wait(0.1)
+                end
+            end
+
+            if not AutoPickupRunning then
+                AutoPickupBusy=false
+                return
+            end
+
+            AddDebug("[AUTO MAGMA DIP] TP -> Outside")
+            task.wait(1)
+
+        elseif isVolcanic then
+            AddDebug("[AUTO] Volcanic route without Magma Dip")
+
+            exitVolcanicEgg()
+            stopAutoPickupFloat()
+
+            local reachedOutside=false
+
+            while AutoPickupRunning and not reachedOutside do
+                if teleportOutsidePlot(eggPosition) then
+                    reachedOutside=true
+                else
+                    task.wait(0.1)
+                end
+            end
+
+            if not AutoPickupRunning then
+                AutoPickupBusy=false
+                return
+            end
+
+            AddDebug("[AUTO] TP -> Outside")
+            task.wait(1)
+
+        else
+            AddDebug("[AUTO] Normal route without Magma Dip")
+
+            stopAutoPickupFloat()
+
+            local reachedOutside=false
+
+            while AutoPickupRunning and not reachedOutside do
+                if teleportOutsidePlot(eggPosition) then
+                    reachedOutside=true
+                else
+                    task.wait(0.1)
+                end
+            end
+
+            if not AutoPickupRunning then
+                AutoPickupBusy=false
+                return
+            end
+
+            AddDebug("[AUTO] TP -> Outside")
+            task.wait(1)
+        end
+
+        ----------------------------------------------------------------
+        -- DROP + PICKUP VERIFICATION
+        ----------------------------------------------------------------
+
+        local BasketDropEvent=ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Game"):WaitForChild("BasketDrop")
+
+        local previousDroppedUUIDs={}
+        local activeEggsBeforeDrop=getActiveEggs()
+
+        if activeEggsBeforeDrop then
+            for _,existingEgg in ipairs(activeEggsBeforeDrop:GetChildren()) do
+                local existingUUID=getEggUUID(existingEgg)
+
+                if existingUUID then
+                    previousDroppedUUIDs[tostring(existingUUID)]=true
+                end
+            end
+        end
 
         local root=getCharacterRoot()
 
-        if root then
-            pcall(function()
-                root.CFrame=CFrame.new(VolcanoDropPosition)
-            end)
-            AddDebug("[AUTO MAGMA DIP] TP -> Volcano")
-        else
-            AddDebug("[AUTO MAGMA DIP ERROR] Root not found")
-            AutoPickupBusy=false
-            return
+        if not root then
+            AddDebug("[AUTO] Root missing before drop")
+            egg=nil
+            task.wait(1)
+            continue
         end
 
-        task.wait(1)
+        local dropPosition=root.Position
 
-        AutoMagmaDipResult=nil
-        AutoMagmaDipWaitingForResult=true
-        AutoVolcanoMessageReceived=false
-        AutoVolcanoMessageText=nil
-        AutoVolcanoWaitingForMessage=true
+        AddDebug("[AUTO] BasketDrop")
 
-        if VolcanoDipEvent then
-            VolcanoDipEvent:FireServer()
-        else
-            AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDip remote not found")
-            AutoMagmaDipWaitingForResult=false
-            AutoVolcanoWaitingForMessage=false
-            AutoPickupBusy=false
-            return
-        end
-
-        task.wait(1)
-
-        local mutationStart=os.clock()
-
-        while AutoPickupRunning
-            and AutoMagmaDipWaitingForResult
-            and os.clock()-mutationStart<15 do
-            task.wait(0.1)
-        end
-
-        AutoMagmaDipWaitingForResult=false
-
-        if not AutoPickupRunning then
-            AutoPickupBusy=false
-            return
-        end
-
-        if AutoMagmaDipResult==nil then
-            AddDebug("[AUTO MAGMA DIP] Result not received")
-        else
-            AddDebug("[AUTO MAGMA DIP] Result: "..tostring(AutoMagmaDipResult))
-        end
-
-        local messageStart=os.clock()
-
-        while AutoPickupRunning
-            and not AutoVolcanoMessageReceived
-            and os.clock()-messageStart<15 do
-            task.wait(0.1)
-        end
-
-        AutoVolcanoWaitingForMessage=false
-
-        if not AutoPickupRunning then
-            AutoPickupBusy=false
-            return
-        end
-
-        if AutoVolcanoMessageReceived then
-            AddDebug("[AUTO MAGMA DIP] Mutation: "..tostring(AutoVolcanoMessageText))
-        else
-            AddDebug("[AUTO MAGMA DIP] Mutation message not received")
-        end
-
-        task.wait(3)
-
-        stopAutoPickupFloat()
-
-        local reachedOutside=false
-
-        while AutoPickupRunning and not reachedOutside do
-            if teleportOutsidePlot(eggPosition) then
-                reachedOutside=true
-            else
-                task.wait(0.1)
-            end
-        end
-
-        if not AutoPickupRunning then
-            AutoPickupBusy=false
-            return
-        end
-
-        AddDebug("[AUTO MAGMA DIP] TP -> Outside")
-        task.wait(1)
-
-    elseif isVolcanic then
-        AddDebug("[AUTO] Volcanic route without Magma Dip")
-
-        if not exitVolcanicEgg() then
-            AutoPickupBusy=false
-            return
-        end
-
-        stopAutoPickupFloat()
-
-        local reachedOutside=false
-
-        while AutoPickupRunning and not reachedOutside do
-            if teleportOutsidePlot(eggPosition) then
-                reachedOutside=true
-            else
-                task.wait(0.1)
-            end
-        end
-
-        if not AutoPickupRunning then
-            AutoPickupBusy=false
-            return
-        end
-
-        AddDebug("[AUTO] TP -> Outside")
-        task.wait(1)
-
-    else
-        AddDebug("[AUTO] Normal route without Magma Dip")
-
-        stopAutoPickupFloat()
-
-        local reachedOutside=false
-
-        while AutoPickupRunning and not reachedOutside do
-            if teleportOutsidePlot(eggPosition) then
-                reachedOutside=true
-            else
-                task.wait(0.1)
-            end
-        end
-
-        if not AutoPickupRunning then
-            AutoPickupBusy=false
-            return
-        end
-
-        AddDebug("[AUTO] TP -> Outside")
-        task.wait(1)
-    end
-
-    local BasketDropEvent=ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Game"):WaitForChild("BasketDrop")
-
-    local previousDroppedUUIDs={}
-    local activeEggsBeforeDrop=getActiveEggs()
-
-    if activeEggsBeforeDrop then
-        for _,existingEgg in ipairs(activeEggsBeforeDrop:GetChildren()) do
-            local existingUUID=getEggUUID(existingEgg)
-            if existingUUID then
-                previousDroppedUUIDs[tostring(existingUUID)]=true
-            end
-        end
-    end
-
-    local root=getCharacterRoot()
-    local dropPosition=root and root.Position
-
-    if not dropPosition then
-        AutoPickupBusy=false
-        return
-    end
-
-    local droppedEgg=nil
-
-    AddDebug("[AUTO] BasketDrop")
-
-    while AutoPickupRunning and not droppedEgg do
         BasketDropEvent:FireServer()
         task.wait(1)
 
-        droppedEgg=waitForDroppedEgg(eggName,previousDroppedUUIDs,dropPosition,2)
+        local droppedEgg=nil
+        local dropStart=os.clock()
+
+        while AutoPickupRunning
+            and not droppedEgg
+            and os.clock()-dropStart<5 do
+
+            droppedEgg=waitForDroppedEgg(
+                eggName,
+                previousDroppedUUIDs,
+                dropPosition,
+                0.5
+            )
+
+            if not droppedEgg then
+                task.wait(0.1)
+            end
+        end
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
 
         if not droppedEgg then
-            task.wait(0.1)
+            AddDebug("[AUTO] DROP FAILED - restarting")
+            egg=nil
+            task.wait(1)
+            continue
         end
-    end
 
-    if not AutoPickupRunning or not droppedEgg then
-        AutoPickupBusy=false
-        return
-    end
+        local droppedUUID=tostring(droppedEgg.UUID)
 
-    local droppedUUID=tostring(droppedEgg.UUID)
+        AddDebug("[AUTO] Drop confirmed: "..droppedUUID)
 
-    AddDebug("[AUTO] Dropped UUID: "..droppedUUID)
+        ----------------------------------------------------------------
+        -- PICK UP DROPPED EGG
+        ----------------------------------------------------------------
 
-    AutoPickupAwaitingUUID=droppedUUID
-    AutoPickupAwaitingPickup=true
-    AutoPickupPickupConfirmed=false
+        AutoPickupAwaitingUUID=droppedUUID
+        AutoPickupAwaitingPickup=true
+        AutoPickupPickupConfirmed=false
 
-    AddDebug("[AUTO] Pickup dropped egg")
+        AddDebug("[AUTO] Pickup dropped egg")
 
-    while AutoPickupRunning and not AutoPickupPickupConfirmed do
-        EggPickupEvent:FireServer(droppedUUID)
+        local droppedPickupStart=os.clock()
+
+        while AutoPickupRunning
+            and not AutoPickupPickupConfirmed
+            and os.clock()-droppedPickupStart<8 do
+
+            EggPickupEvent:FireServer(droppedUUID)
+            task.wait(1)
+        end
+
+        AutoPickupAwaitingPickup=false
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        if not AutoPickupPickupConfirmed then
+            AddDebug("[AUTO] DROPPED PICKUP FAILED - restarting")
+            egg=nil
+            AutoPickupAwaitingUUID=nil
+            task.wait(1)
+            continue
+        end
+
+        AddDebug("[AUTO] Dropped pickup confirmed")
+
+        ----------------------------------------------------------------
+        -- GO TO PLOT
+        ----------------------------------------------------------------
+
+        local reachedPlot=false
+
+        while AutoPickupRunning and not reachedPlot do
+            if teleportToMyPlot() then
+                reachedPlot=true
+            else
+                task.wait(0.1)
+            end
+        end
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        AddDebug("[AUTO] TP -> Plot")
+        task.wait(1)
+
+        ----------------------------------------------------------------
+        -- DEPOSIT
+        ----------------------------------------------------------------
+
+        AutoPickupAwaitingDeposit=true
+        AutoPickupDepositConfirmed=false
+
+        AddDebug("[AUTO] EggArrivalClaim")
+
+        local depositStart=os.clock()
+
+        while AutoPickupRunning
+            and not AutoPickupDepositConfirmed
+            and os.clock()-depositStart<8 do
+
+            if EggArrivalClaimEvent then
+                EggArrivalClaimEvent:FireServer(droppedUUID)
+                task.wait(1)
+            else
+                AddDebug("[AUTO ERROR] EggArrivalClaim remote not found")
+                break
+            end
+        end
+
+        AutoPickupAwaitingDeposit=false
+
+        if AutoPickupDepositConfirmed then
+            AddDebug("[AUTO] Egg deposited successfully")
+            AutoPickupAwaitingUUID=nil
+            AutoPickupBusy=false
+            return
+        end
+
+        AddDebug("[AUTO] Deposit failed - restarting")
+        AutoPickupAwaitingUUID=nil
+        egg=nil
         task.wait(1)
     end
 
-    AutoPickupAwaitingPickup=false
-
-    if not AutoPickupRunning then
-        AutoPickupBusy=false
-        return
-    end
-
-    AddDebug("[AUTO] Dropped egg picked up")
-
-    local reachedPlot=false
-
-    while AutoPickupRunning and not reachedPlot do
-        if teleportToMyPlot() then
-            reachedPlot=true
-        else
-            task.wait(0.1)
-        end
-    end
-
-    if not AutoPickupRunning then
-        AutoPickupBusy=false
-        return
-    end
-
-    AddDebug("[AUTO] TP -> Plot")
-    task.wait(1)
-
-    AutoPickupAwaitingDeposit=true
-    AutoPickupDepositConfirmed=false
-
-    AddDebug("[AUTO] EggArrivalClaim")
-
-    while AutoPickupRunning and not AutoPickupDepositConfirmed do
-        if EggArrivalClaimEvent then
-            EggArrivalClaimEvent:FireServer(droppedUUID)
-            task.wait(1)
-        else
-            AddDebug("[AUTO ERROR] EggArrivalClaim remote not found")
-            break
-        end
-    end
-
-    AutoPickupAwaitingDeposit=false
-
-    if AutoPickupDepositConfirmed then
-        AddDebug("[AUTO] Egg deposited successfully")
-    else
-        AddDebug("[AUTO] Deposit confirmation not received")
-    end
-
+    AddDebug("[AUTO ERROR] Maximum retries reached")
     AutoPickupAwaitingUUID=nil
     AutoPickupBusy=false
 end
