@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v6.4"
+local ver = "TEST v6.3"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1265,40 +1265,6 @@ ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function
         0,
         ESPFilterLayout.AbsoluteContentSize.Y+5
     )
-end)
-
-ESPToggle.MouseButton1Click:Connect(function()
-    ESPEnabled=not ESPEnabled
-
-    ESPToggle.Text=ESPEnabled and "ON" or "OFF"
-    ESPToggle.BackgroundColor3=
-        ESPEnabled
-        and Color3.fromRGB(55,120,75)
-        or Color3.fromRGB(45,45,53)
-
-    ESPStatus.Text=ESPEnabled and "● Active" or "● Inactive"
-    ESPStatus.TextColor3=
-        ESPEnabled
-        and Color3.fromRGB(130,180,140)
-        or Color3.fromRGB(150,150,158)
-
-    AddDebug(
-        ESPEnabled
-        and "[ESP] Enabled"
-        or "[ESP] Disabled"
-    )
-    updateFilterText()
-    updateESP()
-end)
-
-ESPFilterButton.MouseButton1Click:Connect(function()
-    ESPFilterFrame.Visible=not ESPFilterFrame.Visible
-    if ESPFilterFrame.Visible then
-        ESPFilterButton.Text="Select Eggs ▲"
-        createESPFilterButtons()
-    else
-        refreshESPFilterText()
-    end
 end)
 --==================================================
 -- 15. DEBUG PAGE
@@ -3262,6 +3228,40 @@ Close.MouseButton1Click:Connect(function()
         end
     end)
     Gui:Destroy()
+end)
+
+ESPToggle.MouseButton1Click:Connect(function()
+    ESPEnabled=not ESPEnabled
+
+    ESPToggle.Text=ESPEnabled and "ON" or "OFF"
+    ESPToggle.BackgroundColor3=
+        ESPEnabled
+        and Color3.fromRGB(55,120,75)
+        or Color3.fromRGB(45,45,53)
+
+    ESPStatus.Text=ESPEnabled and "● Active" or "● Inactive"
+    ESPStatus.TextColor3=
+        ESPEnabled
+        and Color3.fromRGB(130,180,140)
+        or Color3.fromRGB(150,150,158)
+
+    AddDebug(
+        ESPEnabled
+        and "[ESP] Enabled"
+        or "[ESP] Disabled"
+    )
+    updateFilterText()
+    updateESP()
+end)
+
+ESPFilterButton.MouseButton1Click:Connect(function()
+    ESPFilterFrame.Visible=not ESPFilterFrame.Visible
+    if ESPFilterFrame.Visible then
+        ESPFilterButton.Text="Select Eggs ▲"
+        createESPFilterButtons()
+    else
+        refreshESPFilterText()
+    end
 end)
 --==================================================
 -- 25. LOOPS / TASKS
