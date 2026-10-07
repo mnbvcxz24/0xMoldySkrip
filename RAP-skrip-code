@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.5"
+local ver = "TEST v5.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1144,6 +1144,34 @@ ESPFilterCount.Font=Enum.Font.Gotham
 ESPFilterCount.TextXAlignment=Enum.TextXAlignment.Left
 ESPFilterCount.Parent=ESPPage
 
+local DetectedEggFrame=Instance.new("ScrollingFrame")
+DetectedEggFrame.Name="DetectedEggFrame"
+DetectedEggFrame.Size=UDim2.new(1,-10,0,110)
+DetectedEggFrame.Position=UDim2.fromOffset(5,137)
+DetectedEggFrame.BackgroundColor3=Color3.fromRGB(27,27,33)
+DetectedEggFrame.BorderSizePixel=0
+DetectedEggFrame.ScrollBarThickness=3
+DetectedEggFrame.ScrollBarImageTransparency=0.3
+DetectedEggFrame.CanvasSize=UDim2.fromOffset(0,0)
+DetectedEggFrame.ZIndex=5
+DetectedEggFrame.Parent=ESPPage
+
+local DetectedEggCorner=Instance.new("UICorner")
+DetectedEggCorner.CornerRadius=UDim.new(0,7)
+DetectedEggCorner.Parent=DetectedEggFrame
+
+local DetectedEggLayout=Instance.new("UIListLayout")
+DetectedEggLayout.Padding=UDim.new(0,2)
+DetectedEggLayout.SortOrder=Enum.SortOrder.LayoutOrder
+DetectedEggLayout.Parent=DetectedEggFrame
+
+DetectedEggLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    DetectedEggFrame.CanvasSize=UDim2.fromOffset(
+        0,
+        DetectedEggLayout.AbsoluteContentSize.Y+5
+    )
+end)
+
 local ESPFilterFrame=Instance.new("ScrollingFrame")
 ESPFilterFrame.Name="ESPFilterFrame"
 ESPFilterFrame.Size=UDim2.new(1,-10,0,155)
@@ -2186,7 +2214,7 @@ local function teleportOutsidePlot(eggPosition)
     local outsidePosition =
         center -
         direction *
-        (edge + 50)
+        (edge + 20)
 
     local success = pcall(function()
         root.CFrame =
@@ -2805,6 +2833,26 @@ end
 local function getPrimarySelectedEgg()
     local names=getSelectedEggNames()
     return names[1]
+end
+
+local function updateDetectedEggList(lines)
+    for _,child in ipairs(DetectedEggFrame:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+
+    for _,line in ipairs(lines) do
+        local label=Instance.new("TextLabel")
+        label.Size=UDim2.new(1,-10,0,20)
+        label.BackgroundTransparency=1
+        label.Text=tostring(line)
+        label.TextColor3=Color3.fromRGB(210,210,218)
+        label.TextSize=textSize(9)
+        label.Font=Enum.Font.Gotham
+        label.TextXAlignment=Enum.TextXAlignment.Left
+        label.Parent=DetectedEggFrame
+    end
 end
 
 local function updateFilterText()
