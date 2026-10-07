@@ -847,6 +847,7 @@ local AutoMagmaDipWaitingForResult = false
 local AutoVolcanoMessageReceived = false
 local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
+local AutoVolcanoMessageType = nil
 --==================================================
 -- 12.4 AUTO PLACE EGGS
 --==================================================
@@ -2305,7 +2306,9 @@ local function tryAutoPickup(egg)
         AutoMagmaDipResult=nil
         AutoMagmaDipWaitingForResult=true
         AutoVolcanoMessageReceived=false
+        AutoVolcanoMessageReceived=false
         AutoVolcanoMessageText=nil
+        AutoVolcanoMessageType=nil
         AutoVolcanoWaitingForMessage=true
 
         if VolcanoDipEvent then
@@ -2756,18 +2759,18 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
     if string.find(message,"Egg Mutated Into",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
+        AutoVolcanoMessageType="Success"
         AddDebug("[AUTO MAGMA DIP] Mutation SUCCESS detected")
-        AddDebug("[AUTO MAGMA DIP] "..message)
     elseif string.find(message,"Egg Didn't Mutate",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
+        AutoVolcanoMessageType="Failed"
         AddDebug("[AUTO MAGMA DIP] Mutation FAILED detected")
-        AddDebug("[AUTO MAGMA DIP] "..message)
-    else string.find(message,"Every Egg You Carry",1,true) then
+    elseif string.find(message,"Every Egg You Carry",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
-        AddDebug("[AUTO MAGMA DIP] The Egg was Already Dip")
-        AddDebug("[AUTO MAGMA DIP] "..message)
+        AutoVolcanoMessageType="AlreadyDipped"
+        AddDebug("[AUTO MAGMA DIP] Egg was already dipped")
     end
 end)
 
@@ -2776,8 +2779,8 @@ if VolcanoDipResultEvent then
         if not AutoMagmaDipWaitingForResult then
             return
         end
-        AutoMagmaDipResult = result
-        AutoMagmaDipWaitingForResult = false
+        AutoMagmaDipResult=result
+        AutoMagmaDipWaitingForResult=false
     end)
 else
     AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDipResult remote not found")
