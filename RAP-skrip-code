@@ -3035,8 +3035,9 @@ end
 
 ESPFilterButton.MouseButton1Click:Connect(function()
     ESPFilterFrame.Visible=not ESPFilterFrame.Visible
-
     if ESPFilterFrame.Visible then
+        refreshESPFilterButtons()
+        refreshESPFilterText()
         ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
     end
 end)
@@ -3303,6 +3304,7 @@ task.spawn(function()
                 updateESP()
             end)
         end
+        task.wait(0.25)
     end
 end)
 
