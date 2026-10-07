@@ -107,7 +107,7 @@ local function saveConfig()
         writefile(CONFIG_FILE, HttpService:JSONEncode({
             selectedEggs = selected,
             autoSelectedEggs = autoSelected,
-            autoDipEnabled = AutoDipEnabled,
+            AutoMagmaDipEnabled = AutoMagmaDipEnabled,
             movementMode = AutoPickupMovementMode,
             claimDelay = AutoPickupClaimDelay,
             antiAFK = AntiAFKEnabled
@@ -163,8 +163,8 @@ local function loadConfig()
         end
     end
 
-    if type(data.autoDipEnabled) == "boolean" then
-        AutoDipEnabled = data.autoDipEnabled
+    if type(data.autoMagmaDipEnabled) == "boolean" then
+        AutoMagmaDipEnabled = data.autoMagmaDipEnabled
     end
 
     if type(data.movementMode) == "string" then
@@ -646,45 +646,45 @@ AutoPickupFilterCount.Font = Enum.Font.Gotham
 AutoPickupFilterCount.TextXAlignment = Enum.TextXAlignment.Left
 AutoPickupFilterCount.Parent = AutoPage
 
-local AutoDipTitle = Instance.new("TextLabel")
-AutoDipTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoDipTitle.Position = UDim2.fromOffset(5, 118)
-AutoDipTitle.BackgroundTransparency = 1
-AutoDipTitle.Text = "Auto DIP"
-AutoDipTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
-AutoDipTitle.TextSize = textSize(10)
-AutoDipTitle.Font = Enum.Font.GothamMedium
-AutoDipTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoDipTitle.Parent = AutoPage
+local AutoMagmaDipTitle = Instance.new("TextLabel")
+AutoMagmaDipTitle.Size = UDim2.new(1, -85, 0, 19)
+AutoMagmaDipTitle.Position = UDim2.fromOffset(5, 118)
+AutoMagmaDipTitle.BackgroundTransparency = 1
+AutoMagmaDipTitle.Text = "Auto Magma DIP"
+AutoMagmaDipTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoMagmaDipTitle.TextSize = textSize(10)
+AutoMagmaDipTitle.Font = Enum.Font.GothamMedium
+AutoMagmaDipTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoMagmaDipTitle.Parent = AutoPage
 
-local AutoDipStatus = Instance.new("TextLabel")
-AutoDipStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoDipStatus.Position = UDim2.fromOffset(5, 131)
-AutoDipStatus.BackgroundTransparency = 1
-AutoDipStatus.Text = "● Inactive"
-AutoDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
-AutoDipStatus.TextSize = textSize(10)
-AutoDipStatus.Font = Enum.Font.Gotham
-AutoDipStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoDipStatus.Parent = AutoPage
+local AutoMagmaDipStatus = Instance.new("TextLabel")
+AutoMagmaDipStatus.Size = UDim2.new(1, -85, 0, 22)
+AutoMagmaDipStatus.Position = UDim2.fromOffset(5, 131)
+AutoMagmaDipStatus.BackgroundTransparency = 1
+AutoMagmaDipStatus.Text = "● Inactive"
+AutoMagmaDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+AutoMagmaDipStatus.TextSize = textSize(10)
+AutoMagmaDipStatus.Font = Enum.Font.Gotham
+AutoMagmaDipStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoMagmaDipStatus.Parent = AutoPage
 
-local AutoDipToggle = Instance.new("TextButton")
-AutoDipToggle.Size = UDim2.fromOffset(62, 27)
-AutoDipToggle.Position = UDim2.new(1, -67, 0, 118)
-AutoDipToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-AutoDipToggle.Text = "OFF"
-AutoDipToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
-AutoDipToggle.TextSize = textSize(10)
-AutoDipToggle.Font = Enum.Font.GothamBold
-AutoDipToggle.AutoButtonColor = false
-AutoDipToggle.Active = true
-AutoDipToggle.Selectable = true
-AutoDipToggle.ZIndex = 10
-AutoDipToggle.Parent = AutoPage
+local AutoMagmaDipToggle = Instance.new("TextButton")
+AutoMagmaDipToggle.Size = UDim2.fromOffset(62, 27)
+AutoMagmaDipToggle.Position = UDim2.new(1, -67, 0, 118)
+AutoMagmaDipToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoMagmaDipToggle.Text = "OFF"
+AutoMagmaDipToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoMagmaDipToggle.TextSize = textSize(10)
+AutoMagmaDipToggle.Font = Enum.Font.GothamBold
+AutoMagmaDipToggle.AutoButtonColor = false
+AutoMagmaDipToggle.Active = true
+AutoMagmaDipToggle.Selectable = true
+AutoMagmaDipToggle.ZIndex = 10
+AutoMagmaDipToggle.Parent = AutoPage
 
-local AutoDipToggleCorner = Instance.new("UICorner")
-AutoDipToggleCorner.CornerRadius = UDim.new(0, 6)
-AutoDipToggleCorner.Parent = AutoDipToggle
+local AutoMagmaDipToggleCorner = Instance.new("UICorner")
+AutoMagmaDipToggleCorner.CornerRadius = UDim.new(0, 6)
+AutoMagmaDipToggleCorner.Parent = AutoMagmaDipToggle
 
 local AutoMovementLabel = Instance.new("TextLabel")
 AutoMovementLabel.Size = UDim2.new(1, -10, 0, 18)
@@ -833,11 +833,11 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 --==================================================
--- 12.2 AUTO DIP
+-- 12.2 AUTO MAGMA DIP
 --==================================================
-local AutoDipEnabled = false
-local AutoDipResult = nil
-local AutoDipWaitingForResult = false
+local AutoMagmaDipEnabled = false
+local AutoMagmaDipResult = nil
+local AutoMagmaDipWaitingForResult = false
 local AutoVolcanoMessageReceived = false
 local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
@@ -2132,7 +2132,7 @@ local function tryAutoPickup(egg)
     local eggName=egg:GetAttribute("Egg")
     local eggPosition=getEggPosition(egg)
     local isVolcanic=eggName=="Volcanic Egg"
-    local shouldAutoDip=(AutoDipEnabled==true and not isVolcanic)
+    local shouldAutoMagmaDip=(AutoMagmaDipEnabled==true and not isVolcanic)
 
     if not eggName or not eggPosition then
         AutoPickupBusy=false
@@ -2174,7 +2174,7 @@ local function tryAutoPickup(egg)
 
     stopAutoPickupFloat()
 
-    if shouldAutoDip then
+    if shouldAutoMagmaDip then
         local root=getCharacterRoot()
 
         if root then
@@ -2215,7 +2215,7 @@ local function tryAutoPickup(egg)
         while AutoPickupRunning and not reachedOutside do
             if teleportOutsidePlot(eggPosition) then
                 reachedOutside=true
-                AddDebug("[AUTO DIP] TP -> Outside")
+                AddDebug("[AUTO MAGMA DIP] TP -> Outside")
             else
                 task.wait(0.1)
             end
@@ -2621,7 +2621,7 @@ local function sendArrivalClaim(uuid)
     return true
 end
 --==================================================
--- 21. AUTO DIP LOGIC
+-- 21. AUTO MAGMA DIP LOGIC
 --==================================================
 local GameMessageEvent=game:GetService("ReplicatedStorage").Remotes.Reusable.GameMessage
 
@@ -2630,26 +2630,26 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
     if string.find(message,"Egg Mutated Into",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
-        AddDebug("[AUTO DIP] Mutation SUCCESS detected")
-        AddDebug("[AUTO DIP] "..message)
+        AddDebug("[AUTO MAGMA DIP] Mutation SUCCESS detected")
+        AddDebug("[AUTO MAGMA DIP] "..message)
     elseif string.find(message,"Egg Didn't Mutate",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
-        AddDebug("[AUTO DIP] Mutation FAILED detected")
-        AddDebug("[AUTO DIP] "..message)
+        AddDebug("[AUTO MAGMA DIP] Mutation FAILED detected")
+        AddDebug("[AUTO MAGMA DIP] "..message)
     end
 end)
 
 if VolcanoDipResultEvent then
     VolcanoDipResultEvent.OnClientEvent:Connect(function(result)
-        if not AutoDipWaitingForResult then
+        if not AutoMagmaDipWaitingForResult then
             return
         end
-        AutoDipResult = result
-        AutoDipWaitingForResult = false
+        AutoMagmaDipResult = result
+        AutoMagmaDipWaitingForResult = false
     end)
 else
-    AddDebug("[AUTO DIP ERROR] VolcanoDipResult remote not found")
+    AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDipResult remote not found")
 end
 --==================================================
 -- 22. AUTO PLACE LOGIC
@@ -3009,13 +3009,13 @@ AutoMovementButton.MouseButton1Click:Connect(function()
     end
 end)
 
-AutoDipToggle.MouseButton1Click:Connect(function()
-    AutoDipEnabled=not AutoDipEnabled
-    AutoDipButton.Text=AutoDipEnabled and "ON" or "OFF"
-    AutoDipButton.BackgroundColor3=AutoDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
-    AutoDipStatus.Text=AutoDipEnabled and "● Active" or "● Inactive"
-    AutoDipStatus.TextColor3=AutoDipEnabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
-    AddDebug(AutoDipEnabled and "[AUTO DIP] Enabled" or "[AUTO DIP] Disabled")
+AutoMagmaDipToggle.MouseButton1Click:Connect(function()
+    AutoMagmaDipEnabled=not AutoMagmaDipEnabled
+    AutoMagmaDipButton.Text=AutoMagmaDipEnabled and "ON" or "OFF"
+    AutoMagmaDipButton.BackgroundColor3=AutoMagmaDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+    AutoMagmaDipStatus.Text=AutoMagmaDipEnabled and "● Active" or "● Inactive"
+    AutoMagmaDipStatus.TextColor3=AutoMagmaDipEnabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
+    AddDebug(AutoMagmaDipEnabled and "[AUTO MAGMA DIP] Enabled" or "[AUTO MAGMA DIP] Disabled")
 end)
 
 if EggPickupEvent then
@@ -3184,7 +3184,7 @@ end)
 Close.MouseButton1Click:Connect(function()
     AutoPickupRunning=false
     AutoPickupBusy=false
-    AutoDipEnabled=false
+    AutoMagmaDipEnabled=false
     AutoPickupFloating=false
     AntiAFKEnabled=false
     pcall(function()
