@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.9"
+local ver = "TEST v4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2120,7 +2120,8 @@ local function teleportOutsidePlot(eggPosition)
 
     return true
 end
-
+local findNextAutoPickupEgg
+local waitForDroppedEgg
 --==================================================
 -- 19. AUTO FARM LOGIC
 --==================================================
@@ -2428,7 +2429,7 @@ end
 --==================================================
 -- 20. AUTO PICKUP LOGIC
 --==================================================
-local function findNextAutoPickupEgg()
+findNextAutoPickupEgg = function()
     local ActiveEggs =
         getActiveEggs()
 
@@ -2464,7 +2465,7 @@ local function findNextAutoPickupEgg()
     return nil
 end
 
-local function waitForPickupConfirmation(uuid)
+waitForPickupConfirmation = function(uuid)
     local timeout =
         8
 
