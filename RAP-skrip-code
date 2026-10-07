@@ -1177,20 +1177,6 @@ ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function
 end)
 
 local ESPFilterButtons={}
-local function refreshESPFilterButtons()
-    for eggName,button in pairs(ESPFilterButtons) do
-        if eggName=="--" then
-            button.Text="☐ Clear Selection"
-            button.TextColor3=Color3.fromRGB(190,190,198)
-        elseif SelectedEggs[eggName] then
-            button.Text="☑ "..eggName
-            button.TextColor3=Color3.fromRGB(100,200,130)
-        else
-            button.Text="☐ "..eggName
-            button.TextColor3=Color3.fromRGB(190,190,198)
-        end
-    end
-end
 
 local function refreshESPFilterText()
     local selected={}
@@ -1223,36 +1209,33 @@ local function createESPFilterButtons()
             child:Destroy()
         end
     end
-    table.clear(ESPFilterButtons)
 
     for _,eggName in ipairs(EggTypes) do
+        local isSelected=eggName~="--" and SelectedEggs[eggName]==true
         local button=Instance.new("TextButton")
-        button.Name="ESPFilter_"..eggName
         button.Size=UDim2.new(1,-10,0,22)
-        button.BackgroundTransparency=1
-        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
+        button.BackgroundTransparency=isSelected and 0 or 1
+        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
         button.TextSize=textSize(10)
         button.Font=Enum.Font.Gotham
         button.TextXAlignment=Enum.TextXAlignment.Left
         button.AutoButtonColor=false
-        button.Active=true
-        button.Selectable=true
+        button.Text=(SelectedEggs[eggName] and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
         button.Parent=ESPFilterFrame
-    
-        ESPFilterButtons[eggName]=button
-    
+
         button.MouseButton1Click:Connect(function()
             if eggName=="--" then
                 SelectedEggs={}
             else
                 SelectedEggs[eggName]=not SelectedEggs[eggName] or nil
             end
-    
-            refreshESPFilterButtons()
+
+            createESPFilterButtons()
             refreshESPFilterText()
             saveConfig()
             updateFilterText()
-    
+
             if ESPEnabled then
                 updateESP()
             end
@@ -3014,7 +2997,7 @@ end)
 AutoPickupFilterButton.MouseButton1Click:Connect(function()
     AutoPickupFilterFrame.Visible=not AutoPickupFilterFrame.Visible
     if AutoPickupFilterFrame.Visible then
-        AutoPickupFilterButton.Text="Select Eggs ▲"
+        AutoPickupFilterButton.Text="  Select Eggs ▲"
         createAutoPickupFilterButtons()
     else
         refreshAutoPickupFilterText()
@@ -3251,7 +3234,6 @@ ESPFilterButton.MouseButton1Click:Connect(function()
     if ESPFilterFrame.Visible then
         ESPFilterButton.Text="Select Eggs ▲"
         createESPFilterButtons()
-        refreshESPFilterButtons()
     else
         refreshESPFilterText()
     end
