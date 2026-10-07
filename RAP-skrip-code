@@ -3315,9 +3315,6 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    local lastAutoError=""
-    local lastAutoErrorTime=0
-
     while Gui.Parent do
         if AutoPickupRunning and not AutoPickupBusy then
             local success,err=xpcall(function()
@@ -3327,15 +3324,7 @@ task.spawn(function()
             end)
 
             if not success then
-                local errorText=tostring(err)
-                local now=os.clock()
-
-                if errorText~=lastAutoError or now-lastAutoErrorTime>=5 then
-                    AddDebug("[AUTO ERROR] "..errorText)
-                    lastAutoError=errorText
-                    lastAutoErrorTime=now
-                end
-
+                warn("[AUTO ERROR]\n"..tostring(err))
                 AutoPickupBusy=false
                 task.wait(1)
             end
