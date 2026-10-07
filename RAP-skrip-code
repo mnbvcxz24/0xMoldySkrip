@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.6"
+local ver = "TEST v3.8"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -3331,34 +3331,6 @@ task.spawn(function()
                 if errorText~=lastAutoError or now-lastAutoErrorTime>=5 then
                     AddDebug("[AUTO ERROR] "..errorText)
                     lastAutoError=errorText
-                    lastAutoErrorTime=now
-                end
-
-                AutoPickupBusy=false
-                task.wait(1)
-            end
-        end
-
-        task.wait(0.25)
-    end
-end)
-
-task.spawn(function()
-    local lastAutoError=""
-    local lastAutoErrorTime=0
-
-    while Gui.Parent do
-        if AutoPickupRunning and not AutoPickupBusy then
-            local success,err=pcall(function()
-                tryAutoPickup()
-            end)
-
-            if not success then
-                local now=os.clock()
-
-                if err~=lastAutoError or now-lastAutoErrorTime>5 then
-                    AddDebug("[AUTO ERROR] "..tostring(err))
-                    lastAutoError=err
                     lastAutoErrorTime=now
                 end
 
