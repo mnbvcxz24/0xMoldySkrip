@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.9"
+local ver = "TEST v5"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -45,32 +45,29 @@ local VolcanoDropPosition = Vector3.new(-5067.05859375,41419.12890625,-3471.7358
 --==================================================
 -- 5. DEBUG SYSTEM
 --==================================================
-local DebugLines = {"[SYSTEM] ESP UI loaded."}
+local DebugLines={}
 
 local DebugText
 local DebugBox
 
 local function AddDebug(message)
-    table.insert(DebugLines, tostring(message))
-    if #DebugLines > 150 then
-        table.remove(DebugLines, 1)
+    table.insert(DebugLines,tostring(message))
+
+    if #DebugLines>50 then
+        table.remove(DebugLines,1)
     end
+
     if DebugText then
-        DebugText.Text = table.concat(DebugLines, "\n")
+        DebugText.Text=table.concat(DebugLines,"\n")
     end
+
     if DebugText and DebugBox then
         task.defer(function()
             if DebugText and DebugBox then
-                DebugBox.CanvasSize = UDim2.fromOffset(
+                DebugBox.CanvasSize=UDim2.fromOffset(0,DebugText.AbsoluteSize.Y+15)
+                DebugBox.CanvasPosition=Vector2.new(
                     0,
-                    DebugText.AbsoluteSize.Y + 15
-                )
-                DebugBox.CanvasPosition = Vector2.new(
-                    0,
-                    math.max(
-                        0,
-                        DebugText.AbsoluteSize.Y - DebugBox.AbsoluteSize.Y
-                    )
+                    math.max(0,DebugText.AbsoluteSize.Y-DebugBox.AbsoluteSize.Y)
                 )
             end
         end)
@@ -1816,14 +1813,6 @@ local function teleportToEgg(egg)
 
         return false
     end
-
-    AddDebug(
-        "[AUTO] TP -> " ..
-        tostring(
-            egg:GetAttribute("Egg")
-        )
-    )
-
     return true
 end
 
@@ -1852,8 +1841,6 @@ local function enterVolcanicEgg(egg)
         return false
     end
 
-    AddDebug("[AUTO VOLCANO] Entrance 2")
-
     root.CFrame = CFrame.new(
         VolcanoEntrance2Position
     )
@@ -1863,8 +1850,6 @@ local function enterVolcanicEgg(egg)
     if not AutoPickupRunning then
         return false
     end
-
-    AddDebug("[AUTO VOLCANO] Inside 1")
 
     root.CFrame = CFrame.new(
         VolcanoInside1Position
@@ -1876,8 +1861,6 @@ local function enterVolcanicEgg(egg)
         return false
     end
 
-    AddDebug("[AUTO VOLCANO] Inside 2")
-
     root.CFrame = CFrame.new(
         VolcanoInside2Position
     )
@@ -1887,8 +1870,6 @@ local function enterVolcanicEgg(egg)
     if not AutoPickupRunning then
         return false
     end
-
-    AddDebug("[AUTO VOLCANO] Moving to Volcanic Egg")
 
     root.CFrame = CFrame.new(
         VolcanoEggPosition
@@ -1905,8 +1886,6 @@ local function exitVolcanicEgg()
         return false
     end
 
-    AddDebug("[AUTO VOLCANO] Returning to Inside 2")
-
     root.CFrame = CFrame.new(
         VolcanoInside2Position
     )
@@ -1916,8 +1895,6 @@ local function exitVolcanicEgg()
     if not AutoPickupRunning then
         return false
     end
-
-    AddDebug("[AUTO VOLCANO] Returning to Inside 1")
 
     root.CFrame = CFrame.new(
         VolcanoInside1Position
@@ -1929,8 +1906,6 @@ local function exitVolcanicEgg()
         return false
     end
 
-    AddDebug("[AUTO VOLCANO] Returning to Entrance 2")
-
     root.CFrame = CFrame.new(
         VolcanoEntrance2Position
     )
@@ -1940,8 +1915,6 @@ local function exitVolcanicEgg()
     if not AutoPickupRunning then
         return false
     end
-
-    AddDebug("[AUTO VOLCANO] Exiting through Entrance 1")
 
     root.CFrame = CFrame.new(
         VolcanoEntrance1Position
@@ -2042,8 +2015,6 @@ local function teleportToMyPlot()
         return false
     end
 
-    AddDebug("[AUTO] TP -> Your Plot")
-
     return true
 end
 
@@ -2114,10 +2085,6 @@ local function teleportOutsidePlot(eggPosition)
     if not success then
         return false
     end
-
-    AddDebug(
-        "[AUTO] TP -> 50 studs outside plot"
-    )
 
     return true
 end
@@ -2211,8 +2178,6 @@ local function tryAutoPickup(egg)
 
     -- 4. Auto Magma Dip
     if shouldAutoMagmaDip then
-        AddDebug("[AUTO MAGMA DIP] Starting")
-
         local root=getCharacterRoot()
 
         if root then
@@ -2230,8 +2195,6 @@ local function tryAutoPickup(egg)
         AutoVolcanoMessageReceived=false
         AutoVolcanoMessageText=nil
         AutoVolcanoWaitingForMessage=true
-
-        AddDebug("[AUTO MAGMA DIP] Firing")
 
         if VolcanoDipEvent then
             VolcanoDipEvent:FireServer()
@@ -2294,7 +2257,6 @@ local function tryAutoPickup(egg)
         while AutoPickupRunning and not reachedOutside do
             if teleportOutsidePlot(VolcanoDropPosition) then
                 reachedOutside=true
-                AddDebug("[AUTO MAGMA DIP] TP -> Outside")
             else
                 task.wait(0.1)
             end
@@ -2309,8 +2271,6 @@ local function tryAutoPickup(egg)
 
     -- 5. Volcanic Egg without Magma Dip
     elseif isVolcanic then
-        AddDebug("[AUTO VOLCANO] Exiting")
-
         exitVolcanicEgg()
         stopAutoPickupFloat()
 
@@ -2321,7 +2281,6 @@ local function tryAutoPickup(egg)
         while AutoPickupRunning and not reachedOutside do
             if teleportOutsidePlot(currentEggPosition) then
                 reachedOutside=true
-                AddDebug("[AUTO VOLCANO] TP -> Outside")
             else
                 task.wait(0.25)
             end
@@ -2345,7 +2304,6 @@ local function tryAutoPickup(egg)
         while AutoPickupRunning and not reachedOutside do
             if teleportOutsidePlot(currentEggPosition) then
                 reachedOutside=true
-                AddDebug("[AUTO] TP -> Outside")
             else
                 task.wait(0.1)
             end
@@ -2385,7 +2343,6 @@ local function tryAutoPickup(egg)
 
     -- 8. Drop egg
     AutoPickupStage="Drop"
-    AddDebug("[AUTO] Dropping egg")
 
     BasketDropEvent:FireServer()
 
@@ -2409,7 +2366,6 @@ local function tryAutoPickup(egg)
     end
 
     if not droppedEgg then
-        AddDebug("[AUTO ERROR] Dropped egg not found")
         AutoPickupBusy=false
         return
     end
@@ -2423,9 +2379,6 @@ local function tryAutoPickup(egg)
     end
     
     droppedUUID=tostring(droppedUUID)
-
-    AddDebug("[AUTO] Dropped egg: "..tostring(eggName))
-    AddDebug("[AUTO] UUID: "..tostring(droppedUUID))
 
     -- 10. Pick up dropped egg
     AutoPickupStage="DroppedPickup"
@@ -2458,11 +2411,8 @@ local function tryAutoPickup(egg)
     AutoPickupAwaitingUUID=nil
     AutoPickupPickupConfirmed=false
 
-    AddDebug("[AUTO] Dropped pickup confirmed")
-
     -- 11. Return to plot
     AutoPickupStage="GoingToPlot"
-    AddDebug("[AUTO] TP -> Plot")
 
     local reachedPlot=false
 
@@ -2700,6 +2650,11 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
         AddDebug("[AUTO MAGMA DIP] Mutation FAILED detected")
+        AddDebug("[AUTO MAGMA DIP] "..message)
+    elseif string.find(message,"Every Egg You Carry",1,true) then
+        AutoVolcanoMessageReceived=true
+        AutoVolcanoMessageText=message
+        AddDebug("[AUTO MAGMA DIP] The Egg was Already Dip")
         AddDebug("[AUTO MAGMA DIP] "..message)
     end
 end)
@@ -3380,14 +3335,3 @@ createAutoPickupFilterButtons()
 refreshAutoPickupFilterText()
 
 updateAntiAFKButton()
-
-AddDebug("[SYSTEM] Source: ServerData.ActiveEggs")
-AddDebug("[SYSTEM] Filter uses Egg attribute")
-AddDebug("[SYSTEM] ESP uses Position attribute")
-AddDebug("[SYSTEM] ESP displays EggName | Weight")
-AddDebug("[SYSTEM] Ranch Luck source: Upgrade.CurrentUpgrade")
-AddDebug("[SYSTEM] Egg Luck source: EggTracker.EggsHolder")
-AddDebug("[SYSTEM] Config autosave enabled")
-AddDebug("[SYSTEM] Auto filter initialized")
-AddDebug("[SYSTEM] Auto TP pickup flow initialized")
-AddDebug("[SYSTEM] EggArrivalClaim enabled")
