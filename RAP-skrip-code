@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v6"
+local ver = "TEST v7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2968,17 +2968,6 @@ function updateESP()
 
     EggCount.Text="Active Eggs: "..tostring(#eggs)
 end
-
-ESPFilterButton.MouseButton1Click:Connect(function()
-    ESPFilterFrame.Visible=not ESPFilterFrame.Visible
-    if ESPFilterFrame.Visible then
-        ESPFilterButton.Text="Select Eggs ▲"
-        createESPFilterButtons()
-        refreshESPFilterButtons()
-    else
-        refreshESPFilterText()
-    end
-end)
 --==================================================
 -- 24. EVENT CONNECTIONS
 --==================================================
@@ -3262,6 +3251,7 @@ ESPFilterButton.MouseButton1Click:Connect(function()
     if ESPFilterFrame.Visible then
         ESPFilterButton.Text="Select Eggs ▲"
         createESPFilterButtons()
+        refreshESPFilterButtons()
     else
         refreshESPFilterText()
     end
@@ -3312,5 +3302,8 @@ updateActivePageButton(AutoButton)
 
 createAutoPickupFilterButtons()
 refreshAutoPickupFilterText()
+
+refreshESPFilterText()
+createESPFilterButtons()
 
 updateAntiAFKButton()
