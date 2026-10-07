@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.4"
+local ver = "TEST v5.5"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2813,7 +2813,6 @@ local function updateFilterText()
     if #selectedNames==0 then
         ESPFilterButton.Text="-- ▼"
         ESPFilterCount.Text="Detected eggs: 0"
-        updateDetectedEggList({})
         return
     end
 
@@ -2826,49 +2825,20 @@ local function updateFilterText()
     local ActiveEggs=getActiveEggs()
     if not ActiveEggs then
         ESPFilterCount.Text="Detected eggs: 0"
-        updateDetectedEggList({})
         return
     end
 
-    local lines={}
-    local counts={}
-
-    for _,eggName in ipairs(selectedNames) do
-        counts[eggName]=0
-    end
+    local total=0
 
     for _,egg in ipairs(ActiveEggs:GetChildren()) do
         local eggName=egg:GetAttribute("Egg")
 
         if eggName and SelectedEggs[eggName] then
-            counts[eggName]=(counts[eggName] or 0)+1
-        end
-    end
-
-    local total=0
-
-    for _,eggName in ipairs(selectedNames) do
-        local count=counts[eggName] or 0
-
-        if count>0 then
-            total=total+count
-
-            for _,egg in ipairs(ActiveEggs:GetChildren()) do
-                if egg:GetAttribute("Egg")==eggName then
-                    local weight=tonumber(egg:GetAttribute("Weight"))
-
-                    if weight then
-                        table.insert(lines,string.format("%s - %.2f",eggName,weight))
-                    else
-                        table.insert(lines,eggName.." - --")
-                    end
-                end
-            end
+            total=total+1
         end
     end
 
     ESPFilterCount.Text="Detected eggs: "..tostring(total)
-    updateDetectedEggList(lines)
 end
 
 local function refreshFilterButtons()
