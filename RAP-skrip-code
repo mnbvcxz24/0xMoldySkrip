@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v6"
+local ver = "TEST v6.1"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1208,8 +1208,6 @@ local function refreshESPFilterText()
     else
         ESPFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
     end
-
-    ESPFilterCount.Text="Selected eggs: "..tostring(#selected)
 
     ESPFilterButton.BackgroundColor3=
         #selected>0
@@ -2828,18 +2826,6 @@ end
 
 local function updateFilterText()
     local selectedNames=getSelectedEggNames()
-    if #selectedNames==0 then
-        ESPFilterButton.Text="-- ▼"
-        ESPFilterCount.Text="Detected eggs: 0"
-        updateDetectedEggList({})
-        return
-    end
-
-    if #selectedNames==1 then
-        ESPFilterButton.Text=selectedNames[1].." ▼"
-    else
-        ESPFilterButton.Text=tostring(#selectedNames).." eggs selected ▼"
-    end
 
     local ActiveEggs=getActiveEggs()
     if not ActiveEggs then
