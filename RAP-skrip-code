@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v6.1"
+local ver = "TEST v6.2"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1103,7 +1103,6 @@ ESPFilterButton.TextXAlignment=Enum.TextXAlignment.Left
 ESPFilterButton.AutoButtonColor=false
 ESPFilterButton.Active=true
 ESPFilterButton.Selectable=true
-ESPFilterButton.ZIndex=10
 ESPFilterButton.Parent=ESPPage
 
 local ESPFilterButtonCorner=Instance.new("UICorner")
