@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.3"
+local ver = "TEST v5.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2811,22 +2811,21 @@ local function updateFilterText()
     local selectedNames=getSelectedEggNames()
 
     if #selectedNames==0 then
-        FilterButton.Text="-- ▼"
-        FilterCount.Text="Detected eggs: 0"
+        ESPFilterButton.Text="-- ▼"
+        ESPFilterCount.Text="Detected eggs: 0"
         updateDetectedEggList({})
         return
     end
 
     if #selectedNames==1 then
-        FilterButton.Text=selectedNames[1].." ▼"
+        ESPFilterButton.Text=selectedNames[1].." ▼"
     else
-        FilterButton.Text=tostring(#selectedNames).." eggs selected ▼"
+        ESPFilterButton.Text=tostring(#selectedNames).." eggs selected ▼"
     end
 
     local ActiveEggs=getActiveEggs()
-
     if not ActiveEggs then
-        FilterCount.Text="Detected eggs: 0"
+        ESPFilterCount.Text="Detected eggs: 0"
         updateDetectedEggList({})
         return
     end
@@ -2834,11 +2833,11 @@ local function updateFilterText()
     local lines={}
     local counts={}
 
-    for _, eggName in ipairs(selectedNames) do
+    for _,eggName in ipairs(selectedNames) do
         counts[eggName]=0
     end
 
-    for _, egg in ipairs(ActiveEggs:GetChildren()) do
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
         local eggName=egg:GetAttribute("Egg")
 
         if eggName and SelectedEggs[eggName] then
@@ -2848,13 +2847,13 @@ local function updateFilterText()
 
     local total=0
 
-    for _, eggName in ipairs(selectedNames) do
+    for _,eggName in ipairs(selectedNames) do
         local count=counts[eggName] or 0
 
         if count>0 then
             total=total+count
 
-            for _, egg in ipairs(ActiveEggs:GetChildren()) do
+            for _,egg in ipairs(ActiveEggs:GetChildren()) do
                 if egg:GetAttribute("Egg")==eggName then
                     local weight=tonumber(egg:GetAttribute("Weight"))
 
@@ -2868,12 +2867,12 @@ local function updateFilterText()
         end
     end
 
-    FilterCount.Text="Detected eggs: "..tostring(total)
+    ESPFilterCount.Text="Detected eggs: "..tostring(total)
     updateDetectedEggList(lines)
 end
 
 local function refreshFilterButtons()
-    for name, button in pairs(FilterButtons) do
+    for name, button in pairs(ESPFilterButtons) do
         if SelectedEggs[name] then
             button.Text="☑ "..name
             button.TextColor3=Color3.fromRGB(100,200,130)
@@ -2883,20 +2882,20 @@ local function refreshFilterButtons()
         end
     end
 
-    if FilterButtons["--"] then
-        FilterButtons["--"].Text="☐ Clear Selection"
-        FilterButtons["--"].TextColor3=Color3.fromRGB(190,190,198)
+    if ESPFilterButtons["--"] then
+        ESPFilterButtons["--"].Text="☐ Clear Selection"
+        ESPFilterButtons["--"].TextColor3=Color3.fromRGB(190,190,198)
     end
 end
 
 local function rebuildFilter()
-    for _, child in ipairs(FilterFrame:GetChildren()) do
+    for _, child in ipairs(ESPFilterFrame:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
         end
     end
 
-    table.clear(FilterButtons)
+    table.clear(ESPFilterButtons)
 
     for index, eggName in ipairs(EggTypes) do
         local button=Instance.new("TextButton")
@@ -2911,9 +2910,9 @@ local function rebuildFilter()
         button.Active=true
         button.Selectable=true
         button.ZIndex=21
-        button.Parent=FilterFrame
+        button.Parent=ESPFilterFrame
 
-        FilterButtons[eggName]=button
+        ESPFilterButtons[eggName]=button
 
         if eggName=="--" then
             button.Text="☐ Clear Selection"
@@ -2944,7 +2943,7 @@ local function rebuildFilter()
         end)
     end
 
-    FilterFrame.CanvasPosition=Vector2.new(0,0)
+    ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
 end
 
 local ESPFolder=Instance.new("Folder")
@@ -3024,7 +3023,7 @@ function updateESP()
 
     if #selectedNames==0 then
         clearESP()
-        FilterCount.Text="Detected eggs: 0"
+        ESPFilterCount.Text="Detected eggs: 0"
         updateDetectedEggList({})
         return
     end
@@ -3034,7 +3033,7 @@ function updateESP()
     if not ActiveEggs then
         clearESP()
         AddDebug("[ESP ERROR] ActiveEggs not found")
-        FilterCount.Text="Detected eggs: 0"
+        ESPFilterCount.Text="Detected eggs: 0"
         updateDetectedEggList({})
         return
     end
@@ -3103,7 +3102,7 @@ function updateESP()
     end
 
     EggCount.Text="Active Eggs: "..tostring(#eggs)
-    FilterCount.Text="Detected eggs: "..tostring(totalSelected)
+    ESPFilterCount.Text="Detected eggs: "..tostring(totalSelected)
     updateDetectedEggList(detectedLines)
 end
 
@@ -3111,11 +3110,11 @@ rebuildFilter()
 refreshFilterButtons()
 updateFilterText()
 
-FilterButton.MouseButton1Click:Connect(function()
-    FilterFrame.Visible=not FilterFrame.Visible
+ESPFilterButton.MouseButton1Click:Connect(function()
+    ESPFilterFrame.Visible=not ESPFilterFrame.Visible
 
-    if FilterFrame.Visible then
-        FilterFrame.CanvasPosition=Vector2.new(0,0)
+    if ESPFilterFrame.Visible then
+        ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
     end
 end)
 --==================================================
