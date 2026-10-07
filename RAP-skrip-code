@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v6.3"
+local ver = "TEST v6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1156,11 +1156,11 @@ ESPFilterFrame.Position=UDim2.fromOffset(5,110)
 ESPFilterFrame.BackgroundColor3=Color3.fromRGB(27,27,33)
 ESPFilterFrame.BorderSizePixel=0
 ESPFilterFrame.Visible=false
+ESPFilterFrame.Active=true
 ESPFilterFrame.ZIndex=25
 ESPFilterFrame.ScrollBarThickness=3
 ESPFilterFrame.ScrollBarImageTransparency=0.3
 ESPFilterFrame.CanvasSize=UDim2.fromOffset(0,0)
-ESPFilterFrame.Active=true
 ESPFilterFrame.Parent=ESPPage
 
 local ESPFilterFrameCorner=Instance.new("UICorner")
@@ -1172,8 +1172,11 @@ ESPFilterLayout.Padding=UDim.new(0,1)
 ESPFilterLayout.SortOrder=Enum.SortOrder.LayoutOrder
 ESPFilterLayout.Parent=ESPFilterFrame
 
-local ESPFilterButtons={}
+ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ESPFilterFrame.CanvasSize=UDim2.fromOffset(0,ESPFilterLayout.AbsoluteContentSize.Y+5)
+end)
 
+local ESPFilterButtons={}
 local function refreshESPFilterButtons()
     for eggName,button in pairs(ESPFilterButtons) do
         if eggName=="--" then
@@ -1220,7 +1223,6 @@ local function createESPFilterButtons()
             child:Destroy()
         end
     end
-
     table.clear(ESPFilterButtons)
 
     for _,eggName in ipairs(EggTypes) do
@@ -1235,29 +1237,27 @@ local function createESPFilterButtons()
         button.AutoButtonColor=false
         button.Active=true
         button.Selectable=true
-        button.ZIndex=21
         button.Parent=ESPFilterFrame
-
+    
         ESPFilterButtons[eggName]=button
-
+    
         button.MouseButton1Click:Connect(function()
             if eggName=="--" then
                 SelectedEggs={}
             else
                 SelectedEggs[eggName]=not SelectedEggs[eggName] or nil
             end
+    
             refreshESPFilterButtons()
             refreshESPFilterText()
             saveConfig()
             updateFilterText()
+    
             if ESPEnabled then
                 updateESP()
             end
         end)
     end
-
-    refreshESPFilterButtons()
-    refreshESPFilterText()
 end
 
 ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -2972,8 +2972,11 @@ end
 ESPFilterButton.MouseButton1Click:Connect(function()
     ESPFilterFrame.Visible=not ESPFilterFrame.Visible
     if ESPFilterFrame.Visible then
+        ESPFilterButton.Text="Select Eggs ▲"
+        createESPFilterButtons()
         refreshESPFilterButtons()
-        ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
+    else
+        refreshESPFilterText()
     end
 end)
 --==================================================
