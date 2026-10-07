@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.8"
+local ver = "TEST v3.9"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -3320,8 +3320,10 @@ task.spawn(function()
 
     while Gui.Parent do
         if AutoPickupRunning and not AutoPickupBusy then
-            local success,err=pcall(function()
+            local success,err=xpcall(function()
                 tryAutoPickup()
+            end,function(errorMessage)
+                return debug.traceback(tostring(errorMessage),2)
             end)
 
             if not success then
