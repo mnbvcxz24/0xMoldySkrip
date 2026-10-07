@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v3.5"
+local ver = "TEST v3.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2138,19 +2138,27 @@ local function tryAutoPickup(egg)
     local eggName=egg:GetAttribute("Egg")
     local eggPosition=getEggPosition(egg)
     local isVolcanic=eggName=="Volcanic Egg"
-    local shouldAutoMagmaDip=(AutoMagmaDipEnabled==true and not isVolcanic)
+    local shouldAutoMagmaDip=AutoMagmaDipEnabled==true
 
     if not eggName or not eggPosition then
         AutoPickupBusy=false
         return
     end
 
-    AddDebug("[AUTO] Pickup: "..tostring(eggName))
-
+    local reachedEgg=false
+    
     if isVolcanic then
-        enterVolcanicEgg(egg)
+        AddDebug("[AUTO] Route: Volcanic Egg")
+        reachedEgg=enterVolcanicEgg(egg)
     else
-        teleportToEgg(egg)
+        AddDebug("[AUTO] Route: Normal Egg")
+        reachedEgg=teleportToEgg(egg)
+    end
+    
+    if not reachedEgg then
+        AddDebug("[AUTO] Failed to reach egg")
+        AutoPickupBusy=false
+        return
     end
 
     task.wait(AutoPickupClaimDelay)
@@ -2181,6 +2189,8 @@ local function tryAutoPickup(egg)
     stopAutoPickupFloat()
 
     if shouldAutoMagmaDip then
+        AddDebug("[AUTO MAGMA DIP] Starting")
+
         local root=getCharacterRoot()
 
         if root then
@@ -2191,25 +2201,62 @@ local function tryAutoPickup(egg)
 
         task.wait(0.5)
 
+        AutoMagmaDipResult=nil
+        AutoMagmaDipWaitingForResult=true
         AutoVolcanoMessageReceived=false
         AutoVolcanoMessageText=nil
         AutoVolcanoWaitingForMessage=true
 
-        VolcanoDipEvent:FireServer()
+        if VolcanoDipEvent then
+            VolcanoDipEvent:FireServer()
+        else
+            AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDip remote not found")
+            AutoMagmaDipWaitingForResult=false
+            AutoVolcanoWaitingForMessage=false
+            AutoPickupBusy=false
+            return
+        end
 
         local mutationStart=os.clock()
 
         while AutoPickupRunning
-            and not AutoVolcanoMessageReceived
+            and AutoMagmaDipWaitingForResult
             and os.clock()-mutationStart<15 do
+            task.wait(0.1)
+        end
+
+        AutoMagmaDipWaitingForResult=false
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        if AutoMagmaDipResult==nil then
+            AddDebug("[AUTO MAGMA DIP] Result not received")
+        else
+            AddDebug("[AUTO MAGMA DIP] Result: "..tostring(AutoMagmaDipResult))
+        end
+
+        local messageStart=os.clock()
+
+        while AutoPickupRunning
+            and not AutoVolcanoMessageReceived
+            and os.clock()-messageStart<15 do
             task.wait(0.1)
         end
 
         AutoVolcanoWaitingForMessage=false
 
-        if not AutoVolcanoMessageReceived then
+        if not AutoPickupRunning then
             AutoPickupBusy=false
             return
+        end
+
+        if AutoVolcanoMessageReceived then
+            AddDebug("[AUTO MAGMA DIP] Mutation: "..tostring(AutoVolcanoMessageText))
+        else
+            AddDebug("[AUTO MAGMA DIP] Mutation message not received")
         end
 
         task.wait(3)
@@ -2235,6 +2282,8 @@ local function tryAutoPickup(egg)
         task.wait(1)
 
     elseif isVolcanic then
+        AddDebug("[AUTO] Volcanic route without Magma Dip")
+
         exitVolcanicEgg()
         stopAutoPickupFloat()
 
@@ -2256,6 +2305,8 @@ local function tryAutoPickup(egg)
         task.wait(1)
 
     else
+        AddDebug("[AUTO] Normal route without Magma Dip")
+
         stopAutoPickupFloat()
 
         local reachedOutside=false
@@ -2993,6 +3044,45 @@ end)
 --==================================================
 -- 24. EVENT CONNECTIONS
 --==================================================
+AutoPickupToggle.MouseButton1Click:Connect(function()
+    local enabled=not AutoPickupRunning
+    AutoPickupRunning=enabled
+
+    AutoPickupToggle.Text=enabled and "ON" or "OFF"
+    AutoPickupToggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+
+    AutoPickupStatus.Text=enabled and "● Active" or "● Inactive"
+    AutoPickupStatus.TextColor3=enabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
+
+    AddDebug(enabled and "[AUTO] Enabled" or "[AUTO] Disabled")
+
+    if not enabled then
+        task.spawn(function()
+            pcall(function()
+                stopAutoPickupFloat()
+            end)
+
+            AutoPickupBusy=false
+            AutoPickupAwaitingUUID=nil
+            AutoPickupAwaitingPickup=false
+            AutoPickupAwaitingDeposit=false
+            AutoPickupPickupConfirmed=false
+            AutoPickupDepositConfirmed=false
+            AutoMagmaDipWaitingForResult=false
+            AutoVolcanoWaitingForMessage=false
+            AutoPickupFloating=false
+
+            AddDebug("[AUTO] Movement reset")
+        end)
+
+        return
+    end
+
+    AddDebug("[AUTO] Movement: "..AutoPickupMovementMode)
+    AddDebug(string.format("[AUTO] Claim Delay: %.1fs",AutoPickupClaimDelay))
+    AddDebug("[AUTO] Next Egg Delay: 3.0s")
+end)
+
 AutoPickupFilterButton.MouseButton1Click:Connect(function()
     AutoPickupFilterFrame.Visible=not AutoPickupFilterFrame.Visible
     if AutoPickupFilterFrame.Visible then
@@ -3241,6 +3331,34 @@ task.spawn(function()
                 if errorText~=lastAutoError or now-lastAutoErrorTime>=5 then
                     AddDebug("[AUTO ERROR] "..errorText)
                     lastAutoError=errorText
+                    lastAutoErrorTime=now
+                end
+
+                AutoPickupBusy=false
+                task.wait(1)
+            end
+        end
+
+        task.wait(0.25)
+    end
+end)
+
+task.spawn(function()
+    local lastAutoError=""
+    local lastAutoErrorTime=0
+
+    while Gui.Parent do
+        if AutoPickupRunning and not AutoPickupBusy then
+            local success,err=pcall(function()
+                tryAutoPickup()
+            end)
+
+            if not success then
+                local now=os.clock()
+
+                if err~=lastAutoError or now-lastAutoErrorTime>5 then
+                    AddDebug("[AUTO ERROR] "..tostring(err))
+                    lastAutoError=err
                     lastAutoErrorTime=now
                 end
 
