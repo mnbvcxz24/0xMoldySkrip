@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7"
+local ver = "TEST v7.1"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1233,7 +1233,6 @@ local function createESPFilterButtons()
 
             createESPFilterButtons()
             refreshESPFilterText()
-            saveConfig()
             updateFilterText()
 
             if ESPEnabled then
