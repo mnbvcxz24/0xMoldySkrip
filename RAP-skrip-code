@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v4.5"
+local ver = "TEST v4.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2528,35 +2528,23 @@ end
 --==================================================
 -- 20. AUTO PICKUP LOGIC
 --==================================================
-findNextAutoPickupEgg = function()
-    local ActiveEggs =
-        getActiveEggs()
+findNextAutoPickupEgg=function()
+    local ActiveEggs=getActiveEggs()
 
     if not ActiveEggs then
-        AddDebug(
-            "[AUTO ERROR] ActiveEggs not found"
-        )
-
+        AddDebug("[AUTO ERROR] ActiveEggs not found")
         return nil
     end
 
-    for _, egg in ipairs(
-        ActiveEggs:GetChildren()
-    ) do
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local eggName=egg:GetAttribute("Egg")
 
-        local eggName =
-            egg:GetAttribute("Egg")
-
-        if eggName
-            and isAutoPickupEggSelected(eggName) then
-
-            local uuid =
-                getEggUUID(egg)
-            local position =
-                getEggPosition(egg)
+        if eggName and isAutoPickupEggSelected(eggName) then
+            local uuid=getEggUUID(egg)
+            local position=getEggPosition(egg)
 
             if uuid and position then
-                return egg, uuid
+                return egg,uuid
             end
         end
     end
@@ -2564,20 +2552,14 @@ findNextAutoPickupEgg = function()
     return nil
 end
 
-waitForPickupConfirmation = function(uuid)
-    local timeout =
-        8
+local function waitForPickupConfirmation(uuid)
+    local timeout=8
+    local start=os.clock()
 
-    local start =
-        os.clock()
-
-    while AutoPickupRunning
-        and os.clock() - start < timeout do
-
+    while AutoPickupRunning and os.clock()-start<timeout do
         if AutoPickupPickupConfirmed then
             return true
         end
-
         task.wait(0.1)
     end
 
@@ -2585,19 +2567,13 @@ waitForPickupConfirmation = function(uuid)
 end
 
 local function waitForDepositConfirmation()
-    local timeout =
-        8
+    local timeout=8
+    local start=os.clock()
 
-    local start =
-        os.clock()
-
-    while AutoPickupRunning
-        and os.clock() - start < timeout do
-
+    while AutoPickupRunning and os.clock()-start<timeout do
         if AutoPickupDepositConfirmed then
             return true
         end
-
         task.wait(0.1)
     end
 
@@ -2605,28 +2581,28 @@ local function waitForDepositConfirmation()
 end
 
 local function getDroppedEggData(uuid)
-    local ActiveEggs = getActiveEggs()
+    local ActiveEggs=getActiveEggs()
 
     if not ActiveEggs then
         AddDebug("[AUTO ERROR] ActiveEggs not found")
         return nil
     end
 
-    for _, egg in ipairs(ActiveEggs:GetChildren()) do
-        local eggUUID = getEggUUID(egg)
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local eggUUID=getEggUUID(egg)
 
-        if eggUUID and tostring(eggUUID) == tostring(uuid) then
-            local eggName = egg:GetAttribute("Egg")
-            local breakRemaining = egg:GetAttribute("BreakRemaining")
-            local dropStartedAt = egg:GetAttribute("DropStartedAt")
+        if eggUUID and tostring(eggUUID)==tostring(uuid) then
+            local eggName=egg:GetAttribute("Egg")
+            local breakRemaining=egg:GetAttribute("BreakRemaining")
+            local dropStartedAt=egg:GetAttribute("DropStartedAt")
 
-            if breakRemaining ~= nil then
+            if breakRemaining~=nil then
                 return {
-                    Instance = egg,
-                    UUID = tostring(eggUUID),
-                    Egg = eggName,
-                    BreakRemaining = tonumber(breakRemaining),
-                    DropStartedAt = dropStartedAt
+                    Instance=egg,
+                    UUID=tostring(eggUUID),
+                    Egg=eggName,
+                    BreakRemaining=tonumber(breakRemaining),
+                    DropStartedAt=dropStartedAt
                 }
             end
         end
@@ -2635,42 +2611,41 @@ local function getDroppedEggData(uuid)
     return nil
 end
 
-local function findNearestDroppedEgg(eggName, previousUUIDs, dropPosition)
-    local ActiveEggs = getActiveEggs()
+local function findNearestDroppedEgg(eggName,previousUUIDs,dropPosition)
+    local ActiveEggs=getActiveEggs()
 
     if not ActiveEggs or not dropPosition then
         return nil
     end
 
-    local nearest = nil
-    local nearestDistance = math.huge
+    local nearest=nil
+    local nearestDistance=math.huge
 
-    for _, egg in ipairs(ActiveEggs:GetChildren()) do
-        local currentEggName = egg:GetAttribute("Egg")
-        local uuid = getEggUUID(egg)
-        local breakRemaining = tonumber(egg:GetAttribute("BreakRemaining"))
-        local position = getEggPosition(egg)
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local currentEggName=egg:GetAttribute("Egg")
+        local uuid=getEggUUID(egg)
+        local breakRemaining=tonumber(egg:GetAttribute("BreakRemaining"))
+        local position=getEggPosition(egg)
 
-        if currentEggName == eggName
+        if currentEggName==eggName
             and uuid
             and position
-            and breakRemaining ~= nil
-            and not previousUUIDs[uuid] then
+            and breakRemaining~=nil
+            and not previousUUIDs[tostring(uuid)] then
 
-            local distance =
-                (position - dropPosition).Magnitude
+            local distance=(position-dropPosition).Magnitude
 
-            if distance < nearestDistance then
-                nearestDistance = distance
+            if distance<nearestDistance then
+                nearestDistance=distance
 
-                nearest = {
-                    Instance = egg,
-                    UUID = tostring(uuid),
-                    Egg = currentEggName,
-                    BreakRemaining = breakRemaining,
-                    DropStartedAt = egg:GetAttribute("DropStartedAt"),
-                    Position = position,
-                    Distance = distance
+                nearest={
+                    Instance=egg,
+                    UUID=tostring(uuid),
+                    Egg=currentEggName,
+                    BreakRemaining=breakRemaining,
+                    DropStartedAt=egg:GetAttribute("DropStartedAt"),
+                    Position=position,
+                    Distance=distance
                 }
             end
         end
@@ -2679,31 +2654,26 @@ local function findNearestDroppedEgg(eggName, previousUUIDs, dropPosition)
     return nearest
 end
 
-local function waitForDroppedEgg(eggName, previousUUIDs, dropPosition, timeout)
-    timeout = timeout or 10
+waitForDroppedEgg=function(eggName,previousUUIDs,dropPosition,timeout)
+    timeout=timeout or 10
 
-    local start = os.clock()
+    local start=os.clock()
 
-    while AutoPickupRunning
-        and os.clock() - start < timeout do
-
-        local data =
-            findNearestDroppedEgg(
-                eggName,
-                previousUUIDs,
-                dropPosition
-            )
+    while AutoPickupRunning and os.clock()-start<timeout do
+        local data=findNearestDroppedEgg(
+            eggName,
+            previousUUIDs,
+            dropPosition
+        )
 
         if data then
-            AddDebug(
-                string.format(
-                    "[AUTO] New dropped %s | UUID: %s | BreakRemaining: %.2f | Distance: %.1f",
-                    tostring(data.Egg),
-                    tostring(data.UUID),
-                    data.BreakRemaining,
-                    data.Distance
-                )
-            )
+            AddDebug(string.format(
+                "[AUTO] New dropped %s | UUID: %s | BreakRemaining: %.2f | Distance: %.1f",
+                tostring(data.Egg),
+                tostring(data.UUID),
+                tonumber(data.BreakRemaining) or 0,
+                tonumber(data.Distance) or 0
+            ))
 
             return data
         end
@@ -2711,71 +2681,8 @@ local function waitForDroppedEgg(eggName, previousUUIDs, dropPosition, timeout)
         task.wait(0.1)
     end
 
-    AddDebug(
-        "[AUTO ERROR] New dropped egg not found"
-    )
-
+    AddDebug("[AUTO ERROR] New dropped egg not found")
     return nil
-end
-
-local function sendArrivalClaim(uuid)
-    if not EggArrivalClaimEvent then
-        AddDebug(
-            "[AUTO ERROR] EggArrivalClaim remote not found"
-        )
-
-        return false
-    end
-
-    local ranchCFrame =
-        getMyRanchCFrame()
-
-    if not ranchCFrame then
-        AddDebug(
-            "[AUTO ERROR] Cannot find ranch position for claim"
-        )
-
-        return false
-    end
-
-    local arrivalPosition =
-        ranchCFrame.Position
-
-    local serverTime
-
-    pcall(function()
-        serverTime =
-            workspace:GetServerTimeNow()
-    end)
-
-    if not serverTime then
-        serverTime =
-            os.time()
-    end
-
-    local success, err =
-        pcall(function()
-            EggArrivalClaimEvent:FireServer(
-                serverTime,
-                arrivalPosition,
-                {uuid}
-            )
-        end)
-
-    if not success then
-        AddDebug(
-            "[AUTO ERROR] EggArrivalClaim failed: " ..
-            tostring(err)
-        )
-
-        return false
-    end
-
-    AddDebug(
-        "[AUTO] EggArrivalClaim sent"
-    )
-
-    return true
 end
 --==================================================
 -- 21. AUTO MAGMA DIP LOGIC
