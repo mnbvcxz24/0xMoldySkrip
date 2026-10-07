@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v6.2"
+local ver = "TEST v6.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -1294,13 +1294,12 @@ end)
 ESPFilterButton.MouseButton1Click:Connect(function()
     ESPFilterFrame.Visible=not ESPFilterFrame.Visible
     if ESPFilterFrame.Visible then
-        refreshESPFilterButtons()
+        ESPFilterButton.Text="Select Eggs ▲"
+        createESPFilterButtons()
+    else
         refreshESPFilterText()
-        updateFilterText()
-        ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
     end
 end)
-createESPFilterButtons()
 --==================================================
 -- 15. DEBUG PAGE
 --==================================================
@@ -3008,7 +3007,6 @@ ESPFilterButton.MouseButton1Click:Connect(function()
     ESPFilterFrame.Visible=not ESPFilterFrame.Visible
     if ESPFilterFrame.Visible then
         refreshESPFilterButtons()
-        refreshESPFilterText()
         ESPFilterFrame.CanvasPosition=Vector2.new(0,0)
     end
 end)
