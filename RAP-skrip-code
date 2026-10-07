@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v5.2"
+local ver = "TEST v5.3"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -3015,7 +3015,7 @@ local function createESP(egg)
 end
 
 function updateESP()
-    if Toggle.Text~="ON" then
+    if not ESPEnabled then
         clearESP()
         return
     end
