@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7.6"
+local ver = "TEST v7.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -33,7 +33,6 @@ local function textSize(size)
     return math.floor(size * TEXT_SCALE)
 end
 local AntiAFKEnabled=false
-
 local VolcanoEntrance1Position = Vector3.new(-4918.390625,41274.457031,-3673.695312)
 local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198486)
 local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
@@ -201,8 +200,6 @@ local EggArrivalClaimEvent
 local TeleportToPlotEvent
 local VolcanoDipEvent
 local VolcanoDipResultEvent
-
-local EggPlaceEvent
 
 task.spawn(function()
     pcall(function()
@@ -403,6 +400,61 @@ AutoTitle2.Font = Enum.Font.GothamBold
 AutoTitle2.TextXAlignment = Enum.TextXAlignment.Left
 AutoTitle2.Parent = AutoContent2
 
+local AutoPlaceTitle = Instance.new("TextLabel")
+AutoPlaceTitle.Name = "AutoPlaceTitle"
+AutoPlaceTitle.Size = UDim2.new(1, -85, 0, 19)
+AutoPlaceTitle.Position = UDim2.fromOffset(5, 27)
+AutoPlaceTitle.BackgroundTransparency = 1
+AutoPlaceTitle.Text = "Auto Place Eggs"
+AutoPlaceTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoPlaceTitle.TextSize = textSize(10)
+AutoPlaceTitle.Font = Enum.Font.GothamMedium
+AutoPlaceTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceTitle.Parent = AutoContent2
+
+local AutoPlaceStatus = Instance.new("TextLabel")
+AutoPlaceStatus.Name = "AutoPlaceStatus"
+AutoPlaceStatus.Size = UDim2.new(1, -85, 0, 22)
+AutoPlaceStatus.Position = UDim2.fromOffset(5, 43)
+AutoPlaceStatus.BackgroundTransparency = 1
+AutoPlaceStatus.Text = "● Inactive"
+AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+AutoPlaceStatus.TextSize = textSize(10)
+AutoPlaceStatus.Font = Enum.Font.Gotham
+AutoPlaceStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceStatus.Parent = AutoContent2
+
+local AutoPlaceToggle = Instance.new("TextButton")
+AutoPlaceToggle.Name = "AutoPlaceToggle"
+AutoPlaceToggle.Size = UDim2.fromOffset(62, 27)
+AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 27)
+AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoPlaceToggle.Text = "OFF"
+AutoPlaceToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoPlaceToggle.TextSize = textSize(10)
+AutoPlaceToggle.Font = Enum.Font.GothamBold
+AutoPlaceToggle.AutoButtonColor = false
+AutoPlaceToggle.Active = true
+AutoPlaceToggle.Selectable = true
+AutoPlaceToggle.ZIndex = 10
+AutoPlaceToggle.Parent = AutoContent2
+
+local AutoPlaceToggleCorner = Instance.new("UICorner")
+AutoPlaceToggleCorner.CornerRadius = UDim.new(0, 6)
+AutoPlaceToggleCorner.Parent = AutoPlaceToggle
+
+local AutoPlaceFilterLabel = Instance.new("TextLabel")
+AutoPlaceFilterLabel.Name = "AutoPlaceFilterLabel"
+AutoPlaceFilterLabel.Size = UDim2.new(1, -10, 0, 19)
+AutoPlaceFilterLabel.Position = UDim2.fromOffset(5, 67)
+AutoPlaceFilterLabel.BackgroundTransparency = 1
+AutoPlaceFilterLabel.Text = "Egg Filter"
+AutoPlaceFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoPlaceFilterLabel.TextSize = textSize(10)
+AutoPlaceFilterLabel.Font = Enum.Font.GothamMedium
+AutoPlaceFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceFilterLabel.Parent = AutoContent2
+
 local ESPContent2 = Instance.new("Frame")
 ESPContent2.Name = "ESPContent2"
 ESPContent2.Size = UDim2.fromScale(1, 1)
@@ -500,7 +552,7 @@ local SettingsButton = createSidebarButton("Settings")
 
 task.defer(updateSidebarSize)
 --==================================================
--- 12. AUTO PAGE GUI
+-- 12. AUTO PAGE
 --==================================================
 local ESPEnabled=false
 
@@ -695,92 +747,8 @@ AutoClaimBar.Parent = AutoPage
 local AutoClaimBarCorner = Instance.new("UICorner")
 AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
 AutoClaimBarCorner.Parent = AutoClaimBar
-
-local AutoPlaceTitle = Instance.new("TextLabel")
-AutoPlaceTitle.Name = "AutoPlaceTitle"
-AutoPlaceTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoPlaceTitle.Position = UDim2.fromOffset(5, 27)
-AutoPlaceTitle.BackgroundTransparency = 1
-AutoPlaceTitle.Text = "Auto Place Eggs"
-AutoPlaceTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
-AutoPlaceTitle.TextSize = textSize(10)
-AutoPlaceTitle.Font = Enum.Font.GothamMedium
-AutoPlaceTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceTitle.Parent = AutoContent2
-
-local AutoPlaceStatus = Instance.new("TextLabel")
-AutoPlaceStatus.Name = "AutoPlaceStatus"
-AutoPlaceStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoPlaceStatus.Position = UDim2.fromOffset(5, 43)
-AutoPlaceStatus.BackgroundTransparency = 1
-AutoPlaceStatus.Text = "● Inactive"
-AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
-AutoPlaceStatus.TextSize = textSize(10)
-AutoPlaceStatus.Font = Enum.Font.Gotham
-AutoPlaceStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceStatus.Parent = AutoContent2
-
-local AutoPlaceToggle = Instance.new("TextButton")
-AutoPlaceToggle.Name = "AutoPlaceToggle"
-AutoPlaceToggle.Size = UDim2.fromOffset(62, 27)
-AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 27)
-AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-AutoPlaceToggle.Text = "OFF"
-AutoPlaceToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
-AutoPlaceToggle.TextSize = textSize(10)
-AutoPlaceToggle.Font = Enum.Font.GothamBold
-AutoPlaceToggle.AutoButtonColor = false
-AutoPlaceToggle.Active = true
-AutoPlaceToggle.Selectable = true
-AutoPlaceToggle.ZIndex = 10
-AutoPlaceToggle.Parent = AutoContent2
-
-local AutoPlaceToggleCorner = Instance.new("UICorner")
-AutoPlaceToggleCorner.CornerRadius = UDim.new(0, 6)
-AutoPlaceToggleCorner.Parent = AutoPlaceToggle
-
-local AutoPlaceFilterLabel = Instance.new("TextLabel")
-AutoPlaceFilterLabel.Name = "AutoPlaceFilterLabel"
-AutoPlaceFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoPlaceFilterLabel.Position = UDim2.fromOffset(5, 67)
-AutoPlaceFilterLabel.BackgroundTransparency = 1
-AutoPlaceFilterLabel.Text = "Egg Filter"
-AutoPlaceFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
-AutoPlaceFilterLabel.TextSize = textSize(10)
-AutoPlaceFilterLabel.Font = Enum.Font.GothamMedium
-AutoPlaceFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceFilterLabel.Parent = AutoContent2
-
-local AutoPlaceFilterButton = Instance.new("TextButton")
-AutoPlaceFilterButton.Name = "AutoPlaceFilterButton"
-AutoPlaceFilterButton.Size = UDim2.new(1, -10, 0, 25)
-AutoPlaceFilterButton.Position = UDim2.fromOffset(5, 84)
-AutoPlaceFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
-AutoPlaceFilterButton.Text = "  -- ▼"
-AutoPlaceFilterButton.TextColor3 = Color3.fromRGB(190, 190, 198)
-AutoPlaceFilterButton.TextSize = textSize(10)
-AutoPlaceFilterButton.Font = Enum.Font.Gotham
-AutoPlaceFilterButton.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceFilterButton.AutoButtonColor = false
-AutoPlaceFilterButton.Parent = AutoContent2
-
-local AutoPlaceFilterCorner = Instance.new("UICorner")
-AutoPlaceFilterCorner.CornerRadius = UDim.new(0, 5)
-AutoPlaceFilterCorner.Parent = AutoPlaceFilterButton
-
-local AutoPlaceFilterCount = Instance.new("TextLabel")
-AutoPlaceFilterCount.Name = "AutoPlaceFilterCount"
-AutoPlaceFilterCount.Size = UDim2.new(1, -10, 0, 17)
-AutoPlaceFilterCount.Position = UDim2.fromOffset(5, 111)
-AutoPlaceFilterCount.BackgroundTransparency = 1
-AutoPlaceFilterCount.Text = "Selected eggs: 0"
-AutoPlaceFilterCount.TextColor3 = Color3.fromRGB(150, 150, 158)
-AutoPlaceFilterCount.TextSize = textSize(9)
-AutoPlaceFilterCount.Font = Enum.Font.Gotham
-AutoPlaceFilterCount.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceFilterCount.Parent = AutoContent2
 --==================================================
--- 12.1 AUTO PICKUP VARIABLES
+-- 12.1 AUTO PICKUP
 --==================================================
 local AutoPickupRunning = false
 local AutoPickupBusy = false
@@ -867,7 +835,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 --==================================================
--- 12.2 AUTO MAGMA DIP VARIABLES
+-- 12.2 AUTO MAGMA DIP
 --==================================================
 local AutoMagmaDipEnabled = false
 local AutoMagmaDipResult = nil
@@ -878,13 +846,9 @@ local AutoVolcanoWaitingForMessage = false
 local AutoVolcanoMessageType = nil
 local AutoVolcanoAlreadyDone = false
 --==================================================
--- 12.4 AUTO PLACE EGGS VARIABLES
+-- 12.4 AUTO PLACE EGGS
 --==================================================
-local AutoPlaceEnabled=false
-local AutoPlaceSelectedEggs={}
-local AutoPlaceFilterFrame
-local AutoPlaceFilterButton
-local AutoPlaceFilterCount
+
 --==================================================
 -- 13. EGG FILTER SYSTEM
 --==================================================
@@ -1019,28 +983,23 @@ local function createAutoPickupFilterButtons()
     end
 end
 --==================================================
--- 13.2 AUTO PLACE EGG FILTER FUNCTIONS
+-- 13.3 AUTO PLACE EGG FILTER
 --==================================================
 local function refreshAutoPlaceFilterText()
     local selected={}
     for _,eggName in ipairs(EggTypes) do
-        if eggName~="--" and AutoPlaceSelectedEggs[eggName] then
+        if eggName~="--" and AutoSelectedEggs[eggName] then
             table.insert(selected,eggName)
         end
     end
 
     if #selected==0 then
-        AutoPlaceFilterButton.Text="  -- ▼"
+        AutoPlaceFilterButton.Text="-- ▼"
     elseif #selected==1 then
-        AutoPlaceFilterButton.Text="  "..selected[1].." ▼"
-    elseif #selected==2 then
-        AutoPlaceFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
+        AutoPlaceFilterButton.Text=selected[1].." ▼"
     else
-        AutoPlaceFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
+        AutoPlaceFilterButton.Text=tostring(#selected).." eggs selected ▼"
     end
-
-    AutoPlaceFilterCount.Text="Selected eggs: "..tostring(#selected)
-    AutoPlaceFilterButton.BackgroundColor3=#selected>0 and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
 end
 
 local function createAutoPlaceFilterButtons()
@@ -1051,24 +1010,22 @@ local function createAutoPlaceFilterButtons()
     end
 
     for _,eggName in ipairs(EggTypes) do
-        local isSelected=eggName~="--" and AutoPlaceSelectedEggs[eggName]==true
         local button=Instance.new("TextButton")
         button.Size=UDim2.new(1,-10,0,22)
-        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
-        button.BackgroundTransparency=isSelected and 0 or 1
-        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
+        button.BackgroundTransparency=1
+        button.TextColor3=Color3.fromRGB(190,190,198)
         button.TextSize=textSize(10)
         button.Font=Enum.Font.Gotham
         button.TextXAlignment=Enum.TextXAlignment.Left
         button.AutoButtonColor=false
-        button.Text=(AutoPlaceSelectedEggs[eggName] and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
         button.Parent=AutoPlaceFilterFrame
 
         button.MouseButton1Click:Connect(function()
             if eggName=="--" then
-                AutoPlaceSelectedEggs={}
+                AutoSelectedEggs={}
             else
-                AutoPlaceSelectedEggs[eggName]=not AutoPlaceSelectedEggs[eggName] or nil
+                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
             end
 
             createAutoPlaceFilterButtons()
@@ -1076,58 +1033,10 @@ local function createAutoPlaceFilterButtons()
         end)
     end
 end
-
-AutoPlaceFilterButton.MouseButton1Click:Connect(function()
-    AutoPlaceFilterFrame.Visible=not AutoPlaceFilterFrame.Visible
-
-    if AutoPlaceFilterFrame.Visible then
-        AutoPlaceFilterButton.Text="  Select Eggs ▲"
-        createAutoPlaceFilterButtons()
-    else
-        refreshAutoPlaceFilterText()
-    end
-end)
---==================================================
--- 13.3 AUTO PLACE TOGGLE
---==================================================
-local function updateAutoPlaceButton()
-    if AutoPlaceEnabled then
-        AutoPlaceToggle.Text="ON"
-        AutoPlaceToggle.BackgroundColor3=Color3.fromRGB(55,85,60)
-        AutoPlaceStatus.Text="● Active"
-        AutoPlaceStatus.TextColor3=Color3.fromRGB(100,200,130)
-    else
-        AutoPlaceToggle.Text="OFF"
-        AutoPlaceToggle.BackgroundColor3=Color3.fromRGB(45,45,53)
-        AutoPlaceStatus.Text="● Inactive"
-        AutoPlaceStatus.TextColor3=Color3.fromRGB(150,150,158)
-    end
-end
-
-AutoPlaceToggle.MouseButton1Click:Connect(function()
-    AutoPlaceEnabled=not AutoPlaceEnabled
-    updateAutoPlaceButton()
-end)
-
-updateAutoPlaceButton()
---==================================================
--- 13.4 AUTO PLACE STATE
---==================================================
-local function hasAutoPlaceSelection()
-    for _,eggName in ipairs(EggTypes) do
-        if eggName~="--" and AutoPlaceSelectedEggs[eggName] then
-            return true
-        end
-    end
-    return false
-end
-
-local function isAutoPlaceEggSelected(eggName)
-    return eggName~="--" and AutoPlaceSelectedEggs[eggName]==true
-end
 -- ============================================================
 -- #14 ESP PAGE
 -- ============================================================
+
 local ESPTitle=Instance.new("TextLabel")
 ESPTitle.Name="ESPTitle"
 ESPTitle.Size=UDim2.new(1,-10,0,25)
