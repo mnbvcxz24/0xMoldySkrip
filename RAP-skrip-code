@@ -215,6 +215,37 @@ task.spawn(function()
         VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
     end)
 end)
+
+task.spawn(function()
+    task.wait(2)
+    AddDebug("[PLACE SCAN] Scanning Remotes...")
+
+    local function scanFolder(folder,path)
+        for _,obj in ipairs(folder:GetChildren()) do
+            local fullPath=path.."."..obj.Name
+
+            if obj:IsA("RemoteEvent") or obj:IsA("RemoteFunction") then
+                AddDebug("[REMOTE] "..fullPath.." ["..obj.ClassName.."]")
+            end
+
+            if obj:IsA("Folder") then
+                scanFolder(obj,fullPath)
+            end
+        end
+    end
+
+    local remotes=ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes then
+        scanFolder(remotes,"ReplicatedStorage.Remotes")
+    end
+
+    local packages=ReplicatedStorage:FindFirstChild("packages")
+    if packages then
+        scanFolder(packages,"ReplicatedStorage.packages")
+    end
+
+    AddDebug("[PLACE SCAN] Done")
+end)
 --==================================================
 -- 10. GUI ROOT
 --==================================================
