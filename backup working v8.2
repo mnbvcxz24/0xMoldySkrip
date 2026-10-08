@@ -1,1 +1,3286 @@
+--==================================================
+-- 1. VERSION
+--==================================================
+local ver = "TEST v8.2"
+--==================================================
+-- 2. SERVICES
+--==================================================
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
+local VirtualUser = game:GetService("VirtualUser")
+local player = Players.LocalPlayer
 
+pcall(function()
+    local oldGui = CoreGui:FindFirstChild("RAPGUIskrip")
+    if oldGui then
+        oldGui:Destroy()
+    end
+end)
+pcall(function()
+    local oldESP = workspace:FindFirstChild("RAPGUIskrip")
+    if oldESP then
+        oldESP:Destroy()
+    end
+end)
+--==================================================
+-- 3. CONSTANTS / GENERAL SETTINGS / GLOBAL LOCAL
+--==================================================
+local TEXT_SCALE = 0.80
+local function textSize(size)
+    return math.floor(size * TEXT_SCALE)
+end
+local AntiAFKEnabled=false
+local VolcanoEntrance1Position = Vector3.new(-4918.390625,41274.457031,-3673.695312)
+local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198486)
+local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
+local VolcanoInside2Position = Vector3.new(-5085.847656,41253.742188,-3509.459473)
+local VolcanoEggPosition = Vector3.new(-5330.669922,40912.410156,-3575.845215)
+local VolcanoDropPosition = Vector3.new(-5067.05859375,41424.12890625,-3471.73583984375)
+--==================================================
+-- 4. UTILITY FUNCTIONS
+--==================================================
+
+--==================================================
+-- 5. DEBUG SYSTEM
+--==================================================
+local DebugLines={}
+
+local DebugText
+local DebugBox
+
+local function AddDebug(message)
+    table.insert(DebugLines,tostring(message))
+
+    if #DebugLines>50 then
+        table.remove(DebugLines,1)
+    end
+
+    if DebugText then
+        DebugText.Text=table.concat(DebugLines,"\n")
+    end
+
+    if DebugText and DebugBox then
+        task.defer(function()
+            if DebugText and DebugBox then
+                DebugBox.CanvasSize=UDim2.fromOffset(0,DebugText.AbsoluteSize.Y+15)
+                DebugBox.CanvasPosition=Vector2.new(
+                    0,
+                    math.max(0,DebugText.AbsoluteSize.Y-DebugBox.AbsoluteSize.Y)
+                )
+            end
+        end)
+    end
+end
+--==================================================
+-- 6. CONFIGURATION
+--==================================================
+local CONFIG_FOLDER = "RAPSkrip"
+local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
+
+local SelectedEggs = {}
+local AutoSelectedEggs = {}
+
+local function saveConfig()
+    if not writefile then
+        AddDebug("[CONFIG] writefile unavailable")
+        return
+    end
+
+    local success, err = pcall(function()
+        if makefolder and isfolder and not isfolder(CONFIG_FOLDER) then
+            makefolder(CONFIG_FOLDER)
+        end
+
+        local selected = {}
+        for eggName in pairs(SelectedEggs) do
+            table.insert(selected, eggName)
+        end
+        table.sort(selected)
+
+        local autoSelected = {}
+        for eggName, enabled in pairs(AutoSelectedEggs) do
+            if enabled then
+                table.insert(autoSelected, eggName)
+            end
+        end
+        table.sort(autoSelected)
+
+        writefile(CONFIG_FILE, HttpService:JSONEncode({
+            selectedEggs = selected,
+            autoSelectedEggs = autoSelected,
+            movementMode = AutoPickupMovementMode,
+            claimDelay = AutoPickupClaimDelay,
+            antiAFK = AntiAFKEnabled
+        }))
+
+        AddDebug("[CONFIG] Saved successfully")
+    end)
+
+    if not success then
+        AddDebug("[CONFIG ERROR] " .. tostring(err))
+    end
+end
+
+local function loadConfig()
+    if not isfile or not readfile then
+        AddDebug("[CONFIG] File functions unavailable")
+        return
+    end
+
+    local exists = false
+
+    local checkSuccess = pcall(function()
+        exists = isfile(CONFIG_FILE)
+    end)
+
+    if not checkSuccess or not exists then
+        AddDebug("[CONFIG] No saved config")
+        return
+    end
+
+    local success, data = pcall(function()
+        return HttpService:JSONDecode(readfile(CONFIG_FILE))
+    end)
+
+    if not success or type(data) ~= "table" then
+        AddDebug("[CONFIG] Invalid config")
+        return
+    end
+
+    if type(data.selectedEggs) == "table" then
+        for _, eggName in ipairs(data.selectedEggs) do
+            if type(eggName) == "string" and eggName ~= "--" then
+                SelectedEggs[eggName] = true
+            end
+        end
+    end
+
+    if type(data.autoSelectedEggs) == "table" then
+        for _, eggName in ipairs(data.autoSelectedEggs) do
+            if type(eggName) == "string" and eggName ~= "--" then
+                AutoSelectedEggs[eggName] = true
+            end
+        end
+    end
+
+    if type(data.movementMode) == "string" then
+        AutoPickupMovementMode = data.movementMode
+    end
+
+    if type(data.claimDelay) == "number" then
+        AutoPickupClaimDelay = math.clamp(data.claimDelay, 1, 5)
+    end
+
+    if type(data.antiAFK) == "boolean" then
+        AntiAFKEnabled = data.antiAFK
+    end
+
+    AddDebug("[CONFIG] Loaded saved config")
+end
+AddDebug("[SYSTEM] RAPSkrip initialized.")
+AddDebug("[SYSTEM] Version: "..tostring(ver))
+AddDebug("[SYSTEM] Ready.")
+loadConfig()
+--==================================================
+-- 7. PLAYER / CHARACTER REFERENCES
+--==================================================
+
+--==================================================
+-- 8. GAME OBJECT / FOLDER REFERENCES
+--==================================================
+
+--==================================================
+-- 9. REMOTES
+--==================================================
+local EggPickupEvent
+local EggArrivalClaimEvent
+local TeleportToPlotEvent
+local VolcanoDipEvent
+local VolcanoDipResultEvent
+
+task.spawn(function()
+    pcall(function()
+        local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+        local GameRemotes = Remotes:WaitForChild("Game")
+        EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
+        EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
+        TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
+        VolcanoDipEvent = ReplicatedStorage.packages.Net["RE/VolcanoDip"]
+        VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
+    end)
+end)
+--==================================================
+-- 10. GUI ROOT
+--==================================================
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "RAPGUIskrip"
+Gui.ResetOnSpawn = false
+Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Gui.Enabled = true
+Gui.Parent = CoreGui
+--==================================================
+-- 11. MAIN NAVIGATION
+--==================================================
+local Main = Instance.new("Frame")
+Main.Name = "Main"
+Main.Size = UDim2.fromOffset(400, 300)
+Main.Position = UDim2.new(0.5, -270, 0.5, -172.5)
+Main.BackgroundColor3 = Color3.fromRGB(22, 22, 27)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = Main
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1, 0, 0, 55)
+Header.BackgroundTransparency = 1
+Header.Active = true
+Header.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -125, 0, 28)
+Title.Position = UDim2.fromOffset(16, 7)
+Title.BackgroundTransparency = 1
+Title.Text = "Ride A Pet"
+Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+Title.TextSize = textSize(18)
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(1, -125, 0, 18)
+Subtitle.Position = UDim2.fromOffset(16, 31)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "RAP SKRIP - 0xMoldy | " .. ver
+Subtitle.TextColor3 = Color3.fromRGB(145, 145, 155)
+Subtitle.TextSize = textSize(11)
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = Header
+
+local Minimize = Instance.new("TextButton")
+Minimize.Size = UDim2.fromOffset(32, 32)
+Minimize.Position = UDim2.new(1, -82, 0, 11)
+Minimize.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+Minimize.Text = "—"
+Minimize.TextColor3 = Color3.fromRGB(220, 220, 225)
+Minimize.TextSize = textSize(18)
+Minimize.Font = Enum.Font.Gotham
+Minimize.AutoButtonColor = false
+Minimize.Active = true
+Minimize.Selectable = true
+Minimize.ZIndex = 30
+Minimize.Parent = Header
+
+local MinimizeCorner = Instance.new("UICorner")
+MinimizeCorner.CornerRadius = UDim.new(0, 8)
+MinimizeCorner.Parent = Minimize
+
+local Close = Instance.new("TextButton")
+Close.Size = UDim2.fromOffset(32, 32)
+Close.Position = UDim2.new(1, -42, 0, 11)
+Close.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+Close.Text = "×"
+Close.TextColor3 = Color3.fromRGB(220, 220, 225)
+Close.TextSize = textSize(20)
+Close.Font = Enum.Font.Gotham
+Close.AutoButtonColor = false
+Close.Active = true
+Close.Selectable = true
+Close.ZIndex = 30
+Close.Parent = Header
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = Close
+
+local Minimized = Instance.new("TextButton")
+Minimized.Name = "Minimized"
+Minimized.Size = UDim2.fromOffset(45, 45)
+Minimized.Position = UDim2.new(0, 15, 1, -60)
+Minimized.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+Minimized.Text = "RAP"
+Minimized.TextColor3 = Color3.fromRGB(220, 220, 225)
+Minimized.TextSize = textSize(10)
+Minimized.Font = Enum.Font.GothamBold
+Minimized.AutoButtonColor = false
+Minimized.Active = true
+Minimized.Selectable = true
+Minimized.Visible = false
+Minimized.ZIndex = 30
+Minimized.Parent = Gui
+
+local MinimizedCorner = Instance.new("UICorner")
+MinimizedCorner.CornerRadius = UDim.new(0, 10)
+MinimizedCorner.Parent = Minimized
+
+local Sidebar = Instance.new("Frame")
+Sidebar.Size = UDim2.fromOffset(45, 10)
+Sidebar.Position = UDim2.fromOffset(15, 45)
+Sidebar.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
+Sidebar.BorderSizePixel = 0
+Sidebar.Active = true
+Sidebar.ZIndex = 5
+Sidebar.Parent = Main
+
+local SidebarCorner = Instance.new("UICorner")
+SidebarCorner.CornerRadius = UDim.new(0, 8)
+SidebarCorner.Parent = Sidebar
+
+local SidebarLayout = Instance.new("UIListLayout")
+SidebarLayout.FillDirection = Enum.FillDirection.Vertical
+SidebarLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SidebarLayout.VerticalAlignment = Enum.VerticalAlignment.Top
+SidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+SidebarLayout.Padding = UDim.new(0, 5)
+SidebarLayout.Parent = Sidebar
+
+local SidebarPadding = Instance.new("UIPadding")
+SidebarPadding.PaddingTop = UDim.new(0, 5)
+SidebarPadding.PaddingBottom = UDim.new(0, 5)
+SidebarPadding.Parent = Sidebar
+
+local function updateSidebarSize()
+    local contentHeight = SidebarLayout.AbsoluteContentSize.Y
+    Sidebar.Size = UDim2.fromOffset(
+        45,
+        contentHeight + 10
+    )
+end
+
+SidebarLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateSidebarSize)
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1,-(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 15),1,-65)
+Content.Position = UDim2.fromOffset(Sidebar.Position.X.Offset + Sidebar.Size.X.Offset + 5,45)
+Content.BackgroundTransparency = 1
+Content.ClipsDescendants = false
+Content.Parent = Main
+
+local Content1 = Instance.new("Frame")
+Content1.Name = "Content1"
+Content1.Size = UDim2.new(0.5, -5, 1, 0)
+Content1.Position = UDim2.fromOffset(0, 0)
+Content1.BackgroundTransparency = 1
+Content1.ClipsDescendants = false
+Content1.Parent = Content
+
+local Content2 = Instance.new("Frame")
+Content2.Name = "Content2"
+Content2.Size = UDim2.new(0.5, -5, 1, 0)
+Content2.Position = UDim2.new(0.5, 5, 0, 0)
+Content2.BackgroundTransparency = 1
+Content2.ClipsDescendants = false
+Content2.Parent = Content
+
+local AutoContent2 = Instance.new("Frame")
+AutoContent2.Name = "AutoContent2"
+AutoContent2.Size = UDim2.fromScale(1, 1)
+AutoContent2.BackgroundTransparency = 1
+AutoContent2.ClipsDescendants = false
+AutoContent2.Visible = true
+AutoContent2.Parent = Content2
+
+local AutoTitle2 = Instance.new("TextLabel")
+AutoTitle2.Name = "AutoTitle2"
+AutoTitle2.Size = UDim2.new(1, -10, 0, 25)
+AutoTitle2.Position = UDim2.fromOffset(5, 0)
+AutoTitle2.BackgroundTransparency = 1
+AutoTitle2.Text = "Eggs Automation"
+AutoTitle2.TextColor3 = Color3.fromRGB(240, 240, 245)
+AutoTitle2.TextSize = textSize(15)
+AutoTitle2.Font = Enum.Font.GothamBold
+AutoTitle2.TextXAlignment = Enum.TextXAlignment.Left
+AutoTitle2.Parent = AutoContent2
+
+local AutoPlaceTitle = Instance.new("TextLabel")
+AutoPlaceTitle.Name = "AutoPlaceTitle"
+AutoPlaceTitle.Size = UDim2.new(1, -85, 0, 19)
+AutoPlaceTitle.Position = UDim2.fromOffset(5, 27)
+AutoPlaceTitle.BackgroundTransparency = 1
+AutoPlaceTitle.Text = "Auto Place Eggs"
+AutoPlaceTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoPlaceTitle.TextSize = textSize(10)
+AutoPlaceTitle.Font = Enum.Font.GothamMedium
+AutoPlaceTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceTitle.Parent = AutoContent2
+
+local AutoPlaceStatus = Instance.new("TextLabel")
+AutoPlaceStatus.Name = "AutoPlaceStatus"
+AutoPlaceStatus.Size = UDim2.new(1, -85, 0, 22)
+AutoPlaceStatus.Position = UDim2.fromOffset(5, 43)
+AutoPlaceStatus.BackgroundTransparency = 1
+AutoPlaceStatus.Text = "● Inactive"
+AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+AutoPlaceStatus.TextSize = textSize(10)
+AutoPlaceStatus.Font = Enum.Font.Gotham
+AutoPlaceStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceStatus.Parent = AutoContent2
+
+local AutoPlaceToggle = Instance.new("TextButton")
+AutoPlaceToggle.Name = "AutoPlaceToggle"
+AutoPlaceToggle.Size = UDim2.fromOffset(62, 27)
+AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 27)
+AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoPlaceToggle.Text = "OFF"
+AutoPlaceToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoPlaceToggle.TextSize = textSize(10)
+AutoPlaceToggle.Font = Enum.Font.GothamBold
+AutoPlaceToggle.AutoButtonColor = false
+AutoPlaceToggle.Active = true
+AutoPlaceToggle.Selectable = true
+AutoPlaceToggle.ZIndex = 10
+AutoPlaceToggle.Parent = AutoContent2
+
+local AutoPlaceToggleCorner = Instance.new("UICorner")
+AutoPlaceToggleCorner.CornerRadius = UDim.new(0, 6)
+AutoPlaceToggleCorner.Parent = AutoPlaceToggle
+
+local AutoPlaceFilterLabel = Instance.new("TextLabel")
+AutoPlaceFilterLabel.Name = "AutoPlaceFilterLabel"
+AutoPlaceFilterLabel.Size = UDim2.new(1, -10, 0, 19)
+AutoPlaceFilterLabel.Position = UDim2.fromOffset(5, 67)
+AutoPlaceFilterLabel.BackgroundTransparency = 1
+AutoPlaceFilterLabel.Text = "Egg Filter"
+AutoPlaceFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoPlaceFilterLabel.TextSize = textSize(10)
+AutoPlaceFilterLabel.Font = Enum.Font.GothamMedium
+AutoPlaceFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceFilterLabel.Parent = AutoContent2
+
+local ESPContent2 = Instance.new("Frame")
+ESPContent2.Name = "ESPContent2"
+ESPContent2.Size = UDim2.fromScale(1, 1)
+ESPContent2.BackgroundTransparency = 1
+ESPContent2.ClipsDescendants = false
+ESPContent2.Visible = false
+ESPContent2.Parent = Content2
+
+local DebugContent2 = Instance.new("Frame")
+DebugContent2.Name = "DebugContent2"
+DebugContent2.Size = UDim2.fromScale(1, 1)
+DebugContent2.BackgroundTransparency = 1
+DebugContent2.ClipsDescendants = false
+DebugContent2.Visible = false
+DebugContent2.Parent = Content2
+
+local SettingsContent2 = Instance.new("Frame")
+SettingsContent2.Name = "SettingsContent2"
+SettingsContent2.Size = UDim2.fromScale(1, 1)
+SettingsContent2.BackgroundTransparency = 1
+SettingsContent2.ClipsDescendants = false
+SettingsContent2.Visible = false
+SettingsContent2.Parent = Content2
+
+local ContentDivider = Instance.new("Frame")
+ContentDivider.Name = "ContentDivider"
+ContentDivider.Size = UDim2.new(0, 1, 1, -8)
+ContentDivider.Position = UDim2.new(0.5, 0, 0, 4)
+ContentDivider.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+ContentDivider.BorderSizePixel = 0
+ContentDivider.Parent = Content
+
+local function createPage()
+    local page = Instance.new("Frame")
+    page.Size = UDim2.fromScale(1, 1)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.ClipsDescendants = false
+    page.Parent = Content1
+    return page
+end
+
+local AutoPage = createPage()
+local ESPPage = createPage()
+local DebugPage = createPage()
+local SettingsPage = createPage()
+
+local function showPage(page)
+    AutoPage.Visible = false
+    ESPPage.Visible = false
+    DebugPage.Visible = false
+    SettingsPage.Visible = false
+    AutoContent2.Visible = false
+    ESPContent2.Visible = false
+    DebugContent2.Visible = false
+    SettingsContent2.Visible = false
+    page.Visible = true
+    if page == AutoPage then
+        AutoContent2.Visible = true
+    elseif page == ESPPage then
+        ESPContent2.Visible = true
+    elseif page == DebugPage then
+        DebugContent2.Visible = true
+    elseif page == SettingsPage then
+        SettingsContent2.Visible = true
+    end
+end
+
+local function createSidebarButton(text)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1,-10,0,math.max(25, textSize(12) + 24))
+    button.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(210, 210, 218)
+    button.TextSize = textSize(12)
+    button.Font = Enum.Font.GothamMedium
+    button.AutoButtonColor = false
+    button.Active = true
+    button.Selectable = true
+    button.RichText = true
+    button.ZIndex = 10
+    button.Parent = Sidebar
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 7)
+    corner.Parent = button
+
+    return button
+end
+
+local AutoButton = createSidebarButton("Auto")
+local ESPButton = createSidebarButton("ESP")
+local DebugButton = createSidebarButton("Debug")
+local SettingsButton = createSidebarButton("Settings")
+
+task.defer(updateSidebarSize)
+--==================================================
+-- 12. AUTO PAGE
+--==================================================
+local ESPEnabled=false
+
+local AutoTitle = Instance.new("TextLabel")
+AutoTitle.Size = UDim2.new(1, -10, 0, 25)
+AutoTitle.Position = UDim2.fromOffset(5, 0)
+AutoTitle.BackgroundTransparency = 1
+AutoTitle.Text = "Eggs Automation"
+AutoTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+AutoTitle.TextSize = textSize(15)
+AutoTitle.Font = Enum.Font.GothamBold
+AutoTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoTitle.Parent = AutoPage
+
+local AutoPickupTitle = Instance.new("TextLabel")
+AutoPickupTitle.Size = UDim2.new(1, -85, 0, 19)
+AutoPickupTitle.Position = UDim2.fromOffset(5, 24)
+AutoPickupTitle.BackgroundTransparency = 1
+AutoPickupTitle.Text = "Auto Pickup"
+AutoPickupTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoPickupTitle.TextSize = textSize(10)
+AutoPickupTitle.Font = Enum.Font.GothamMedium
+AutoPickupTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoPickupTitle.Parent = AutoPage
+
+local AutoPickupStatus = Instance.new("TextLabel")
+AutoPickupStatus.Size = UDim2.new(1, -85, 0, 22)
+AutoPickupStatus.Position = UDim2.fromOffset(5, 37)
+AutoPickupStatus.BackgroundTransparency = 1
+AutoPickupStatus.Text = "● Inactive"
+AutoPickupStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+AutoPickupStatus.TextSize = textSize(10)
+AutoPickupStatus.Font = Enum.Font.Gotham
+AutoPickupStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoPickupStatus.Parent = AutoPage
+
+local AutoPickupToggle = Instance.new("TextButton")
+AutoPickupToggle.Size = UDim2.fromOffset(62, 27)
+AutoPickupToggle.Position = UDim2.new(1, -67, 0, 24)
+AutoPickupToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoPickupToggle.Text = "OFF"
+AutoPickupToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoPickupToggle.TextSize = textSize(10)
+AutoPickupToggle.Font = Enum.Font.GothamBold
+AutoPickupToggle.AutoButtonColor = false
+AutoPickupToggle.Active = true
+AutoPickupToggle.Selectable = true
+AutoPickupToggle.ZIndex = 10
+AutoPickupToggle.Parent = AutoPage
+
+local AutoPickupToggleCorner = Instance.new("UICorner")
+AutoPickupToggleCorner.CornerRadius = UDim.new(0, 6)
+AutoPickupToggleCorner.Parent = AutoPickupToggle
+
+local AutoPickupFilterLabel = Instance.new("TextLabel")
+AutoPickupFilterLabel.Size = UDim2.new(1, -10, 0, 19)
+AutoPickupFilterLabel.Position = UDim2.fromOffset(5, 54)
+AutoPickupFilterLabel.BackgroundTransparency = 1
+AutoPickupFilterLabel.Text = "Egg Filter"
+AutoPickupFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoPickupFilterLabel.TextSize = textSize(10)
+AutoPickupFilterLabel.Font = Enum.Font.GothamMedium
+AutoPickupFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoPickupFilterLabel.Parent = AutoPage
+
+local AutoPickupFilterButton = Instance.new("TextButton")
+AutoPickupFilterButton.Size = UDim2.new(1, -10, 0, 27)
+AutoPickupFilterButton.Position = UDim2.fromOffset(5, 71)
+AutoPickupFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+AutoPickupFilterButton.Text = "  -- ▼"
+AutoPickupFilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoPickupFilterButton.TextSize = textSize(10)
+AutoPickupFilterButton.Font = Enum.Font.Gotham
+AutoPickupFilterButton.TextXAlignment = Enum.TextXAlignment.Left
+AutoPickupFilterButton.AutoButtonColor = false
+AutoPickupFilterButton.Active = true
+AutoPickupFilterButton.Selectable = true
+AutoPickupFilterButton.Parent = AutoPage
+
+local AutoPickupFilterButtonCorner = Instance.new("UICorner")
+AutoPickupFilterButtonCorner.CornerRadius = UDim.new(0, 6)
+AutoPickupFilterButtonCorner.Parent = AutoPickupFilterButton
+
+local AutoPickupFilterCount = Instance.new("TextLabel")
+AutoPickupFilterCount.Size = UDim2.new(1, -10, 0, 18)
+AutoPickupFilterCount.Position = UDim2.fromOffset(5, 100)
+AutoPickupFilterCount.BackgroundTransparency = 1
+AutoPickupFilterCount.Text = "Selected eggs: 0"
+AutoPickupFilterCount.TextColor3 = Color3.fromRGB(145, 145, 155)
+AutoPickupFilterCount.TextSize = textSize(9)
+AutoPickupFilterCount.Font = Enum.Font.Gotham
+AutoPickupFilterCount.TextXAlignment = Enum.TextXAlignment.Left
+AutoPickupFilterCount.Parent = AutoPage
+
+local AutoMagmaDipTitle = Instance.new("TextLabel")
+AutoMagmaDipTitle.Size = UDim2.new(1, -85, 0, 19)
+AutoMagmaDipTitle.Position = UDim2.fromOffset(5, 118)
+AutoMagmaDipTitle.BackgroundTransparency = 1
+AutoMagmaDipTitle.Text = "Auto Magma DIP"
+AutoMagmaDipTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoMagmaDipTitle.TextSize = textSize(10)
+AutoMagmaDipTitle.Font = Enum.Font.GothamMedium
+AutoMagmaDipTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoMagmaDipTitle.Parent = AutoPage
+
+local AutoMagmaDipStatus = Instance.new("TextLabel")
+AutoMagmaDipStatus.Size = UDim2.new(1, -85, 0, 22)
+AutoMagmaDipStatus.Position = UDim2.fromOffset(5, 131)
+AutoMagmaDipStatus.BackgroundTransparency = 1
+AutoMagmaDipStatus.Text = "● Inactive"
+AutoMagmaDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+AutoMagmaDipStatus.TextSize = textSize(10)
+AutoMagmaDipStatus.Font = Enum.Font.Gotham
+AutoMagmaDipStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoMagmaDipStatus.Parent = AutoPage
+
+local AutoMagmaDipToggle = Instance.new("TextButton")
+AutoMagmaDipToggle.Size = UDim2.fromOffset(62, 27)
+AutoMagmaDipToggle.Position = UDim2.new(1, -67, 0, 118)
+AutoMagmaDipToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoMagmaDipToggle.Text = "OFF"
+AutoMagmaDipToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoMagmaDipToggle.TextSize = textSize(10)
+AutoMagmaDipToggle.Font = Enum.Font.GothamBold
+AutoMagmaDipToggle.AutoButtonColor = false
+AutoMagmaDipToggle.Active = true
+AutoMagmaDipToggle.Selectable = true
+AutoMagmaDipToggle.ZIndex = 10
+AutoMagmaDipToggle.Parent = AutoPage
+
+local AutoMagmaDipToggleCorner = Instance.new("UICorner")
+AutoMagmaDipToggleCorner.CornerRadius = UDim.new(0, 6)
+AutoMagmaDipToggleCorner.Parent = AutoMagmaDipToggle
+
+local AutoMovementLabel = Instance.new("TextLabel")
+AutoMovementLabel.Size = UDim2.new(1, -10, 0, 18)
+AutoMovementLabel.Position = UDim2.fromOffset(5, 149)
+AutoMovementLabel.BackgroundTransparency = 1
+AutoMovementLabel.Text = "Movement"
+AutoMovementLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoMovementLabel.TextSize = textSize(10)
+AutoMovementLabel.Font = Enum.Font.GothamMedium
+AutoMovementLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoMovementLabel.Parent = AutoPage
+
+local AutoMovementButton = Instance.new("TextButton")
+AutoMovementButton.Size = UDim2.new(1, -10, 0, 27)
+AutoMovementButton.Position = UDim2.fromOffset(5, 166)
+AutoMovementButton.BackgroundColor3 = Color3.fromRGB(55, 85, 60)
+AutoMovementButton.Text = "Teleport"
+AutoMovementButton.TextColor3 = Color3.fromRGB(225, 225, 230)
+AutoMovementButton.TextSize = textSize(10)
+AutoMovementButton.Font = Enum.Font.GothamMedium
+AutoMovementButton.AutoButtonColor = false
+AutoMovementButton.Active = true
+AutoMovementButton.Selectable = true
+AutoMovementButton.Parent = AutoPage
+
+local AutoMovementCorner = Instance.new("UICorner")
+AutoMovementCorner.CornerRadius = UDim.new(0, 6)
+AutoMovementCorner.Parent = AutoMovementButton
+
+local AutoMovementInfo = Instance.new("TextLabel")
+AutoMovementInfo.Size = UDim2.new(1, -10, 0, 16)
+AutoMovementInfo.Position = UDim2.fromOffset(5, 193)
+AutoMovementInfo.BackgroundTransparency = 1
+AutoMovementInfo.Text = "Teleport active"
+AutoMovementInfo.TextColor3 = Color3.fromRGB(130, 180, 140)
+AutoMovementInfo.TextSize = textSize(8)
+AutoMovementInfo.Font = Enum.Font.Gotham
+AutoMovementInfo.TextXAlignment = Enum.TextXAlignment.Left
+AutoMovementInfo.Parent = AutoPage
+
+local AutoClaimLabel = Instance.new("TextLabel")
+AutoClaimLabel.Size = UDim2.new(1, -10, 0, 18)
+AutoClaimLabel.Position = UDim2.fromOffset(5, 209)
+AutoClaimLabel.BackgroundTransparency = 1
+AutoClaimLabel.Text = "Claim Delay: 1.5s"
+AutoClaimLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoClaimLabel.TextSize = textSize(10)
+AutoClaimLabel.Font = Enum.Font.GothamMedium
+AutoClaimLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoClaimLabel.Parent = AutoPage
+
+local AutoClaimBar = Instance.new("Frame")
+AutoClaimBar.Size = UDim2.new(1, -10, 0, 6)
+AutoClaimBar.Position = UDim2.fromOffset(5, 227)
+AutoClaimBar.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoClaimBar.BorderSizePixel = 0
+AutoClaimBar.Parent = AutoPage
+
+local AutoClaimBarCorner = Instance.new("UICorner")
+AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
+AutoClaimBarCorner.Parent = AutoClaimBar
+--==================================================
+-- 12.1 AUTO PICKUP
+--==================================================
+local AutoPickupRunning = false
+local AutoPickupBusy = false
+local AutoPickupDistance = math.huge
+local AutoPickupMovementMode = "Teleport"
+local AutoPickupClaimDelay = 1.5
+local AutoPickupNextEggDelay = 3
+local AutoPickupFloatHeight = 3
+local AutoPickupFloating = false
+local AutoPickupFloatForce = nil
+local AutoPickupAwaitingUUID = nil
+local AutoPickupAwaitingPickup = false
+local AutoPickupAwaitingDeposit = false
+local AutoPickupPickupConfirmed = false
+local AutoPickupDepositConfirmed = false
+local AutoPickupStage="Idle"
+
+local claimDragging = false
+
+local initialAlpha = (AutoPickupClaimDelay - 1) / 4
+
+local AutoClaimFill = Instance.new("Frame")
+AutoClaimFill.Size = UDim2.new(initialAlpha, 0, 1, 0)
+AutoClaimFill.BackgroundColor3 = Color3.fromRGB(75, 130, 85)
+AutoClaimFill.BorderSizePixel = 0
+AutoClaimFill.Parent = AutoClaimBar
+
+local AutoClaimFillCorner = Instance.new("UICorner")
+AutoClaimFillCorner.CornerRadius = UDim.new(1, 0)
+AutoClaimFillCorner.Parent = AutoClaimFill
+
+local AutoClaimKnob = Instance.new("TextButton")
+AutoClaimKnob.Size = UDim2.fromOffset(14, 14)
+AutoClaimKnob.AnchorPoint = Vector2.new(0.5, 0.5)
+AutoClaimKnob.Position = UDim2.new(initialAlpha, 0, 0.5, 0)
+AutoClaimKnob.BackgroundColor3 = Color3.fromRGB(220, 220, 225)
+AutoClaimKnob.Text = ""
+AutoClaimKnob.AutoButtonColor = false
+AutoClaimKnob.Active = true
+AutoClaimKnob.Selectable = true
+AutoClaimKnob.Parent = AutoClaimBar
+
+local AutoClaimKnobCorner = Instance.new("UICorner")
+AutoClaimKnobCorner.CornerRadius = UDim.new(1, 0)
+AutoClaimKnobCorner.Parent = AutoClaimKnob
+
+local function updateClaimDelayFromX(x)
+    local width = AutoClaimBar.AbsoluteSize.X
+    if width <= 0 then
+        return
+    end
+
+    local relative = math.clamp((x - AutoClaimBar.AbsolutePosition.X) / width, 0, 1)
+    AutoPickupClaimDelay = math.floor((1 + relative * 4) * 10 + 0.5) / 10
+
+    local alpha = (AutoPickupClaimDelay - 1) / 4
+    AutoClaimFill.Size = UDim2.new(alpha, 0, 1, 0)
+    AutoClaimKnob.Position = UDim2.new(alpha, 0, 0.5, 0)
+    AutoClaimLabel.Text = string.format("Claim Delay: %.1fs", AutoPickupClaimDelay)
+end
+
+AutoClaimKnob.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        claimDragging = true
+    end
+end)
+
+AutoClaimBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        claimDragging = true
+        updateClaimDelayFromX(input.Position.X)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if claimDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        updateClaimDelayFromX(input.Position.X)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        claimDragging = false
+    end
+end)
+--==================================================
+-- 12.2 AUTO MAGMA DIP
+--==================================================
+local AutoMagmaDipEnabled = false
+local AutoMagmaDipResult = nil
+local AutoMagmaDipWaitingForResult = false
+local AutoVolcanoMessageReceived = false
+local AutoVolcanoMessageText = nil
+local AutoVolcanoWaitingForMessage = false
+local AutoVolcanoMessageType = nil
+--==================================================
+-- 12.4 AUTO PLACE EGGS
+--==================================================
+
+--==================================================
+-- 13. EGG FILTER SYSTEM
+--==================================================
+local EggTypes = {
+    "--",
+    "White Egg",
+    "Brown Egg",
+    "Cracked Egg",
+    "Easter Egg",
+    "Stone Egg",
+    "Leaf Egg",
+    "Mushroom Egg",
+    "Flower Egg",
+    "Slime Egg",
+    "Ice Egg",
+    "Glass Egg",
+    "Golden Egg",
+    "Crystal Egg",
+    "Skull Egg",
+    "Dominus Egg",
+    "Flaming Egg",
+    "Sinister Egg",
+    "Soul Egg",
+    "Aurora Egg",
+    "Galaxy Egg",
+    "Bloom Egg",
+    "Blackhole Egg",
+    "Solaris Egg",
+    "Cherub Egg",
+    "Volcanic Egg"
+}
+
+local FilterButtons = {}
+
+local AutoPickupFilterFrame = Instance.new("ScrollingFrame")
+AutoPickupFilterFrame.Name = "AutoPickupFilterFrame"
+AutoPickupFilterFrame.Size = UDim2.new(1, -10, 0, 160)
+AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 100)
+AutoPickupFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
+AutoPickupFilterFrame.BorderSizePixel = 0
+AutoPickupFilterFrame.ScrollBarThickness = 3
+AutoPickupFilterFrame.ZIndex = 20
+AutoPickupFilterFrame.Visible = false
+AutoPickupFilterFrame.Parent = AutoPage
+
+local AutoPickupFilterLayout = Instance.new("UIListLayout")
+AutoPickupFilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
+AutoPickupFilterLayout.Padding = UDim.new(0, 3)
+AutoPickupFilterLayout.Parent = AutoPickupFilterFrame
+
+local AutoPlaceFilterFrame = Instance.new("ScrollingFrame")
+AutoPlaceFilterFrame.Name = "AutoPlaceFilterFrame"
+AutoPlaceFilterFrame.Size = UDim2.new(1, -10, 0, 120)
+AutoPlaceFilterFrame.Position = UDim2.fromOffset(5, 93)
+AutoPlaceFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
+AutoPlaceFilterFrame.BorderSizePixel = 0
+AutoPlaceFilterFrame.ScrollBarThickness = 3
+AutoPlaceFilterFrame.ZIndex = 20
+AutoPlaceFilterFrame.Visible = false
+AutoPlaceFilterFrame.Parent = AutoContent2
+
+local AutoPlaceFilterLayout = Instance.new("UIListLayout")
+AutoPlaceFilterLayout.SortOrder = Enum.SortOrder.LayoutOrder
+AutoPlaceFilterLayout.Padding = UDim.new(0, 3)
+AutoPlaceFilterLayout.Parent = AutoPlaceFilterFrame
+
+local function setupFilterScrolling(frame,layout)
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        frame.CanvasSize=UDim2.fromOffset(0,layout.AbsoluteContentSize.Y+5)
+    end)
+end
+
+setupFilterScrolling(AutoPickupFilterFrame,AutoPickupFilterLayout)
+setupFilterScrolling(AutoPlaceFilterFrame,AutoPlaceFilterLayout)
+--==================================================
+-- 13.1 AUTO PICKUP EGG FILTER FUNCTION
+--==================================================
+local function refreshAutoPickupFilterText()
+    local selected={}
+
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and AutoSelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
+
+    if #selected==0 then
+        AutoPickupFilterButton.Text="  -- ▼"
+    elseif #selected==1 then
+        AutoPickupFilterButton.Text="  "..selected[1].." ▼"
+    elseif #selected==2 then
+        AutoPickupFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
+    else
+        AutoPickupFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
+    end
+
+    AutoPickupFilterCount.Text="Selected eggs: "..tostring(#selected)
+    AutoPickupFilterButton.BackgroundColor3=#selected>0 and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
+end
+
+local function createAutoPickupFilterButtons()
+    for _,child in ipairs(AutoPickupFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _,eggName in ipairs(EggTypes) do
+        local isSelected=eggName~="--" and AutoSelectedEggs[eggName]==true
+        local button=Instance.new("TextButton")
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
+        button.BackgroundTransparency=isSelected and 0 or 1
+        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Text=(AutoSelectedEggs[eggName] and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Parent=AutoPickupFilterFrame
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                AutoSelectedEggs={}
+            else
+                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+            end
+
+            createAutoPickupFilterButtons()
+            refreshAutoPickupFilterText()
+        end)
+    end
+end
+--==================================================
+-- 13.3 AUTO PLACE EGG FILTER
+--==================================================
+local function refreshAutoPlaceFilterText()
+    local selected={}
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and AutoSelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
+
+    if #selected==0 then
+        AutoPlaceFilterButton.Text="-- ▼"
+    elseif #selected==1 then
+        AutoPlaceFilterButton.Text=selected[1].." ▼"
+    else
+        AutoPlaceFilterButton.Text=tostring(#selected).." eggs selected ▼"
+    end
+end
+
+local function createAutoPlaceFilterButtons()
+    for _,child in ipairs(AutoPlaceFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _,eggName in ipairs(EggTypes) do
+        local button=Instance.new("TextButton")
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundTransparency=1
+        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Parent=AutoPlaceFilterFrame
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                AutoSelectedEggs={}
+            else
+                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+            end
+
+            createAutoPlaceFilterButtons()
+            refreshAutoPlaceFilterText()
+        end)
+    end
+end
+-- ============================================================
+-- #14 ESP PAGE
+-- ============================================================
+
+local ESPTitle=Instance.new("TextLabel")
+ESPTitle.Name="ESPTitle"
+ESPTitle.Size=UDim2.new(1,-10,0,25)
+ESPTitle.Position=UDim2.fromOffset(5,3)
+ESPTitle.BackgroundTransparency=1
+ESPTitle.Text="Egg ESP"
+ESPTitle.TextColor3=Color3.fromRGB(240,240,245)
+ESPTitle.TextSize=textSize(15)
+ESPTitle.Font=Enum.Font.GothamBold
+ESPTitle.TextXAlignment=Enum.TextXAlignment.Left
+ESPTitle.Parent=ESPPage
+
+local ESPStatus=Instance.new("TextLabel")
+ESPStatus.Name="ESPStatus"
+ESPStatus.Size=UDim2.new(1,-85,0,22)
+ESPStatus.Position=UDim2.fromOffset(5,30)
+ESPStatus.BackgroundTransparency=1
+ESPStatus.Text="● Inactive"
+ESPStatus.TextColor3=Color3.fromRGB(150,150,158)
+ESPStatus.TextSize=textSize(10)
+ESPStatus.Font=Enum.Font.Gotham
+ESPStatus.TextXAlignment=Enum.TextXAlignment.Left
+ESPStatus.Parent=ESPPage
+
+local ESPToggle=Instance.new("TextButton")
+ESPToggle.Name="ESPToggle"
+ESPToggle.Size=UDim2.fromOffset(62,27)
+ESPToggle.Position=UDim2.new(1,-67,0,30)
+ESPToggle.BackgroundColor3=Color3.fromRGB(45,45,53)
+ESPToggle.Text="OFF"
+ESPToggle.TextColor3=Color3.fromRGB(220,220,225)
+ESPToggle.TextSize=textSize(10)
+ESPToggle.Font=Enum.Font.GothamBold
+ESPToggle.AutoButtonColor=false
+ESPToggle.Active=true
+ESPToggle.Selectable=true
+ESPToggle.ZIndex=10
+ESPToggle.Parent=ESPPage
+
+local ESPToggleCorner=Instance.new("UICorner")
+ESPToggleCorner.CornerRadius=UDim.new(0,6)
+ESPToggleCorner.Parent=ESPToggle
+
+local ESPFilterLabel=Instance.new("TextLabel")
+ESPFilterLabel.Name="ESPFilterLabel"
+ESPFilterLabel.Size=UDim2.new(1,-10,0,19)
+ESPFilterLabel.Position=UDim2.fromOffset(5,60)
+ESPFilterLabel.BackgroundTransparency=1
+ESPFilterLabel.Text="Egg Filter"
+ESPFilterLabel.TextColor3=Color3.fromRGB(210,210,218)
+ESPFilterLabel.TextSize=textSize(10)
+ESPFilterLabel.Font=Enum.Font.GothamMedium
+ESPFilterLabel.TextXAlignment=Enum.TextXAlignment.Left
+ESPFilterLabel.Parent=ESPPage
+
+local ESPFilterButton=Instance.new("TextButton")
+ESPFilterButton.Name="ESPFilterButton"
+ESPFilterButton.Size=UDim2.new(1,-10,0,30)
+ESPFilterButton.Position=UDim2.fromOffset(5,80)
+ESPFilterButton.BackgroundColor3=Color3.fromRGB(35,35,42)
+ESPFilterButton.Text="  -- ▼"
+ESPFilterButton.TextColor3=Color3.fromRGB(220,220,225)
+ESPFilterButton.TextSize=textSize(10)
+ESPFilterButton.Font=Enum.Font.Gotham
+ESPFilterButton.TextXAlignment=Enum.TextXAlignment.Left
+ESPFilterButton.AutoButtonColor=false
+ESPFilterButton.Active=true
+ESPFilterButton.Selectable=true
+ESPFilterButton.Parent=ESPPage
+
+local ESPFilterButtonCorner=Instance.new("UICorner")
+ESPFilterButtonCorner.CornerRadius=UDim.new(0,6)
+ESPFilterButtonCorner.Parent=ESPFilterButton
+
+local ESPFilterCount=Instance.new("TextLabel")
+ESPFilterCount.Name="ESPFilterCount"
+ESPFilterCount.Size=UDim2.new(1,-10,0,20)
+ESPFilterCount.Position=UDim2.fromOffset(5,113)
+ESPFilterCount.BackgroundTransparency=1
+ESPFilterCount.Text="Selected eggs: 0"
+ESPFilterCount.TextColor3=Color3.fromRGB(175,175,185)
+ESPFilterCount.TextSize=textSize(9)
+ESPFilterCount.Font=Enum.Font.Gotham
+ESPFilterCount.TextXAlignment=Enum.TextXAlignment.Left
+ESPFilterCount.Parent=ESPPage
+
+local DetectedEggFrame=Instance.new("ScrollingFrame")
+DetectedEggFrame.Name="DetectedEggFrame"
+DetectedEggFrame.Size=UDim2.new(1,-10,0,110)
+DetectedEggFrame.Position=UDim2.fromOffset(5,137)
+DetectedEggFrame.BackgroundColor3=Color3.fromRGB(27,27,33)
+DetectedEggFrame.BorderSizePixel=0
+DetectedEggFrame.ScrollBarThickness=3
+DetectedEggFrame.ScrollBarImageTransparency=0.3
+DetectedEggFrame.CanvasSize=UDim2.fromOffset(0,0)
+DetectedEggFrame.ZIndex=5
+DetectedEggFrame.Parent=ESPPage
+
+local DetectedEggCorner=Instance.new("UICorner")
+DetectedEggCorner.CornerRadius=UDim.new(0,7)
+DetectedEggCorner.Parent=DetectedEggFrame
+
+local DetectedEggLayout=Instance.new("UIListLayout")
+DetectedEggLayout.Padding=UDim.new(0,2)
+DetectedEggLayout.SortOrder=Enum.SortOrder.LayoutOrder
+DetectedEggLayout.Parent=DetectedEggFrame
+
+DetectedEggLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    DetectedEggFrame.CanvasSize=UDim2.fromOffset(
+        0,
+        DetectedEggLayout.AbsoluteContentSize.Y+5
+    )
+end)
+
+local ESPFilterFrame=Instance.new("ScrollingFrame")
+ESPFilterFrame.Name="ESPFilterFrame"
+ESPFilterFrame.Size=UDim2.new(1,-10,0,155)
+ESPFilterFrame.Position=UDim2.fromOffset(5,110)
+ESPFilterFrame.BackgroundColor3=Color3.fromRGB(27,27,33)
+ESPFilterFrame.BorderSizePixel=0
+ESPFilterFrame.Visible=false
+ESPFilterFrame.Active=true
+ESPFilterFrame.ZIndex=25
+ESPFilterFrame.ScrollBarThickness=3
+ESPFilterFrame.ScrollBarImageTransparency=0.3
+ESPFilterFrame.CanvasSize=UDim2.fromOffset(0,0)
+ESPFilterFrame.Parent=ESPPage
+
+local ESPFilterFrameCorner=Instance.new("UICorner")
+ESPFilterFrameCorner.CornerRadius=UDim.new(0,7)
+ESPFilterFrameCorner.Parent=ESPFilterFrame
+
+local ESPFilterLayout=Instance.new("UIListLayout")
+ESPFilterLayout.Padding=UDim.new(0,1)
+ESPFilterLayout.SortOrder=Enum.SortOrder.LayoutOrder
+ESPFilterLayout.Parent=ESPFilterFrame
+
+ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ESPFilterFrame.CanvasSize=UDim2.fromOffset(0,ESPFilterLayout.AbsoluteContentSize.Y+5)
+end)
+
+local ESPFilterButtons={}
+
+local function refreshESPFilterText()
+    local selected={}
+
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and SelectedEggs[eggName] then
+            table.insert(selected,eggName)
+        end
+    end
+
+    if #selected==0 then
+        ESPFilterButton.Text="  -- ▼"
+    elseif #selected==1 then
+        ESPFilterButton.Text="  "..selected[1].." ▼"
+    elseif #selected==2 then
+        ESPFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
+    else
+        ESPFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
+    end
+
+    ESPFilterButton.BackgroundColor3=
+        #selected>0
+        and Color3.fromRGB(55,85,60)
+        or Color3.fromRGB(35,35,42)
+end
+
+local function createESPFilterButtons()
+    for _,child in ipairs(ESPFilterFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    for _,eggName in ipairs(EggTypes) do
+        local isSelected=eggName~="--" and SelectedEggs[eggName]==true
+        local button=Instance.new("TextButton")
+        button.Size=UDim2.new(1,-10,0,22)
+        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
+        button.BackgroundTransparency=isSelected and 0 or 1
+        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
+        button.TextSize=textSize(10)
+        button.Font=Enum.Font.Gotham
+        button.TextXAlignment=Enum.TextXAlignment.Left
+        button.AutoButtonColor=false
+        button.Text=(SelectedEggs[eggName] and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Parent=ESPFilterFrame
+
+        button.MouseButton1Click:Connect(function()
+            if eggName=="--" then
+                SelectedEggs={}
+            else
+                SelectedEggs[eggName]=not SelectedEggs[eggName] or nil
+            end
+
+            createESPFilterButtons()
+            refreshESPFilterText()
+            updateFilterText()
+
+            if ESPEnabled then
+                updateESP()
+            end
+        end)
+    end
+end
+
+ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    ESPFilterFrame.CanvasSize=UDim2.fromOffset(
+        0,
+        ESPFilterLayout.AbsoluteContentSize.Y+5
+    )
+end)
+--==================================================
+-- 15. DEBUG PAGE
+--==================================================
+local DebugTitle = Instance.new("TextLabel")
+DebugTitle.Size = UDim2.new(1, -10, 0, 30)
+DebugTitle.Position = UDim2.fromOffset(5, 5)
+DebugTitle.BackgroundTransparency = 1
+DebugTitle.Text = "Debug Console"
+DebugTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+DebugTitle.TextSize = textSize(16)
+DebugTitle.Font = Enum.Font.GothamBold
+DebugTitle.TextXAlignment = Enum.TextXAlignment.Left
+DebugTitle.Parent = DebugPage
+
+DebugBox = Instance.new("ScrollingFrame")
+DebugBox.Size = UDim2.new(1, -10, 1, -95)
+DebugBox.Position = UDim2.fromOffset(5, 40)
+DebugBox.BackgroundColor3 = Color3.fromRGB(17, 17, 21)
+DebugBox.BorderSizePixel = 0
+DebugBox.ScrollBarThickness = 3
+DebugBox.CanvasSize = UDim2.fromOffset(0, 0)
+DebugBox.Parent = DebugPage
+
+local DebugCorner = Instance.new("UICorner")
+DebugCorner.CornerRadius = UDim.new(0, 7)
+DebugCorner.Parent = DebugBox
+
+DebugText = Instance.new("TextLabel")
+DebugText.Size = UDim2.new(1, -10, 0, 0)
+DebugText.Position = UDim2.fromOffset(5, 5)
+DebugText.BackgroundTransparency = 1
+DebugText.Text = ""
+DebugText.TextColor3 = Color3.fromRGB(180, 180, 190)
+DebugText.TextSize = textSize(11)
+DebugText.Font = Enum.Font.Code
+DebugText.TextXAlignment = Enum.TextXAlignment.Left
+DebugText.TextYAlignment = Enum.TextYAlignment.Top
+DebugText.TextWrapped = true
+DebugText.AutomaticSize = Enum.AutomaticSize.Y
+DebugText.Parent = DebugBox
+
+AddDebug(
+    "[SYSTEM] Egg filter initialized"
+)
+
+local ScanButton = Instance.new("TextButton")
+ScanButton.Size = UDim2.new(1, -10, 0, 35)
+ScanButton.Position = UDim2.new(0, 5, 1, -40)
+ScanButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
+ScanButton.Text = "Scan Active Eggs"
+ScanButton.TextColor3 = Color3.fromRGB(225, 225, 230)
+ScanButton.TextSize = textSize(12)
+ScanButton.Font = Enum.Font.GothamMedium
+ScanButton.AutoButtonColor = false
+ScanButton.Active = true
+ScanButton.Selectable = true
+ScanButton.ZIndex = 10
+ScanButton.Parent = DebugPage
+
+local ScanCorner = Instance.new("UICorner")
+ScanCorner.CornerRadius = UDim.new(0, 7)
+ScanCorner.Parent = ScanButton
+
+ScanButton.MouseButton1Click:Connect(function()
+    DebugLines={}
+    if DebugText then
+        DebugText.Text=""
+    end
+    if DebugBox then
+        DebugBox.CanvasPosition=Vector2.new(0,0)
+    end
+    AddDebug("========== EGG SCAN ==========")
+    local success,err=pcall(function()
+        local ActiveEggs=getActiveEggs()
+        if not ActiveEggs then
+            AddDebug("[ERROR] ActiveEggs not found")
+            return
+        end
+        local eggs=ActiveEggs:GetChildren()
+        EggCount.Text="Active Eggs: "..tostring(#eggs)
+        local selectedNames=getSelectedEggNames()
+        if #selectedNames==0 then
+            AddDebug("No egg selected")
+        else
+            AddDebug("Selected: "..table.concat(selectedNames,", "))
+        end
+        local counts={}
+        for _,egg in ipairs(eggs) do
+            local eggName=egg:GetAttribute("Egg")
+            if eggName and eggName~="" then
+                counts[eggName]=(counts[eggName] or 0)+1
+            end
+        end
+        for eggName,count in pairs(counts) do
+            AddDebug(tostring(eggName).." x "..tostring(count))
+        end
+        for _,selectedName in ipairs(selectedNames) do
+            local selectedWeight
+            for _,egg in ipairs(eggs) do
+                if egg:GetAttribute("Egg")==selectedName then
+                    selectedWeight=tonumber(egg:GetAttribute("Weight"))
+                    break
+                end
+            end
+            AddDebug("Egg: "..tostring(selectedName))
+            AddDebug("Weight: "..tostring(selectedWeight))
+            AddDebug("Selected Count: "..tostring(counts[selectedName] or 0))
+        end
+        AddDebug("Total Active Eggs: "..tostring(#eggs))
+        for _,egg in ipairs(eggs) do
+            local eggName=egg:GetAttribute("Egg")
+            if eggName and SelectedEggs[eggName] then
+                local position=egg:GetAttribute("Position")
+                AddDebug(tostring(eggName).." | Position Type: "..typeof(position))
+            end
+        end
+        AddDebug("========== SCAN COMPLETE ==========")
+    end)
+    if not success then
+        AddDebug("========== LUA ERROR ==========")
+        AddDebug(tostring(err))
+    end
+end)
+--==================================================
+-- 16. SETTINGS PAGE
+--==================================================
+local SettingsTitle = Instance.new("TextLabel")
+SettingsTitle.Size = UDim2.new(1, -10, 0, 30)
+SettingsTitle.Position = UDim2.fromOffset(5, 5)
+SettingsTitle.BackgroundTransparency = 1
+SettingsTitle.Text = "Settings"
+SettingsTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+SettingsTitle.TextSize = textSize(16)
+SettingsTitle.Font = Enum.Font.GothamBold
+SettingsTitle.TextXAlignment = Enum.TextXAlignment.Left
+SettingsTitle.Parent = SettingsPage
+
+local AutoExecuteLabel = Instance.new("TextLabel")
+AutoExecuteLabel.Size = UDim2.new(1, -85, 0, 22)
+AutoExecuteLabel.Position = UDim2.fromOffset(5, 45)
+AutoExecuteLabel.BackgroundTransparency = 1
+AutoExecuteLabel.Text = "Create Auto Execute"
+AutoExecuteLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoExecuteLabel.TextSize = textSize(10)
+AutoExecuteLabel.Font = Enum.Font.GothamMedium
+AutoExecuteLabel.TextXAlignment = Enum.TextXAlignment.Left
+AutoExecuteLabel.Parent = SettingsPage
+
+local AutoExecuteButton = Instance.new("TextButton")
+AutoExecuteButton.Size = UDim2.fromOffset(62, 27)
+AutoExecuteButton.Position = UDim2.new(1, -67, 0, 42)
+AutoExecuteButton.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoExecuteButton.Text = "CREATE"
+AutoExecuteButton.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoExecuteButton.TextSize = textSize(10)
+AutoExecuteButton.Font = Enum.Font.GothamBold
+AutoExecuteButton.AutoButtonColor = false
+AutoExecuteButton.Active = true
+AutoExecuteButton.Selectable = true
+AutoExecuteButton.Parent = SettingsPage
+
+local AutoExecuteCorner = Instance.new("UICorner")
+AutoExecuteCorner.CornerRadius = UDim.new(0, 6)
+AutoExecuteCorner.Parent = AutoExecuteButton
+
+local AutoExecuteStatus = Instance.new("TextLabel")
+AutoExecuteStatus.Size = UDim2.new(1, -10, 0, 25)
+AutoExecuteStatus.Position = UDim2.fromOffset(5, 70)
+AutoExecuteStatus.BackgroundTransparency = 1
+AutoExecuteStatus.Text = "Creates rap_skrip_test.txt"
+AutoExecuteStatus.TextColor3 = Color3.fromRGB(145, 145, 155)
+AutoExecuteStatus.TextSize = textSize(9)
+AutoExecuteStatus.Font = Enum.Font.Gotham
+AutoExecuteStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoExecuteStatus.Parent = SettingsPage
+
+local ConfigLabel = Instance.new("TextLabel")
+ConfigLabel.Size = UDim2.new(1, -85, 0, 22)
+ConfigLabel.Position = UDim2.fromOffset(5, 105)
+ConfigLabel.BackgroundTransparency = 1
+ConfigLabel.Text = "Config"
+ConfigLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+ConfigLabel.TextSize = textSize(10)
+ConfigLabel.Font = Enum.Font.GothamMedium
+ConfigLabel.TextXAlignment = Enum.TextXAlignment.Left
+ConfigLabel.Parent = SettingsPage
+
+local ConfigSaveButton = Instance.new("TextButton")
+ConfigSaveButton.Size = UDim2.fromOffset(62, 27)
+ConfigSaveButton.Position = UDim2.new(1, -67, 0, 102)
+ConfigSaveButton.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+ConfigSaveButton.Text = "SAVE"
+ConfigSaveButton.TextColor3 = Color3.fromRGB(220, 220, 225)
+ConfigSaveButton.TextSize = textSize(10)
+ConfigSaveButton.Font = Enum.Font.GothamBold
+ConfigSaveButton.AutoButtonColor = false
+ConfigSaveButton.Active = true
+ConfigSaveButton.Selectable = true
+ConfigSaveButton.Parent = SettingsPage
+
+local ConfigSaveCorner = Instance.new("UICorner")
+ConfigSaveCorner.CornerRadius = UDim.new(0, 6)
+ConfigSaveCorner.Parent = ConfigSaveButton
+
+local AntiAFKLabel = Instance.new("TextLabel")
+AntiAFKLabel.Size = UDim2.new(1, -85, 0, 22)
+AntiAFKLabel.Position = UDim2.fromOffset(5, 138)
+AntiAFKLabel.BackgroundTransparency = 1
+AntiAFKLabel.Text = "Anti AFK"
+AntiAFKLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
+AntiAFKLabel.TextSize = textSize(10)
+AntiAFKLabel.Font = Enum.Font.GothamMedium
+AntiAFKLabel.TextXAlignment = Enum.TextXAlignment.Left
+AntiAFKLabel.Parent = SettingsPage
+
+local AntiAFKButton = Instance.new("TextButton")
+AntiAFKButton.Size = UDim2.fromOffset(62, 27)
+AntiAFKButton.Position = UDim2.new(1, -67, 0, 135)
+AntiAFKButton.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AntiAFKButton.Text = "OFF"
+AntiAFKButton.TextColor3 = Color3.fromRGB(220, 220, 225)
+AntiAFKButton.TextSize = textSize(10)
+AntiAFKButton.Font = Enum.Font.GothamBold
+AntiAFKButton.AutoButtonColor = false
+AntiAFKButton.Active = true
+AntiAFKButton.Selectable = true
+AntiAFKButton.Parent = SettingsPage
+
+local AntiAFKCorner = Instance.new("UICorner")
+AntiAFKCorner.CornerRadius = UDim.new(0, 6)
+AntiAFKCorner.Parent = AntiAFKButton
+
+local function updateAntiAFKButton()
+    AntiAFKButton.Text =
+        AntiAFKEnabled and "ON" or "OFF"
+    AntiAFKButton.BackgroundColor3 =
+        AntiAFKEnabled
+        and Color3.fromRGB(55, 120, 75)
+        or Color3.fromRGB(45, 45, 53)
+end
+
+AntiAFKButton.MouseButton1Click:Connect(function()
+    AntiAFKEnabled =
+        not AntiAFKEnabled
+    updateAntiAFKButton()
+    AddDebug(
+        AntiAFKEnabled
+        and "[ANTI AFK] Enabled"
+        or "[ANTI AFK] Disabled"
+    )
+end)
+
+ConfigSaveButton.MouseButton1Click:Connect(function()
+    saveConfig()
+    ConfigSaveButton.Text = "SAVED"
+    ConfigSaveButton.BackgroundColor3 =
+        Color3.fromRGB(55, 120, 75)
+    task.delay(1.5, function()
+        if ConfigSaveButton then
+            ConfigSaveButton.Text = "SAVE"
+            ConfigSaveButton.BackgroundColor3 =
+                Color3.fromRGB(45, 45, 53)
+        end
+    end)
+end)
+
+AutoExecuteButton.MouseButton1Click:Connect(function()
+    local content =
+        'loadstring(game:HttpGet("https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/rap-skrip"))()'
+    local success, err =
+        pcall(function()
+            if makefolder
+                and isfolder
+                and not isfolder(
+                    "RAPSkrip"
+                ) then
+                makefolder(
+                    "RAPSkrip"
+                )
+            end
+            writefile(
+                "RAPSkrip/rap_skrip_test.txt",
+                content
+            )
+        end)
+    if success then
+        AutoExecuteStatus.Text =
+            "Created: rap_skrip_test.txt"
+        AddDebug(
+            "[AUTOEXEC] rap_skrip_test.txt created"
+        )
+    else
+        AutoExecuteStatus.Text =
+            "Failed: " ..
+            tostring(err)
+        AddDebug(
+            "[AUTOEXEC ERROR] " ..
+            tostring(err)
+        )
+    end
+end)
+
+updateAntiAFKButton()
+--==================================================
+-- 17. ANTI-AFK
+--==================================================
+player.Idled:Connect(function()
+    if not AntiAFKEnabled then
+        return
+    end
+    pcall(function()
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new(0, 0))
+    end)
+    AddDebug("[ANTI AFK] Idle activity sent")
+end)
+
+local function setAntiAFK(enabled)
+    AntiAFKEnabled = enabled
+
+    if AntiAFKEnabled then
+        AntiAFKToggle.Text = "ON"
+        AntiAFKToggle.BackgroundColor3 = Color3.fromRGB(55, 90, 60)
+        AntiAFKStatus.Text = "● Active"
+        AntiAFKStatus.TextColor3 = Color3.fromRGB(120, 210, 135)
+        AddDebug("[ANTI AFK] Enabled")
+    else
+        AntiAFKToggle.Text = "OFF"
+        AntiAFKToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+        AntiAFKStatus.Text = "● Inactive"
+        AntiAFKStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+        AddDebug("[ANTI AFK] Disabled")
+    end
+end
+--==================================================
+-- 18. HELPER / GAME FUNCTIONS
+--==================================================
+local function getActiveEggs()
+    local ServerData =
+        ReplicatedStorage:FindFirstChild("ServerData")
+
+    if not ServerData then
+        return nil
+    end
+
+    return ServerData:FindFirstChild("ActiveEggs")
+end
+
+local function getEggPosition(egg)
+    if not egg then
+        return nil
+    end
+
+    local position =
+        egg:GetAttribute("Position")
+
+    if typeof(position) == "Vector3" then
+        return position
+    end
+
+    if typeof(position) == "CFrame" then
+        return position.Position
+    end
+
+    local primaryPart =
+        egg:IsA("Model") and egg.PrimaryPart
+
+    if primaryPart then
+        return primaryPart.Position
+    end
+
+    if egg:IsA("BasePart") then
+        return egg.Position
+    end
+
+    local part =
+        egg:FindFirstChildWhichIsA(
+            "BasePart",
+            true
+        )
+
+    if part then
+        return part.Position
+    end
+
+    return nil
+end
+
+local function getEggUUID(egg)
+    if not egg then
+        return nil
+    end
+
+    local uuid =
+        egg:GetAttribute("UUID")
+
+    if uuid == nil then
+        uuid =
+            egg:GetAttribute("Uuid")
+    end
+
+    if uuid == nil then
+        uuid =
+            egg:GetAttribute("Id")
+    end
+
+    if uuid == nil then
+        uuid =
+            egg:GetAttribute("ID")
+    end
+
+    if uuid == nil then
+        uuid = egg.Name
+    end
+
+    if typeof(uuid) ~= "string" then
+        uuid = tostring(uuid)
+    end
+
+    if uuid == "" then
+        return nil
+    end
+
+    return uuid
+end
+
+local function isAutoPickupEggSelected(eggName)
+    return AutoSelectedEggs[eggName] == true
+end
+
+local function getCharacterRoot()
+    local character =
+        player.Character
+
+    if not character then
+        return nil
+    end
+
+    return character:FindFirstChild(
+        "HumanoidRootPart"
+    )
+end
+
+local function startAutoPickupFloat(position)
+    local character = player.Character
+
+    if not character then
+        return false
+    end
+
+    local root =
+        character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if not root then
+        return false
+    end
+
+    local attachment =
+        root:FindFirstChild(
+            "AutoPickupFloatAttachment"
+        )
+
+    if not attachment then
+        attachment =
+            Instance.new("Attachment")
+
+        attachment.Name =
+            "AutoPickupFloatAttachment"
+
+        attachment.Parent = root
+    end
+
+    local force =
+        root:FindFirstChild(
+            "AutoPickupFloatForce"
+        )
+
+    if not force then
+        force =
+            Instance.new("VectorForce")
+
+        force.Name =
+            "AutoPickupFloatForce"
+
+        force.Attachment0 =
+            attachment
+
+        force.RelativeTo =
+            Enum.ActuatorRelativeTo.World
+
+        force.ApplyAtCenterOfMass =
+            true
+
+        force.Parent = root
+    end
+
+    AutoPickupFloating = true
+    AutoPickupFloatForce = force
+
+    root.CFrame =
+        CFrame.new(
+            position +
+            Vector3.new(
+                0,
+                AutoPickupFloatHeight,
+                0
+            )
+        )
+
+    root.AssemblyLinearVelocity =
+        Vector3.zero
+
+    root.AssemblyAngularVelocity =
+        Vector3.zero
+
+    force.Force =
+        Vector3.new(
+            0,
+            root.AssemblyMass *
+                workspace.Gravity,
+            0
+        )
+
+    return true
+end
+
+local function stopAutoPickupFloat()
+    AutoPickupFloating = false
+
+    local force =
+        AutoPickupFloatForce
+
+    AutoPickupFloatForce = nil
+
+    if force then
+        pcall(function()
+            force:Destroy()
+        end)
+    end
+
+    local character =
+        player.Character
+
+    if not character then
+        return
+    end
+
+    local root =
+        character:FindFirstChild(
+            "HumanoidRootPart"
+        )
+
+    if not root then
+        return
+    end
+
+    local attachment =
+        root:FindFirstChild(
+            "AutoPickupFloatAttachment"
+        )
+
+    if attachment then
+        pcall(function()
+            attachment:Destroy()
+        end)
+    end
+
+    root.AssemblyLinearVelocity =
+        Vector3.zero
+
+    root.AssemblyAngularVelocity =
+        Vector3.zero
+end
+
+local function teleportToEgg(egg)
+    if AutoPickupMovementMode ~= "Teleport" then
+        AddDebug(
+            "[AUTO ERROR] Unsupported movement mode"
+        )
+
+        return false
+    end
+
+    local position =
+        getEggPosition(egg)
+
+    if not position then
+        AddDebug(
+            "[AUTO ERROR] Egg has no usable Position"
+        )
+
+        return false
+    end
+
+    local root =
+        getCharacterRoot()
+
+    if not root then
+        AddDebug(
+            "[AUTO ERROR] HumanoidRootPart not found"
+        )
+
+        return false
+    end
+
+    local success, err =
+        pcall(function()
+            if not startAutoPickupFloat(position) then
+                error(
+                    "Unable to start floating at egg"
+                )
+            end
+        end)
+
+    if not success then
+        AddDebug(
+            "[AUTO ERROR] Egg teleport failed: " ..
+            tostring(err)
+        )
+
+        return false
+    end
+    return true
+end
+
+local function enterVolcanicEgg(egg)
+    if not egg then
+        AddDebug("[AUTO VOLCANO ERROR] Egg not found")
+        return false
+    end
+
+    local root = getCharacterRoot()
+
+    if not root then
+        AddDebug("[AUTO VOLCANO ERROR] HumanoidRootPart not found")
+        return false
+    end
+
+    AddDebug("[AUTO VOLCANO] Entrance 1")
+
+    root.CFrame = CFrame.new(
+        VolcanoEntrance1Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoEntrance2Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoInside1Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoInside2Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoEggPosition
+    )
+
+    return true
+end
+
+local function exitVolcanicEgg()
+    local root = getCharacterRoot()
+
+    if not root then
+        AddDebug("[AUTO VOLCANO ERROR] HumanoidRootPart not found")
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoInside2Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoInside1Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoEntrance2Position
+    )
+
+    task.wait(1)
+
+    if not AutoPickupRunning then
+        return false
+    end
+
+    root.CFrame = CFrame.new(
+        VolcanoEntrance1Position
+    )
+
+    task.wait(1)
+
+    return true
+end
+
+local function findMyPlot()
+    local plots =
+        workspace:FindFirstChild("Plots")
+
+    if not plots then
+        return nil
+    end
+
+    for _, plot in ipairs(plots:GetChildren()) do
+        local data =
+            plot:FindFirstChild("Data")
+
+        if data then
+            local owner =
+                data:FindFirstChild("Owner")
+
+            if owner then
+                local ownerValue
+
+                pcall(function()
+                    ownerValue = owner.Value
+                end)
+
+                if ownerValue == player
+                    or ownerValue == player.Name
+                    or ownerValue == player.DisplayName then
+
+                    return plot
+                end
+
+                if tostring(ownerValue) ==
+                    tostring(player.Name) then
+
+                    return plot
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+local function getMyRanchCFrame()
+    local plot =
+        findMyPlot()
+
+    if not plot then
+        return nil
+    end
+
+    local baseplate =
+        plot:FindFirstChild("Baseplate")
+
+    if not baseplate then
+        return nil
+    end
+
+    if not baseplate:IsA("BasePart") then
+        return nil
+    end
+
+    return baseplate.CFrame *
+        CFrame.new(
+            0,
+            baseplate.Size.Y / 2 + 3,
+            0
+        )
+end
+
+local function teleportToMyPlot()
+    local root = getCharacterRoot()
+
+    if not root then
+        return false
+    end
+
+    local ranchCFrame = getMyRanchCFrame()
+
+    if not ranchCFrame then
+        return false
+    end
+
+    local success = pcall(function()
+        root.CFrame = ranchCFrame
+    end)
+
+    if not success then
+        return false
+    end
+
+    return true
+end
+
+local function teleportOutsidePlot(eggPosition)
+    local root = getCharacterRoot()
+
+    if not root then
+        return false
+    end
+
+    local plot = findMyPlot()
+
+    if not plot or not eggPosition then
+        return false
+    end
+
+    local baseplate = plot:FindFirstChild("Baseplate")
+
+    if not baseplate or not baseplate:IsA("BasePart") then
+        return false
+    end
+
+    local center =
+        baseplate.Position +
+        Vector3.new(
+            0,
+            baseplate.Size.Y / 2 + 3,
+            0
+        )
+
+    local direction =
+        Vector3.new(
+            eggPosition.X - center.X,
+            0,
+            eggPosition.Z - center.Z
+        )
+
+    if direction.Magnitude == 0 then
+        return false
+    end
+
+    direction = direction.Unit
+
+    local edge =
+        (math.abs(
+            direction:Dot(
+                baseplate.CFrame.RightVector
+            )
+        ) * baseplate.Size.X / 2) +
+        (math.abs(
+            direction:Dot(
+                baseplate.CFrame.LookVector
+            )
+        ) * baseplate.Size.Z / 2)
+
+    local outsidePosition =
+        center +
+        direction *
+        (edge + 10)
+
+    local success = pcall(function()
+        root.CFrame =
+            CFrame.new(
+                outsidePosition
+            )
+    end)
+
+    if not success then
+        return false
+    end
+
+    return true
+end
+local findNextAutoPickupEgg
+local waitForDroppedEgg
+--==================================================
+-- 19. AUTO FARM LOGIC
+--==================================================
+local function tryAutoPickup(egg)
+    if not AutoPickupRunning or AutoPickupBusy then return end
+    if not egg then egg=findNextAutoPickupEgg() end
+    if not egg then return end
+
+    AutoPickupBusy=true
+
+    local eggName=egg:GetAttribute("Egg")
+    local eggPosition=getEggPosition(egg)
+    local isVolcanic=eggName=="Volcanic Egg"
+    local shouldAutoMagmaDip=AutoMagmaDipEnabled==true
+
+    if not eggName or not eggPosition then
+        AutoPickupBusy=false
+        return
+    end
+
+    AddDebug("[AUTO] Pickup: "..tostring(eggName))
+
+    -- 1. Move to egg
+    if isVolcanic then
+        if not enterVolcanicEgg(egg) then
+            AutoPickupBusy=false
+            return
+        end
+    elseif not teleportToEgg(egg) then
+        AutoPickupBusy=false
+        return
+    end
+
+    task.wait(AutoPickupClaimDelay)
+
+    -- 2. Get pickup UUID
+    local pickupUUID=getEggUUID(egg)
+    if not pickupUUID then
+        AddDebug("[AUTO ERROR] Pickup UUID not found")
+        AutoPickupBusy=false
+        return
+    end
+
+    -- 3. Pick up original egg
+    AutoPickupStage="InitialPickup"
+    AutoPickupAwaitingUUID=tostring(pickupUUID)
+    AutoPickupAwaitingPickup=true
+    AutoPickupPickupConfirmed=false
+    EggPickupEvent:FireServer(tostring(pickupUUID))
+
+    local pickupStart=os.clock()
+    while AutoPickupRunning and not AutoPickupPickupConfirmed and os.clock()-pickupStart<5 do
+        task.wait(0.1)
+    end
+
+    AutoPickupAwaitingPickup=false
+
+    if not AutoPickupRunning then
+        AutoPickupBusy=false
+        return
+    end
+
+    if not AutoPickupPickupConfirmed then
+        AddDebug("[AUTO ERROR] Initial pickup not confirmed")
+        AutoPickupAwaitingUUID=nil
+        AutoPickupBusy=false
+        return
+    end
+
+    AutoPickupAwaitingUUID=nil
+    AutoPickupPickupConfirmed=false
+
+    -- 4. Auto Magma Dip
+    if shouldAutoMagmaDip then
+        local root=getCharacterRoot()
+        if not root then
+            AddDebug("[AUTO MAGMA DIP ERROR] Root not found")
+            AutoPickupBusy=false
+            return
+        end
+
+        if isVolcanic then
+            if not exitVolcanicEgg() then
+                AutoPickupBusy=false
+                return
+            end
+        end
+
+        root.CFrame=CFrame.new(VolcanoDropPosition)
+        task.wait(1)
+
+        AutoMagmaDipResult=nil
+        AutoMagmaDipWaitingForResult=true
+        AutoVolcanoMessageReceived=false
+        AutoVolcanoMessageText=nil
+        AutoVolcanoMessageType=nil
+        AutoVolcanoWaitingForMessage=true
+
+        if VolcanoDipEvent then
+            VolcanoDipEvent:FireServer()
+            AddDebug("[AUTO MAGMA DIP] Dip request sent")
+        else
+            AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDip remote missing")
+            AutoMagmaDipWaitingForResult=false
+            AutoVolcanoWaitingForMessage=false
+            AutoPickupBusy=false
+            return
+        end
+
+        -- 5. Wait for either result OR mutation message
+        local dipStart=os.clock()
+        while AutoPickupRunning and os.clock()-dipStart<10 do
+            if AutoVolcanoMessageReceived then
+                break
+            end
+            if AutoMagmaDipResult~=nil then
+                break
+            end
+            task.wait(0.1)
+        end
+
+        AutoMagmaDipWaitingForResult=false
+
+        if not AutoPickupRunning then
+            AutoVolcanoWaitingForMessage=false
+            AutoPickupBusy=false
+            return
+        end
+
+        -- 6. Handle the response
+        if AutoVolcanoMessageReceived then
+            if AutoVolcanoMessageType=="Failed" then
+                AddDebug("[AUTO MAGMA DIP] Failed/already dipped message detected")
+            elseif AutoVolcanoMessageType=="Success" then
+                AddDebug("[AUTO MAGMA DIP] Mutation successful")
+            else
+                AddDebug("[AUTO MAGMA DIP] Message: "..tostring(AutoVolcanoMessageText))
+            end
+        elseif AutoMagmaDipResult~=nil then
+            AddDebug("[AUTO MAGMA DIP] Result: "..tostring(AutoMagmaDipResult))
+
+            -- A result was received, now give the mutation message
+            -- time to arrive if it is sent separately.
+            local messageStart=os.clock()
+            while AutoPickupRunning and not AutoVolcanoMessageReceived and os.clock()-messageStart<12 do
+                task.wait(5)
+            end
+
+            if AutoVolcanoMessageReceived then
+                if AutoVolcanoMessageType=="Failed" then
+                    AddDebug("[AUTO MAGMA DIP] Failed/already dipped message detected")
+                elseif AutoVolcanoMessageType=="Success" then
+                    AddDebug("[AUTO MAGMA DIP] Mutation successful")
+                else
+                    AddDebug("[AUTO MAGMA DIP] Message: "..tostring(AutoVolcanoMessageText))
+                end
+            else
+                AddDebug("[AUTO MAGMA DIP] No mutation message received")
+            end
+        else
+            AddDebug("[AUTO MAGMA DIP] No result/message received")
+        end
+
+        AutoVolcanoWaitingForMessage=false
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+        -- 7. Return outside the plot
+        local reachedOutside=false
+        while AutoPickupRunning and not reachedOutside do
+            if teleportOutsidePlot(VolcanoDropPosition) then
+                reachedOutside=true
+            else
+                task.wait(0.1)
+            end
+        end
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        task.wait(1)
+
+    -- 8. Volcanic Egg without Magma Dip
+    elseif isVolcanic then
+        exitVolcanicEgg()
+
+        local currentEggPosition=getEggPosition(egg) or eggPosition
+        local reachedOutside=false
+
+        while AutoPickupRunning and not reachedOutside do
+            if teleportOutsidePlot(VolcanoDropPosition) then
+                reachedOutside=true
+            else
+                task.wait(0.25)
+            end
+        end
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        task.wait(1)
+
+    -- 9. Normal Egg without Magma Dip
+    else
+        local currentEggPosition=getEggPosition(egg) or eggPosition
+        local reachedOutside=false
+
+        while AutoPickupRunning and not reachedOutside do
+            if teleportOutsidePlot(currentEggPosition) then
+                reachedOutside=true
+            else
+                task.wait(0.1)
+            end
+        end
+
+        if not AutoPickupRunning then
+            AutoPickupBusy=false
+            return
+        end
+
+        task.wait(1)
+    end
+
+    -- 10. Prepare dropped egg detection
+    local BasketDropEvent=ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Game"):WaitForChild("BasketDrop")
+    local previousDroppedUUIDs={}
+    local activeEggsBeforeDrop=getActiveEggs()
+
+    if activeEggsBeforeDrop then
+        for _,existingEgg in ipairs(activeEggsBeforeDrop:GetChildren()) do
+            local existingUUID=getEggUUID(existingEgg)
+            if existingUUID then
+                previousDroppedUUIDs[tostring(existingUUID)]=true
+            end
+        end
+    end
+
+    local root=getCharacterRoot()
+    local dropPosition=root and root.Position
+
+    if not dropPosition then
+        AddDebug("[AUTO ERROR] Drop position unavailable")
+        AutoPickupBusy=false
+        return
+    end
+
+    -- 11. Drop egg
+    AutoPickupStage="Drop"
+    BasketDropEvent:FireServer()
+    stopAutoPickupFloat()
+    task.wait(0.25)
+
+    -- 12. Find newly dropped egg
+    local droppedEgg
+    local dropStart=os.clock()
+
+    while AutoPickupRunning and not droppedEgg and os.clock()-dropStart<5 do
+        droppedEgg=waitForDroppedEgg(eggName,previousDroppedUUIDs,dropPosition,0.5)
+        if not droppedEgg then
+            task.wait(0.1)
+        end
+    end
+
+    if not AutoPickupRunning then
+        AutoPickupBusy=false
+        return
+    end
+
+    if not droppedEgg then
+        AddDebug("[AUTO ERROR] Dropped egg not found")
+        AutoPickupBusy=false
+        return
+    end
+
+    local droppedUUID=droppedEgg.UUID
+    if not droppedUUID then
+        AddDebug("[AUTO ERROR] Dropped egg UUID not found")
+        AutoPickupBusy=false
+        return
+    end
+
+    droppedUUID=tostring(droppedUUID)
+
+    -- 13. Pick up dropped egg
+    AutoPickupStage="DroppedPickup"
+    AutoPickupAwaitingUUID=droppedUUID
+    AutoPickupAwaitingPickup=true
+    AutoPickupPickupConfirmed=false
+    EggPickupEvent:FireServer(droppedUUID)
+
+    local droppedPickupStart=os.clock()
+    while AutoPickupRunning and not AutoPickupPickupConfirmed and os.clock()-droppedPickupStart<5 do
+        task.wait(0.1)
+    end
+
+    AutoPickupAwaitingPickup=false
+
+    if not AutoPickupRunning then
+        AutoPickupBusy=false
+        return
+    end
+
+    if not AutoPickupPickupConfirmed then
+        AddDebug("[AUTO ERROR] Dropped pickup not confirmed")
+        AutoPickupAwaitingUUID=nil
+        AutoPickupBusy=false
+        return
+    end
+
+    AutoPickupAwaitingUUID=nil
+    AutoPickupPickupConfirmed=false
+
+    -- 14. Return to plot
+    AutoPickupStage="GoingToPlot"
+    local reachedPlot=false
+
+    while AutoPickupRunning and not reachedPlot do
+        if teleportToMyPlot() then
+            reachedPlot=true
+        else
+            task.wait(0.1)
+        end
+    end
+
+    if not AutoPickupRunning then
+        AutoPickupBusy=false
+        return
+    end
+
+    task.wait(1)
+
+    -- 15. Deposit egg
+    AutoPickupStage="Deposit"
+    AutoPickupAwaitingDeposit=true
+    AutoPickupDepositConfirmed=false
+
+    local ranchCFrame=getMyRanchCFrame()
+    if not ranchCFrame then
+        AddDebug("[AUTO ERROR] Ranch CFrame not found")
+        AutoPickupAwaitingDeposit=false
+        AutoPickupBusy=false
+        return
+    end
+
+    local arrivalPosition=ranchCFrame.Position
+    local serverTime=workspace:GetServerTimeNow()
+
+    if EggArrivalClaimEvent then
+        EggArrivalClaimEvent:FireServer(serverTime,arrivalPosition,{droppedUUID})
+    else
+        AddDebug("[AUTO ERROR] Arrival claim remote missing")
+        AutoPickupAwaitingDeposit=false
+        AutoPickupBusy=false
+        return
+    end
+
+    local depositStart=os.clock()
+    while AutoPickupRunning and not AutoPickupDepositConfirmed and os.clock()-depositStart<5 do
+        task.wait(0.1)
+    end
+
+    AutoPickupAwaitingDeposit=false
+
+    if AutoPickupDepositConfirmed then
+        AddDebug("[AUTO] Egg deposited successfully")
+    else
+        AddDebug("[AUTO ERROR] Deposit not confirmed")
+    end
+
+    AutoPickupDepositConfirmed=false
+    AutoPickupStage="Idle"
+    AutoPickupBusy=false
+end
+--==================================================
+-- 20. AUTO PICKUP LOGIC
+--==================================================
+findNextAutoPickupEgg=function()
+    local ActiveEggs=getActiveEggs()
+
+    if not ActiveEggs then
+        AddDebug("[AUTO ERROR] ActiveEggs not found")
+        return nil
+    end
+
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local eggName=egg:GetAttribute("Egg")
+
+        if eggName and isAutoPickupEggSelected(eggName) then
+            local uuid=getEggUUID(egg)
+            local position=getEggPosition(egg)
+
+            if uuid and position then
+                return egg,uuid
+            end
+        end
+    end
+
+    return nil
+end
+
+local function waitForPickupConfirmation(uuid)
+    local timeout=8
+    local start=os.clock()
+
+    while AutoPickupRunning and os.clock()-start<timeout do
+        if AutoPickupPickupConfirmed then
+            return true
+        end
+        task.wait(0.1)
+    end
+
+    return false
+end
+
+local function waitForDepositConfirmation()
+    local timeout=8
+    local start=os.clock()
+
+    while AutoPickupRunning and os.clock()-start<timeout do
+        if AutoPickupDepositConfirmed then
+            return true
+        end
+        task.wait(0.1)
+    end
+
+    return false
+end
+
+local function getDroppedEggData(uuid)
+    local ActiveEggs=getActiveEggs()
+
+    if not ActiveEggs then
+        AddDebug("[AUTO ERROR] ActiveEggs not found")
+        return nil
+    end
+
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local eggUUID=getEggUUID(egg)
+
+        if eggUUID and tostring(eggUUID)==tostring(uuid) then
+            local eggName=egg:GetAttribute("Egg")
+            local breakRemaining=egg:GetAttribute("BreakRemaining")
+            local dropStartedAt=egg:GetAttribute("DropStartedAt")
+
+            if breakRemaining~=nil then
+                return {
+                    Instance=egg,
+                    UUID=tostring(eggUUID),
+                    Egg=eggName,
+                    BreakRemaining=tonumber(breakRemaining),
+                    DropStartedAt=dropStartedAt
+                }
+            end
+        end
+    end
+
+    return nil
+end
+
+local function findNearestDroppedEgg(eggName,previousUUIDs,dropPosition)
+    local ActiveEggs=getActiveEggs()
+
+    if not ActiveEggs or not dropPosition then
+        return nil
+    end
+
+    local nearest=nil
+    local nearestDistance=math.huge
+
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local currentEggName=egg:GetAttribute("Egg")
+        local uuid=getEggUUID(egg)
+        local breakRemaining=tonumber(egg:GetAttribute("BreakRemaining"))
+        local position=getEggPosition(egg)
+
+        if currentEggName==eggName
+            and uuid
+            and position
+            and breakRemaining~=nil
+            and not previousUUIDs[tostring(uuid)] then
+
+            local distance=(position-dropPosition).Magnitude
+
+            if distance<nearestDistance then
+                nearestDistance=distance
+
+                nearest={
+                    Instance=egg,
+                    UUID=tostring(uuid),
+                    Egg=currentEggName,
+                    BreakRemaining=breakRemaining,
+                    DropStartedAt=egg:GetAttribute("DropStartedAt"),
+                    Position=position,
+                    Distance=distance
+                }
+            end
+        end
+    end
+
+    return nearest
+end
+
+waitForDroppedEgg=function(eggName,previousUUIDs,dropPosition,timeout)
+    timeout=timeout or 10
+
+    local start=os.clock()
+
+    while AutoPickupRunning and os.clock()-start<timeout do
+        local data=findNearestDroppedEgg(
+            eggName,
+            previousUUIDs,
+            dropPosition
+        )
+
+        if data then
+            AddDebug(string.format(
+                "[AUTO] New dropped %s | UUID: %s | BreakRemaining: %.2f | Distance: %.1f",
+                tostring(data.Egg),
+                tostring(data.UUID),
+                tonumber(data.BreakRemaining) or 0,
+                tonumber(data.Distance) or 0
+            ))
+
+            return data
+        end
+
+        task.wait(0.1)
+    end
+
+    AddDebug("[AUTO ERROR] New dropped egg not found")
+    return nil
+end
+--==================================================
+-- 21. AUTO MAGMA DIP LOGIC
+--==================================================
+local GameMessageEvent=game:GetService("ReplicatedStorage").Remotes.Reusable.GameMessage
+
+GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
+    if typeof(message)~="string" then return end
+    if string.find(message,"Egg Mutated Into",1,true) then
+        AutoVolcanoMessageReceived=true
+        AutoVolcanoMessageText=message
+        AutoVolcanoMessageType="Success"
+        AddDebug("[AUTO MAGMA DIP] Mutation SUCCESS detected")
+    elseif string.find(message,"Egg Didn't Mutate",1,true) then
+        AutoVolcanoMessageReceived=true
+        AutoVolcanoMessageText=message
+        AutoVolcanoMessageType="Failed"
+        AddDebug("[AUTO MAGMA DIP] Mutation FAILED detected")
+    elseif string.find(lowerMessage,"every egg you carry",1,true) then
+        AutoVolcanoMessageReceived=true
+        AutoVolcanoMessageText=message
+        AutoVolcanoMessageType="Failed"
+        AddDebug("[AUTO MAGMA DIP] Already dipped / failed detected")
+    end
+end)
+
+if VolcanoDipResultEvent then
+    VolcanoDipResultEvent.OnClientEvent:Connect(function(result)
+        if not AutoMagmaDipWaitingForResult then
+            return
+        end
+        AutoMagmaDipResult=result
+        AutoMagmaDipWaitingForResult=false
+    end)
+else
+    AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDipResult remote not found")
+end
+--==================================================
+-- 22. AUTO PLACE LOGIC
+--==================================================
+
+--==================================================
+-- 23. ESP LOGIC
+--==================================================
+local function getSelectedEggNames()
+    local names = {}
+    for _, eggName in ipairs(EggTypes) do
+        if eggName ~= "--" and SelectedEggs[eggName] then
+            table.insert(names, eggName)
+        end
+    end
+    return names
+end
+
+local function getPrimarySelectedEgg()
+    local names=getSelectedEggNames()
+    return names[1]
+end
+
+local function updateDetectedEggList(lines)
+    for _,child in ipairs(DetectedEggFrame:GetChildren()) do
+        if child:IsA("TextLabel") then
+            child:Destroy()
+        end
+    end
+
+    for _,line in ipairs(lines) do
+        local label=Instance.new("TextLabel")
+        label.Size=UDim2.new(1,-10,0,20)
+        label.BackgroundTransparency=1
+        label.Text=tostring(line)
+        label.TextColor3=Color3.fromRGB(210,210,218)
+        label.TextSize=textSize(9)
+        label.Font=Enum.Font.Gotham
+        label.TextXAlignment=Enum.TextXAlignment.Left
+        label.Parent=DetectedEggFrame
+    end
+end
+
+local function updateFilterText()
+    local selectedNames=getSelectedEggNames()
+
+    local ActiveEggs=getActiveEggs()
+    if not ActiveEggs then
+        ESPFilterCount.Text="Detected eggs: 0"
+        updateDetectedEggList({})
+        return
+    end
+
+    local lines={}
+    local total=0
+
+    for _,egg in ipairs(ActiveEggs:GetChildren()) do
+        local eggName=egg:GetAttribute("Egg")
+
+        if eggName and SelectedEggs[eggName] then
+            total=total+1
+
+            local weight=tonumber(egg:GetAttribute("Weight"))
+            if weight then
+                table.insert(lines,string.format("%s - %.2f",eggName,weight))
+            else
+                table.insert(lines,eggName.." - --")
+            end
+        end
+    end
+
+    ESPFilterCount.Text="Detected eggs: "..tostring(total)
+    updateDetectedEggList(lines)
+end
+
+local ESPFolder=Instance.new("Folder")
+ESPFolder.Name="EggESP"
+ESPFolder.Parent=workspace
+
+local ESPObjects={}
+
+local function clearESP()
+    for egg, data in pairs(ESPObjects) do
+        if data and data.Part then
+            pcall(function()
+                data.Part:Destroy()
+            end)
+        end
+
+        ESPObjects[egg]=nil
+    end
+end
+
+local function createESP(egg)
+    if ESPObjects[egg] then
+        return
+    end
+
+    local eggName=egg:GetAttribute("Egg") or "Egg"
+    local position=getEggPosition(egg)
+
+    if not position then
+        AddDebug("[ESP ERROR] No usable Position: "..tostring(eggName))
+        return
+    end
+
+    local part=Instance.new("Part")
+    part.Name="EggESP_"..tostring(egg.Name)
+    part.Size=Vector3.new(0.5,0.5,0.5)
+    part.Position=position
+    part.Anchored=true
+    part.CanCollide=false
+    part.CanTouch=false
+    part.CanQuery=false
+    part.Transparency=1
+    part.Parent=ESPFolder
+
+    local billboard=Instance.new("BillboardGui")
+    billboard.Name="EggLabel"
+    billboard.Size=UDim2.fromOffset(180,45)
+    billboard.StudsOffset=Vector3.new(0,3,0)
+    billboard.AlwaysOnTop=true
+    billboard.MaxDistance=math.huge
+    billboard.Parent=part
+
+    local label=Instance.new("TextLabel")
+    label.Size=UDim2.fromScale(1,1)
+    label.BackgroundTransparency=1
+    label.Text=eggName
+    label.TextColor3=Color3.fromRGB(255,255,255)
+    label.TextStrokeTransparency=0
+    label.TextStrokeColor3=Color3.fromRGB(0,0,0)
+    label.TextSize=textSize(13)
+    label.Font=Enum.Font.GothamBold
+    label.Parent=billboard
+
+    ESPObjects[egg]={
+        Part=part,
+        Label=label
+    }
+end
+
+function updateESP()
+    if not ESPEnabled then
+        clearESP()
+        return
+    end
+
+    local selectedNames=getSelectedEggNames()
+
+    if #selectedNames==0 then
+        clearESP()
+        ESPFilterCount.Text="Detected eggs: 0"
+        updateDetectedEggList({})
+        return
+    end
+
+    local ActiveEggs=getActiveEggs()
+
+    if not ActiveEggs then
+        clearESP()
+        AddDebug("[ESP ERROR] ActiveEggs not found")
+        ESPFilterCount.Text="Detected eggs: 0"
+        updateDetectedEggList({})
+        return
+    end
+
+    local eggs=ActiveEggs:GetChildren()
+    local activeEggSet={}
+
+    for _, egg in ipairs(eggs) do
+        local currentEggName=egg:GetAttribute("Egg")
+
+        if currentEggName and SelectedEggs[currentEggName] then
+            local weight=tonumber(egg:GetAttribute("Weight"))
+            local position=getEggPosition(egg)
+
+            if not ESPObjects[egg] then
+                createESP(egg)
+            end
+
+            if ESPObjects[egg] then
+                local data=ESPObjects[egg]
+
+                if position and data.Part then
+                    data.Part.Position=position
+                end
+
+                if data.Label then
+                    local weightText="--"
+
+                    if weight~=nil then
+                        weightText=string.format("%.2f",weight)
+                    end
+
+                    data.Label.Text=tostring(currentEggName).." | "..weightText
+                end
+            end
+
+            activeEggSet[egg]=true
+
+            local weightText="--"
+
+            if weight~=nil then
+                weightText=string.format("%.2f",weight)
+            end
+        end
+    end
+
+    for egg, data in pairs(ESPObjects) do
+        if not activeEggSet[egg] then
+            if data and data.Part then
+                pcall(function()
+                    data.Part:Destroy()
+                end)
+            end
+
+            ESPObjects[egg]=nil
+        end
+    end
+
+    EggCount.Text="Active Eggs: "..tostring(#eggs)
+end
+--==================================================
+-- 24. EVENT CONNECTIONS
+--==================================================
+AutoPickupToggle.MouseButton1Click:Connect(function()
+    local enabled=not AutoPickupRunning
+    AutoPickupRunning=enabled
+
+    AutoPickupToggle.Text=enabled and "ON" or "OFF"
+    AutoPickupToggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+
+    AutoPickupStatus.Text=enabled and "● Active" or "● Inactive"
+    AutoPickupStatus.TextColor3=enabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
+
+    AddDebug(enabled and "[AUTO] Enabled" or "[AUTO] Disabled")
+
+    if not enabled then
+        task.spawn(function()
+            pcall(function()
+                stopAutoPickupFloat()
+            end)
+
+            AutoPickupBusy=false
+            AutoPickupAwaitingUUID=nil
+            AutoPickupAwaitingPickup=false
+            AutoPickupAwaitingDeposit=false
+            AutoPickupPickupConfirmed=false
+            AutoPickupDepositConfirmed=false
+            AutoMagmaDipWaitingForResult=false
+            AutoVolcanoWaitingForMessage=false
+            AutoPickupFloating=false
+            AutoPickupStage="Idle"
+
+            AddDebug("[AUTO] Movement reset")
+        end)
+
+        return
+    end
+
+    AddDebug("[AUTO] Movement: "..AutoPickupMovementMode)
+    AddDebug(string.format("[AUTO] Claim Delay: %.1fs",AutoPickupClaimDelay))
+    AddDebug("[AUTO] Next Egg Delay: 3.0s")
+end)
+
+AutoPickupFilterButton.MouseButton1Click:Connect(function()
+    AutoPickupFilterFrame.Visible=not AutoPickupFilterFrame.Visible
+    if AutoPickupFilterFrame.Visible then
+        AutoPickupFilterButton.Text="  Select Eggs ▲"
+        createAutoPickupFilterButtons()
+    else
+        refreshAutoPickupFilterText()
+    end
+end)
+
+AutoMovementButton.MouseButton1Click:Connect(function()
+    if AutoPickupMovementMode == "Teleport" then
+        AutoPickupMovementMode = "Walk"
+        AutoMovementButton.Text = "Walk"
+        AutoMovementInfo.Text = "Walk active"
+    else
+        AutoPickupMovementMode = "Teleport"
+        AutoMovementButton.Text = "Teleport"
+        AutoMovementInfo.Text = "Teleport active"
+    end
+end)
+
+AutoMagmaDipToggle.MouseButton1Click:Connect(function()
+    AutoMagmaDipEnabled=not AutoMagmaDipEnabled
+
+    AutoMagmaDipToggle.Text=AutoMagmaDipEnabled and "ON" or "OFF"
+    AutoMagmaDipToggle.BackgroundColor3=AutoMagmaDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+
+    AutoMagmaDipStatus.Text=AutoMagmaDipEnabled and "● Active" or "● Inactive"
+    AutoMagmaDipStatus.TextColor3=AutoMagmaDipEnabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
+
+    AddDebug(AutoMagmaDipEnabled and "[AUTO MAGMA DIP] Enabled" or "[AUTO MAGMA DIP] Disabled")
+end)
+
+if EggPickupEvent then
+    EggPickupEvent.OnClientEvent:Connect(function(action,...)
+        local args={...}
+
+        if action=="PickedUp" then
+            local eggName=args[1]
+            local uuid=args[2]
+
+            AddDebug("[AUTO EVENT] PickedUp | "..tostring(eggName).." | "..tostring(uuid))
+
+            if AutoPickupStage=="InitialPickup"
+                and AutoPickupAwaitingPickup
+                and AutoPickupAwaitingUUID
+                and tostring(uuid)==tostring(AutoPickupAwaitingUUID) then
+
+                AutoPickupPickupConfirmed=true
+                AutoPickupAwaitingPickup=false
+
+                AddDebug("[AUTO] Initial pickup confirmed: "..tostring(eggName))
+
+            elseif AutoPickupStage=="DroppedPickup"
+                and AutoPickupAwaitingPickup
+                and AutoPickupAwaitingUUID
+                and tostring(uuid)==tostring(AutoPickupAwaitingUUID) then
+
+                AutoPickupPickupConfirmed=true
+                AutoPickupAwaitingPickup=false
+
+                AddDebug("[AUTO] Dropped pickup confirmed: "..tostring(eggName))
+            end
+
+        elseif action=="Deposited" then
+            AddDebug("[AUTO EVENT] Deposited")
+
+            if AutoPickupStage=="Deposit"
+                and AutoPickupAwaitingDeposit then
+
+                AutoPickupDepositConfirmed=true
+                AutoPickupAwaitingDeposit=false
+
+                AddDebug("[AUTO] Deposit confirmed")
+            end
+        end
+    end)
+else
+    AddDebug("[AUTO ERROR] EggPickup remote not found")
+end
+
+ConfigSaveButton.MouseButton1Click:Connect(function()
+    saveConfig()
+    ConfigSaveButton.Text="SAVED"
+    ConfigSaveButton.BackgroundColor3=Color3.fromRGB(55,120,75)
+    task.delay(1.5,function()
+        if ConfigSaveButton then
+            ConfigSaveButton.Text="SAVE"
+            ConfigSaveButton.BackgroundColor3=Color3.fromRGB(45,45,53)
+        end
+    end)
+end)
+
+AutoExecuteButton.MouseButton1Click:Connect(function()
+    local content='loadstring(game:HttpGet("https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/rap-skrip"))()'
+    local success,err=pcall(function()
+        if makefolder and isfolder and not isfolder("RAPSkrip") then
+            makefolder("RAPSkrip")
+        end
+        writefile("RAPSkrip/rap_skrip_test.txt",content)
+    end)
+    if success then
+        AutoExecuteStatus.Text="Created: rap_skrip_test.txt"
+        AddDebug("[AUTOEXEC] rap_skrip_test.txt created")
+    else
+        AutoExecuteStatus.Text="Failed: "..tostring(err)
+        AddDebug("[AUTOEXEC ERROR] "..tostring(err))
+    end
+end)
+
+Header.InputBegan:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+        dragging=true
+        dragStart=input.Position
+        startPos=Main.Position
+        input.Changed:Connect(function()
+            if input.UserInputState==Enum.UserInputState.End then
+                dragging=false
+            end
+        end)
+    end
+end)
+
+Minimized.InputBegan:Connect(function(input)
+    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+        minimizedDragging=true
+        minimizedDragStart=input.Position
+        minimizedStartPos=Minimized.Position
+        input.Changed:Connect(function()
+            if input.UserInputState==Enum.UserInputState.End then
+                minimizedDragging=false
+            end
+        end)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if minimizedDragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+        local delta=input.Position-minimizedDragStart
+        Minimized.Position=UDim2.new(minimizedStartPos.X.Scale,minimizedStartPos.X.Offset+delta.X,minimizedStartPos.Y.Scale,minimizedStartPos.Y.Offset+delta.Y)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+        local delta=input.Position-dragStart
+        Main.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
+    end
+end)
+
+local function updateActivePageButton(activeButton)
+    local buttons={AutoButton,ESPButton,DebugButton,SettingsButton}
+    for _,button in ipairs(buttons) do
+        button.BackgroundColor3=button==activeButton and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
+    end
+end
+AutoButton.MouseButton1Click:Connect(function()
+    showPage(AutoPage)
+    updateActivePageButton(AutoButton)
+end)
+
+ESPButton.MouseButton1Click:Connect(function()
+    showPage(ESPPage)
+    updateActivePageButton(ESPButton)
+end)
+
+DebugButton.MouseButton1Click:Connect(function()
+    showPage(DebugPage)
+    updateActivePageButton(DebugButton)
+end)
+
+SettingsButton.MouseButton1Click:Connect(function()
+    showPage(SettingsPage)
+    updateActivePageButton(SettingsButton)
+end)
+
+Minimize.MouseButton1Click:Connect(function()
+    Main.Visible=false
+    Minimized.Visible=true
+end)
+
+Minimized.MouseButton1Click:Connect(function()
+    Main.Visible=true
+    Minimized.Visible=false
+end)
+
+Close.MouseButton1Click:Connect(function()
+    AutoPickupRunning=false
+    AutoPickupBusy=false
+    AutoMagmaDipEnabled=false
+    AutoPickupFloating=false
+    AntiAFKEnabled=false
+    pcall(function()
+        clearESP()
+    end)
+    pcall(function()
+        if AutoPickupFloatForce then
+            AutoPickupFloatForce:Destroy()
+            AutoPickupFloatForce=nil
+        end
+    end)
+    pcall(function()
+        local oldESP=workspace:FindFirstChild("RAPGUIskrip")
+        if oldESP then
+            oldESP:Destroy()
+        end
+    end)
+    Gui:Destroy()
+end)
+
+ESPToggle.MouseButton1Click:Connect(function()
+    ESPEnabled=not ESPEnabled
+
+    ESPToggle.Text=ESPEnabled and "ON" or "OFF"
+    ESPToggle.BackgroundColor3=
+        ESPEnabled
+        and Color3.fromRGB(55,120,75)
+        or Color3.fromRGB(45,45,53)
+
+    ESPStatus.Text=ESPEnabled and "● Active" or "● Inactive"
+    ESPStatus.TextColor3=
+        ESPEnabled
+        and Color3.fromRGB(130,180,140)
+        or Color3.fromRGB(150,150,158)
+
+    AddDebug(
+        ESPEnabled
+        and "[ESP] Enabled"
+        or "[ESP] Disabled"
+    )
+    updateFilterText()
+    updateESP()
+end)
+
+ESPFilterButton.MouseButton1Click:Connect(function()
+    ESPFilterFrame.Visible=not ESPFilterFrame.Visible
+    if ESPFilterFrame.Visible then
+        ESPFilterButton.Text="Select Eggs ▲"
+        createESPFilterButtons()
+    else
+        refreshESPFilterText()
+    end
+end)
+--==================================================
+-- 25. LOOPS / TASKS
+--==================================================
+task.spawn(function()
+    while Gui.Parent do
+        pcall(function()
+            updateFilterText()
+        end)
+        
+        if ESPEnabled then
+            pcall(function()
+                updateESP()
+            end)
+        end
+        
+        task.wait(0.25)
+    end
+end)
+
+task.spawn(function()
+    while Gui.Parent do
+        if AutoPickupRunning and not AutoPickupBusy then
+            local success,err=xpcall(function()
+                tryAutoPickup()
+            end,function(errorMessage)
+                return debug.traceback(tostring(errorMessage),2)
+            end)
+
+            if not success then
+                warn("[AUTO ERROR]\n"..tostring(err))
+                AutoPickupBusy=false
+                task.wait(1)
+            end
+        end
+
+        task.wait(0.25)
+    end
+end)
+--==================================================
+-- 26. STARTUP / INITIALIZATION
+--==================================================
+showPage(AutoPage)
+updateActivePageButton(AutoButton)
+
+createAutoPickupFilterButtons()
+refreshAutoPickupFilterText()
+
+refreshESPFilterText()
+createESPFilterButtons()
+
+updateAntiAFKButton()
