@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7.5"
+local ver = "TEST v7.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -201,6 +201,8 @@ local EggArrivalClaimEvent
 local TeleportToPlotEvent
 local VolcanoDipEvent
 local VolcanoDipResultEvent
+
+local EggPlaceEvent
 
 task.spawn(function()
     pcall(function()
@@ -957,21 +959,6 @@ end
 
 setupFilterScrolling(AutoPickupFilterFrame,AutoPickupFilterLayout)
 setupFilterScrolling(AutoPlaceFilterFrame,AutoPlaceFilterLayout)
-
-local AutoPlaceFilterFrame = Instance.new("ScrollingFrame")
-AutoPlaceFilterFrame.Name = "AutoPlaceFilterFrame"
-AutoPlaceFilterFrame.Size = UDim2.new(1, -10, 0, 120)
-AutoPlaceFilterFrame.Position = UDim2.fromOffset(5, 130)
-AutoPlaceFilterFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-AutoPlaceFilterFrame.BorderSizePixel = 0
-AutoPlaceFilterFrame.ScrollBarThickness = 3
-AutoPlaceFilterFrame.Visible = false
-AutoPlaceFilterFrame.ZIndex = 20
-AutoPlaceFilterFrame.Parent = AutoContent2
-
-local AutoPlaceFilterLayout = Instance.new("UIListLayout")
-AutoPlaceFilterLayout.Padding = UDim.new(0, 2)
-AutoPlaceFilterLayout.Parent = AutoPlaceFilterFrame
 --==================================================
 -- 13.1 AUTO PICKUP EGG FILTER FUNCTION
 --==================================================
@@ -1032,23 +1019,28 @@ local function createAutoPickupFilterButtons()
     end
 end
 --==================================================
--- 13.3 AUTO PLACE EGG FILTER FUNCTIONS
+-- 13.2 AUTO PLACE EGG FILTER FUNCTIONS
 --==================================================
 local function refreshAutoPlaceFilterText()
     local selected={}
     for _,eggName in ipairs(EggTypes) do
-        if eggName~="--" and AutoSelectedEggs[eggName] then
+        if eggName~="--" and AutoPlaceSelectedEggs[eggName] then
             table.insert(selected,eggName)
         end
     end
 
     if #selected==0 then
-        AutoPlaceFilterButton.Text="-- ▼"
+        AutoPlaceFilterButton.Text="  -- ▼"
     elseif #selected==1 then
-        AutoPlaceFilterButton.Text=selected[1].." ▼"
+        AutoPlaceFilterButton.Text="  "..selected[1].." ▼"
+    elseif #selected==2 then
+        AutoPlaceFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
     else
-        AutoPlaceFilterButton.Text=tostring(#selected).." eggs selected ▼"
+        AutoPlaceFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
     end
+
+    AutoPlaceFilterCount.Text="Selected eggs: "..tostring(#selected)
+    AutoPlaceFilterButton.BackgroundColor3=#selected>0 and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
 end
 
 local function createAutoPlaceFilterButtons()
@@ -1059,28 +1051,79 @@ local function createAutoPlaceFilterButtons()
     end
 
     for _,eggName in ipairs(EggTypes) do
+        local isSelected=eggName~="--" and AutoPlaceSelectedEggs[eggName]==true
         local button=Instance.new("TextButton")
         button.Size=UDim2.new(1,-10,0,22)
-        button.BackgroundTransparency=1
-        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
+        button.BackgroundTransparency=isSelected and 0 or 1
+        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
         button.TextSize=textSize(10)
         button.Font=Enum.Font.Gotham
         button.TextXAlignment=Enum.TextXAlignment.Left
         button.AutoButtonColor=false
-        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Text=(AutoPlaceSelectedEggs[eggName] and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
         button.Parent=AutoPlaceFilterFrame
 
         button.MouseButton1Click:Connect(function()
             if eggName=="--" then
-                AutoSelectedEggs={}
+                AutoPlaceSelectedEggs={}
             else
-                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+                AutoPlaceSelectedEggs[eggName]=not AutoPlaceSelectedEggs[eggName] or nil
             end
 
             createAutoPlaceFilterButtons()
             refreshAutoPlaceFilterText()
         end)
     end
+end
+
+AutoPlaceFilterButton.MouseButton1Click:Connect(function()
+    AutoPlaceFilterFrame.Visible=not AutoPlaceFilterFrame.Visible
+
+    if AutoPlaceFilterFrame.Visible then
+        AutoPlaceFilterButton.Text="  Select Eggs ▲"
+        createAutoPlaceFilterButtons()
+    else
+        refreshAutoPlaceFilterText()
+    end
+end)
+--==================================================
+-- 13.3 AUTO PLACE TOGGLE
+--==================================================
+local function updateAutoPlaceButton()
+    if AutoPlaceEnabled then
+        AutoPlaceToggle.Text="ON"
+        AutoPlaceToggle.BackgroundColor3=Color3.fromRGB(55,85,60)
+        AutoPlaceStatus.Text="● Active"
+        AutoPlaceStatus.TextColor3=Color3.fromRGB(100,200,130)
+    else
+        AutoPlaceToggle.Text="OFF"
+        AutoPlaceToggle.BackgroundColor3=Color3.fromRGB(45,45,53)
+        AutoPlaceStatus.Text="● Inactive"
+        AutoPlaceStatus.TextColor3=Color3.fromRGB(150,150,158)
+    end
+end
+
+AutoPlaceToggle.MouseButton1Click:Connect(function()
+    AutoPlaceEnabled=not AutoPlaceEnabled
+    updateAutoPlaceButton()
+end)
+
+updateAutoPlaceButton()
+--==================================================
+-- 13.4 AUTO PLACE STATE
+--==================================================
+local function hasAutoPlaceSelection()
+    for _,eggName in ipairs(EggTypes) do
+        if eggName~="--" and AutoPlaceSelectedEggs[eggName] then
+            return true
+        end
+    end
+    return false
+end
+
+local function isAutoPlaceEggSelected(eggName)
+    return eggName~="--" and AutoPlaceSelectedEggs[eggName]==true
 end
 -- ============================================================
 -- #14 ESP PAGE
