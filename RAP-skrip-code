@@ -2294,7 +2294,7 @@ local function tryAutoPickup(egg)
             -- A result was received, now give the mutation message
             -- time to arrive if it is sent separately.
             local messageStart=os.clock()
-            while AutoPickupRunning and not AutoVolcanoMessageReceived and os.clock()-messageStart<10 do
+            while AutoPickupRunning and not AutoVolcanoMessageReceived and os.clock()-messageStart<12 do
                 task.wait(0.1)
             end
 
@@ -2319,7 +2319,6 @@ local function tryAutoPickup(egg)
             AutoPickupBusy=false
             return
         end
-        task.wait(0.1)
         -- 7. Return outside the plot
         local reachedOutside=false
         while AutoPickupRunning and not reachedOutside do
