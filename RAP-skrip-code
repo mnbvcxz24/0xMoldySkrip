@@ -2319,7 +2319,7 @@ local function tryAutoPickup(egg)
             AutoPickupBusy=false
             return
         end
-
+        task.wait(0.1)
         -- 7. Return outside the plot
         local reachedOutside=false
         while AutoPickupRunning and not reachedOutside do
