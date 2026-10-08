@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8"
+local ver = "TEST v8.1"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2344,7 +2344,7 @@ local function tryAutoPickup(egg)
         local reachedOutside=false
 
         while AutoPickupRunning and not reachedOutside do
-            if teleportOutsidePlot(currentEggPosition) then
+            if teleportOutsidePlot(VolcanoDropPosition) then
                 reachedOutside=true
             else
                 task.wait(0.25)
