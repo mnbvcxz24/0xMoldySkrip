@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7.5"
+local ver = "TEST v7.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2644,6 +2644,7 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
         AutoVolcanoMessageType="AlreadyDipped"
+        AutoVolcanoAlreadyDone=true
         AddDebug("[AUTO MAGMA DIP] Egg was already dipped")
     end
 end)
