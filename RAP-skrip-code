@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.1"
+local ver = "TEST v8.2"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2131,7 +2131,7 @@ local function teleportOutsidePlot(eggPosition)
         ) * baseplate.Size.Z / 2)
 
     local outsidePosition =
-        center -
+        center +
         direction *
         (edge + 10)
 
