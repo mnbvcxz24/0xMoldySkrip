@@ -769,7 +769,7 @@ local AutoClaimBarCorner = Instance.new("UICorner")
 AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
 AutoClaimBarCorner.Parent = AutoClaimBar
 --==================================================
--- 12.1 AUTO PICKUP
+-- 12.1 AUTO PICKUP VARIABLES
 --==================================================
 local AutoPickupRunning = false
 local AutoPickupBusy = false
@@ -856,7 +856,7 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 --==================================================
--- 12.2 AUTO MAGMA DIP
+-- 12.2 AUTO MAGMA DIP VARIABLES
 --==================================================
 local AutoMagmaDipEnabled = false
 local AutoMagmaDipResult = nil
@@ -866,9 +866,10 @@ local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
 local AutoVolcanoMessageType = nil
 --==================================================
--- 12.4 AUTO PLACE EGGS
+-- 12.4 AUTO PLACE EGGS VARIABLES
 --==================================================
-
+local AutoPlaceEnabled = false
+local AutoPlaceRunning = false
 --==================================================
 -- 13. EGG FILTER SYSTEM
 --==================================================
@@ -1003,7 +1004,7 @@ local function createAutoPickupFilterButtons()
     end
 end
 --==================================================
--- 13.3 AUTO PLACE EGG FILTER
+-- 13.3 AUTO PLACE EGG FILTER FUNCTION
 --==================================================
 local function refreshAutoPlaceFilterText()
     local selected={}
@@ -1058,7 +1059,6 @@ end
 -- ============================================================
 -- #14 ESP PAGE
 -- ============================================================
-
 local ESPTitle=Instance.new("TextLabel")
 ESPTitle.Name="ESPTitle"
 ESPTitle.Size=UDim2.new(1,-10,0,25)
@@ -2740,7 +2740,16 @@ end
 --==================================================
 -- 22. AUTO PLACE LOGIC
 --==================================================
-
+local function autoPlaceEggs()
+    if AutoPlaceRunning then
+        return
+    end
+    AutoPlaceRunning = true
+    while AutoPlaceEnabled do
+        break
+    end
+    AutoPlaceRunning = false
+end
 --==================================================
 -- 23. ESP LOGIC
 --==================================================
