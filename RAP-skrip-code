@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.2"
+local ver = "TEST v8.3"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2250,7 +2250,6 @@ local function tryAutoPickup(egg)
 
         if VolcanoDipEvent then
             VolcanoDipEvent:FireServer()
-            AddDebug("[AUTO MAGMA DIP] Dip request sent")
         else
             AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDip remote missing")
             AutoMagmaDipWaitingForResult=false
@@ -2282,14 +2281,10 @@ local function tryAutoPickup(egg)
         -- 6. Handle the response
         if AutoVolcanoMessageReceived then
             if AutoVolcanoMessageType=="Failed" then
-                AddDebug("[AUTO MAGMA DIP] Failed/already dipped message detected")
             elseif AutoVolcanoMessageType=="Success" then
-                AddDebug("[AUTO MAGMA DIP] Mutation successful")
             else
-                AddDebug("[AUTO MAGMA DIP] Message: "..tostring(AutoVolcanoMessageText))
             end
         elseif AutoMagmaDipResult~=nil then
-            AddDebug("[AUTO MAGMA DIP] Result: "..tostring(AutoMagmaDipResult))
 
             -- A result was received, now give the mutation message
             -- time to arrive if it is sent separately.
@@ -2300,14 +2295,10 @@ local function tryAutoPickup(egg)
 
             if AutoVolcanoMessageReceived then
                 if AutoVolcanoMessageType=="Failed" then
-                    AddDebug("[AUTO MAGMA DIP] Failed/already dipped message detected")
                 elseif AutoVolcanoMessageType=="Success" then
-                    AddDebug("[AUTO MAGMA DIP] Mutation successful")
                 else
-                    AddDebug("[AUTO MAGMA DIP] Message: "..tostring(AutoVolcanoMessageText))
                 end
             else
-                AddDebug("[AUTO MAGMA DIP] No mutation message received")
             end
         else
             AddDebug("[AUTO MAGMA DIP] No result/message received")
@@ -2520,7 +2511,7 @@ local function tryAutoPickup(egg)
     AutoPickupAwaitingDeposit=false
 
     if AutoPickupDepositConfirmed then
-        AddDebug("[AUTO] Egg deposited successfully")
+        AddDebug("Deposited: "..tostring(eggName))
     else
         AddDebug("[AUTO ERROR] Deposit not confirmed")
     end
@@ -3031,8 +3022,6 @@ if EggPickupEvent then
             local eggName=args[1]
             local uuid=args[2]
 
-            AddDebug("[AUTO EVENT] PickedUp | "..tostring(eggName).." | "..tostring(uuid))
-
             if AutoPickupStage=="InitialPickup"
                 and AutoPickupAwaitingPickup
                 and AutoPickupAwaitingUUID
@@ -3041,8 +3030,6 @@ if EggPickupEvent then
                 AutoPickupPickupConfirmed=true
                 AutoPickupAwaitingPickup=false
 
-                AddDebug("[AUTO] Initial pickup confirmed: "..tostring(eggName))
-
             elseif AutoPickupStage=="DroppedPickup"
                 and AutoPickupAwaitingPickup
                 and AutoPickupAwaitingUUID
@@ -3050,20 +3037,15 @@ if EggPickupEvent then
 
                 AutoPickupPickupConfirmed=true
                 AutoPickupAwaitingPickup=false
-
-                AddDebug("[AUTO] Dropped pickup confirmed: "..tostring(eggName))
             end
 
         elseif action=="Deposited" then
-            AddDebug("[AUTO EVENT] Deposited")
 
             if AutoPickupStage=="Deposit"
                 and AutoPickupAwaitingDeposit then
 
                 AutoPickupDepositConfirmed=true
                 AutoPickupAwaitingDeposit=false
-
-                AddDebug("[AUTO] Deposit confirmed")
             end
         end
     end)
