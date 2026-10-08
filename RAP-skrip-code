@@ -2295,7 +2295,7 @@ local function tryAutoPickup(egg)
             -- time to arrive if it is sent separately.
             local messageStart=os.clock()
             while AutoPickupRunning and not AutoVolcanoMessageReceived and os.clock()-messageStart<12 do
-                task.wait(3)
+                task.wait(5)
             end
 
             if AutoVolcanoMessageReceived then
