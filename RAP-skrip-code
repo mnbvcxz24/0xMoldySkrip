@@ -2740,14 +2740,54 @@ end
 --==================================================
 -- 22. AUTO PLACE LOGIC
 --==================================================
+local function holdEgg(eggName)
+    local character = player.Character or player.CharacterAdded:Wait()
+    local backpack = player:WaitForChild("Backpack")
+
+    local tool
+
+    for _, child in ipairs(backpack:GetChildren()) do
+        if child:IsA("Folder") then
+            tool = child:FindFirstChild(eggName, true)
+            if tool then
+                break
+            end
+        elseif child.Name == eggName then
+            tool = child
+            break
+        end
+    end
+
+    if tool and tool:IsA("Tool") then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+
+        if humanoid then
+            humanoid:EquipTool(tool)
+            return true
+        end
+    end
+
+    return false
+end
+
+
 local function autoPlaceEggs()
+    -- Safety: never run unless Auto Place is explicitly enabled
+    if not AutoPlaceEnabled then
+        return
+    end
+
     if AutoPlaceRunning then
         return
     end
+
     AutoPlaceRunning = true
+
     while AutoPlaceEnabled do
+        -- Auto Place logic will go here
         break
     end
+
     AutoPlaceRunning = false
 end
 --==================================================
