@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.3"
+local ver = "TEST v8.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -82,6 +82,7 @@ local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
 
 local SelectedEggs = {}
 local AutoSelectedEggs = {}
+local AutoPlaceSelectedEggs = {}
 
 local function saveConfig()
     if not writefile then
@@ -454,6 +455,38 @@ AutoPlaceFilterLabel.TextSize = textSize(10)
 AutoPlaceFilterLabel.Font = Enum.Font.GothamMedium
 AutoPlaceFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
 AutoPlaceFilterLabel.Parent = AutoContent2
+
+local AutoPlaceFilterButton = Instance.new("TextButton")
+AutoPlaceFilterButton.Name = "AutoPlaceFilterButton"
+AutoPlaceFilterButton.Size = UDim2.new(1,-10,0,27)
+AutoPlaceFilterButton.Position = UDim2.fromOffset(5,86)
+AutoPlaceFilterButton.BackgroundColor3 = Color3.fromRGB(35,35,42)
+AutoPlaceFilterButton.Text = "  -- ▼"
+AutoPlaceFilterButton.TextColor3 = Color3.fromRGB(220,220,225)
+AutoPlaceFilterButton.TextSize = textSize(10)
+AutoPlaceFilterButton.Font = Enum.Font.Gotham
+AutoPlaceFilterButton.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceFilterButton.AutoButtonColor = false
+AutoPlaceFilterButton.Active = true
+AutoPlaceFilterButton.Selectable = true
+AutoPlaceFilterButton.ZIndex = 10
+AutoPlaceFilterButton.Parent = AutoContent2
+
+local AutoPlaceFilterButtonCorner = Instance.new("UICorner")
+AutoPlaceFilterButtonCorner.CornerRadius = UDim.new(0,6)
+AutoPlaceFilterButtonCorner.Parent = AutoPlaceFilterButton
+
+local AutoPlaceFilterCount = Instance.new("TextLabel")
+AutoPlaceFilterCount.Name = "AutoPlaceFilterCount"
+AutoPlaceFilterCount.Size = UDim2.new(1,-10,0,18)
+AutoPlaceFilterCount.Position = UDim2.fromOffset(5,116)
+AutoPlaceFilterCount.BackgroundTransparency = 1
+AutoPlaceFilterCount.Text = "Selected eggs: 0"
+AutoPlaceFilterCount.TextColor3 = Color3.fromRGB(145,145,155)
+AutoPlaceFilterCount.TextSize = textSize(9)
+AutoPlaceFilterCount.Font = Enum.Font.Gotham
+AutoPlaceFilterCount.TextXAlignment = Enum.TextXAlignment.Left
+AutoPlaceFilterCount.Parent = AutoContent2
 
 local ESPContent2 = Instance.new("Frame")
 ESPContent2.Name = "ESPContent2"
@@ -901,7 +934,7 @@ AutoPickupFilterLayout.Parent = AutoPickupFilterFrame
 local AutoPlaceFilterFrame = Instance.new("ScrollingFrame")
 AutoPlaceFilterFrame.Name = "AutoPlaceFilterFrame"
 AutoPlaceFilterFrame.Size = UDim2.new(1, -10, 0, 120)
-AutoPlaceFilterFrame.Position = UDim2.fromOffset(5, 93)
+AutoPlaceFilterFrame.Position = UDim2.fromOffset(5,137)
 AutoPlaceFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPlaceFilterFrame.BorderSizePixel = 0
 AutoPlaceFilterFrame.ScrollBarThickness = 3
@@ -987,18 +1020,21 @@ end
 local function refreshAutoPlaceFilterText()
     local selected={}
     for _,eggName in ipairs(EggTypes) do
-        if eggName~="--" and AutoSelectedEggs[eggName] then
+        if eggName~="--" and AutoPlaceSelectedEggs[eggName] then
             table.insert(selected,eggName)
         end
     end
-
     if #selected==0 then
-        AutoPlaceFilterButton.Text="-- ▼"
+        AutoPlaceFilterButton.Text="  -- ▼"
     elseif #selected==1 then
-        AutoPlaceFilterButton.Text=selected[1].." ▼"
+        AutoPlaceFilterButton.Text="  "..selected[1].." ▼"
+    elseif #selected==2 then
+        AutoPlaceFilterButton.Text="  "..selected[1]..", "..selected[2].." ▼"
     else
-        AutoPlaceFilterButton.Text=tostring(#selected).." eggs selected ▼"
+        AutoPlaceFilterButton.Text="  "..selected[1]..", "..selected[2]..", +"..tostring(#selected-2).." ▼"
     end
+    AutoPlaceFilterCount.Text="Selected eggs: "..tostring(#selected)
+    AutoPlaceFilterButton.BackgroundColor3=#selected>0 and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
 end
 
 local function createAutoPlaceFilterButtons()
@@ -1007,26 +1043,25 @@ local function createAutoPlaceFilterButtons()
             child:Destroy()
         end
     end
-
     for _,eggName in ipairs(EggTypes) do
+        local isSelected=eggName~="--" and AutoPlaceSelectedEggs[eggName]==true
         local button=Instance.new("TextButton")
         button.Size=UDim2.new(1,-10,0,22)
-        button.BackgroundTransparency=1
-        button.TextColor3=Color3.fromRGB(190,190,198)
+        button.BackgroundColor3=isSelected and Color3.fromRGB(55,85,60) or Color3.fromRGB(27,27,33)
+        button.BackgroundTransparency=isSelected and 0 or 1
+        button.TextColor3=isSelected and Color3.fromRGB(225,225,230) or Color3.fromRGB(190,190,198)
         button.TextSize=textSize(10)
         button.Font=Enum.Font.Gotham
         button.TextXAlignment=Enum.TextXAlignment.Left
         button.AutoButtonColor=false
-        button.Text=(AutoSelectedEggs[eggName] and "☑ " or "☐ ")..(eggName=="--" and "Clear Selection" or eggName)
+        button.Text=(isSelected and "  ☑ " or " ☐ ")..(eggName=="--" and "Clear Selection" or eggName)
         button.Parent=AutoPlaceFilterFrame
-
         button.MouseButton1Click:Connect(function()
             if eggName=="--" then
-                AutoSelectedEggs={}
+                AutoPlaceSelectedEggs={}
             else
-                AutoSelectedEggs[eggName]=not AutoSelectedEggs[eggName] or nil
+                AutoPlaceSelectedEggs[eggName]=not AutoPlaceSelectedEggs[eggName] or nil
             end
-
             createAutoPlaceFilterButtons()
             refreshAutoPlaceFilterText()
         end)
@@ -2986,6 +3021,16 @@ AutoPickupFilterButton.MouseButton1Click:Connect(function()
         createAutoPickupFilterButtons()
     else
         refreshAutoPickupFilterText()
+    end
+end)
+
+AutoPlaceFilterButton.MouseButton1Click:Connect(function()
+    AutoPlaceFilterFrame.Visible=not AutoPlaceFilterFrame.Visible
+    if AutoPlaceFilterFrame.Visible then
+        AutoPlaceFilterButton.Text="  Select Eggs ▲"
+        createAutoPlaceFilterButtons()
+    else
+        refreshAutoPlaceFilterText()
     end
 end)
 
