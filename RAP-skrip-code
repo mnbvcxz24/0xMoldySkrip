@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7.3"
+local ver = "TEST v7.4"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -32,6 +32,7 @@ local TEXT_SCALE = 0.80
 local function textSize(size)
     return math.floor(size * TEXT_SCALE)
 end
+local AntiAFKEnabled=false
 local VolcanoEntrance1Position = Vector3.new(-4918.390625,41274.457031,-3673.695312)
 local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198486)
 local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
@@ -1555,7 +1556,6 @@ updateAntiAFKButton()
 --==================================================
 -- 17. ANTI-AFK
 --==================================================
-local AntiAFKEnabled = false
 player.Idled:Connect(function()
     if not AntiAFKEnabled then
         return
@@ -1566,6 +1566,7 @@ player.Idled:Connect(function()
     end)
     AddDebug("[ANTI AFK] Idle activity sent")
 end)
+
 local function setAntiAFK(enabled)
     AntiAFKEnabled = enabled
 
