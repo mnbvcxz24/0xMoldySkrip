@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7.2"
+local ver = "TEST v7.3"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2214,7 +2214,6 @@ local function tryAutoPickup(egg)
 
     AutoPickupAwaitingUUID=nil
     AutoPickupPickupConfirmed=false
-    stopAutoPickupFloat()
 
     -- 4. Auto Magma Dip
     if shouldAutoMagmaDip then
@@ -2280,8 +2279,6 @@ local function tryAutoPickup(egg)
             AddDebug("[AUTO MAGMA DIP] Mutation: "..tostring(AutoVolcanoMessageText))
         end
 
-        stopAutoPickupFloat()
-
         local reachedOutside=false
         while AutoPickupRunning and not reachedOutside do
             if teleportOutsidePlot(VolcanoDropPosition) then
@@ -2297,7 +2294,6 @@ local function tryAutoPickup(egg)
     -- 5. Volcanic Egg without Magma Dip
     elseif isVolcanic then
         exitVolcanicEgg()
-        stopAutoPickupFloat()
 
         local currentEggPosition=getEggPosition(egg) or eggPosition
         local reachedOutside=false
@@ -2315,8 +2311,6 @@ local function tryAutoPickup(egg)
 
     -- 6. Normal Egg without Magma Dip
     else
-        stopAutoPickupFloat()
-
         local currentEggPosition=getEggPosition(egg) or eggPosition
         local reachedOutside=false
 
@@ -2356,6 +2350,7 @@ local function tryAutoPickup(egg)
     -- 8. Drop egg
     AutoPickupStage="Drop"
     BasketDropEvent:FireServer()
+    stopAutoPickupFloat()
     task.wait(0.25)
 
     -- 9. Find newly dropped egg
