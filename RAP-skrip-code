@@ -33,6 +33,7 @@ local function textSize(size)
     return math.floor(size * TEXT_SCALE)
 end
 local AntiAFKEnabled=false
+
 local VolcanoEntrance1Position = Vector3.new(-4918.390625,41274.457031,-3673.695312)
 local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198486)
 local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
