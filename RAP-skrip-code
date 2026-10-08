@@ -2663,7 +2663,6 @@ waitForDroppedEgg=function(eggName,previousUUIDs,dropPosition,timeout)
 
         if data then
             AddDebug(string.format(
-                "[AUTO] New dropped %s | UUID: %s | BreakRemaining: %.2f | Distance: %.1f",
                 tostring(data.Egg),
                 tostring(data.UUID),
                 tonumber(data.BreakRemaining) or 0,
