@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.1"
+local ver = "TEST v8"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2288,7 +2288,6 @@ local function tryAutoPickup(egg)
             else
                 AddDebug("[AUTO MAGMA DIP] Message: "..tostring(AutoVolcanoMessageText))
             end
-            task.wait(3)
         elseif AutoMagmaDipResult~=nil then
             AddDebug("[AUTO MAGMA DIP] Result: "..tostring(AutoMagmaDipResult))
 
@@ -2296,7 +2295,7 @@ local function tryAutoPickup(egg)
             -- time to arrive if it is sent separately.
             local messageStart=os.clock()
             while AutoPickupRunning and not AutoVolcanoMessageReceived and os.clock()-messageStart<12 do
-                task.wait(0.1)
+                task.wait(3)
             end
 
             if AutoVolcanoMessageReceived then
