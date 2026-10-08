@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.4"
+local ver = "TEST v8.5"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -389,22 +389,10 @@ AutoContent2.ClipsDescendants = false
 AutoContent2.Visible = true
 AutoContent2.Parent = Content2
 
-local AutoTitle2 = Instance.new("TextLabel")
-AutoTitle2.Name = "AutoTitle2"
-AutoTitle2.Size = UDim2.new(1, -10, 0, 25)
-AutoTitle2.Position = UDim2.fromOffset(5, 0)
-AutoTitle2.BackgroundTransparency = 1
-AutoTitle2.Text = "Eggs Automation"
-AutoTitle2.TextColor3 = Color3.fromRGB(240, 240, 245)
-AutoTitle2.TextSize = textSize(15)
-AutoTitle2.Font = Enum.Font.GothamBold
-AutoTitle2.TextXAlignment = Enum.TextXAlignment.Left
-AutoTitle2.Parent = AutoContent2
-
 local AutoPlaceTitle = Instance.new("TextLabel")
 AutoPlaceTitle.Name = "AutoPlaceTitle"
 AutoPlaceTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoPlaceTitle.Position = UDim2.fromOffset(5, 27)
+AutoPlaceTitle.Position = UDim2.fromOffset(5, 24)
 AutoPlaceTitle.BackgroundTransparency = 1
 AutoPlaceTitle.Text = "Auto Place Eggs"
 AutoPlaceTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -416,7 +404,7 @@ AutoPlaceTitle.Parent = AutoContent2
 local AutoPlaceStatus = Instance.new("TextLabel")
 AutoPlaceStatus.Name = "AutoPlaceStatus"
 AutoPlaceStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoPlaceStatus.Position = UDim2.fromOffset(5, 43)
+AutoPlaceStatus.Position = UDim2.fromOffset(5, 37)
 AutoPlaceStatus.BackgroundTransparency = 1
 AutoPlaceStatus.Text = "● Inactive"
 AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
@@ -428,7 +416,7 @@ AutoPlaceStatus.Parent = AutoContent2
 local AutoPlaceToggle = Instance.new("TextButton")
 AutoPlaceToggle.Name = "AutoPlaceToggle"
 AutoPlaceToggle.Size = UDim2.fromOffset(62, 27)
-AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 27)
+AutoPlaceToggle.Position = UDim2.new(1, -67, 0, 24)
 AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoPlaceToggle.Text = "OFF"
 AutoPlaceToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -447,7 +435,7 @@ AutoPlaceToggleCorner.Parent = AutoPlaceToggle
 local AutoPlaceFilterLabel = Instance.new("TextLabel")
 AutoPlaceFilterLabel.Name = "AutoPlaceFilterLabel"
 AutoPlaceFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoPlaceFilterLabel.Position = UDim2.fromOffset(5, 67)
+AutoPlaceFilterLabel.Position = UDim2.fromOffset(5,54)
 AutoPlaceFilterLabel.BackgroundTransparency = 1
 AutoPlaceFilterLabel.Text = "Egg Filter"
 AutoPlaceFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -459,7 +447,7 @@ AutoPlaceFilterLabel.Parent = AutoContent2
 local AutoPlaceFilterButton = Instance.new("TextButton")
 AutoPlaceFilterButton.Name = "AutoPlaceFilterButton"
 AutoPlaceFilterButton.Size = UDim2.new(1,-10,0,27)
-AutoPlaceFilterButton.Position = UDim2.fromOffset(5,86)
+AutoPlaceFilterButton.Position = UDim2.fromOffset(5,71)
 AutoPlaceFilterButton.BackgroundColor3 = Color3.fromRGB(35,35,42)
 AutoPlaceFilterButton.Text = "  -- ▼"
 AutoPlaceFilterButton.TextColor3 = Color3.fromRGB(220,220,225)
@@ -479,7 +467,7 @@ AutoPlaceFilterButtonCorner.Parent = AutoPlaceFilterButton
 local AutoPlaceFilterCount = Instance.new("TextLabel")
 AutoPlaceFilterCount.Name = "AutoPlaceFilterCount"
 AutoPlaceFilterCount.Size = UDim2.new(1,-10,0,18)
-AutoPlaceFilterCount.Position = UDim2.fromOffset(5,116)
+AutoPlaceFilterCount.Position = UDim2.fromOffset(5,100)
 AutoPlaceFilterCount.BackgroundTransparency = 1
 AutoPlaceFilterCount.Text = "Selected eggs: 0"
 AutoPlaceFilterCount.TextColor3 = Color3.fromRGB(145,145,155)
@@ -934,7 +922,7 @@ AutoPickupFilterLayout.Parent = AutoPickupFilterFrame
 local AutoPlaceFilterFrame = Instance.new("ScrollingFrame")
 AutoPlaceFilterFrame.Name = "AutoPlaceFilterFrame"
 AutoPlaceFilterFrame.Size = UDim2.new(1, -10, 0, 120)
-AutoPlaceFilterFrame.Position = UDim2.fromOffset(5,137)
+AutoPlaceFilterFrame.Position = UDim2.fromOffset(5,100)
 AutoPlaceFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPlaceFilterFrame.BorderSizePixel = 0
 AutoPlaceFilterFrame.ScrollBarThickness = 3
