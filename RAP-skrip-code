@@ -2224,9 +2224,23 @@ local function tryAutoPickup(egg)
             AutoPickupBusy=false
             return
         end
+if shouldAutoMagmaDip then
+    local root=getCharacterRoot()
+    if not root then
+        AddDebug("[AUTO MAGMA DIP ERROR] Root not found")
+        AutoPickupBusy=false
+        return
+    end
 
-        root.CFrame=CFrame.new(VolcanoDropPosition)
-        task.wait(1)
+    if isVolcanic then
+        if not exitVolcanicEgg() then
+            AutoPickupBusy=false
+            return
+        end
+    end
+
+    root.CFrame=CFrame.new(VolcanoDropPosition)
+    task.wait(1)
 
         AutoMagmaDipResult=nil
         AutoMagmaDipWaitingForResult=true
