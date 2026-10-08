@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v7.6"
+local ver = "TEST v7.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -844,7 +844,6 @@ local AutoVolcanoMessageReceived = false
 local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
 local AutoVolcanoMessageType = nil
-local AutoVolcanoAlreadyDone = false
 --==================================================
 -- 12.4 AUTO PLACE EGGS
 --==================================================
@@ -2240,7 +2239,6 @@ local function tryAutoPickup(egg)
         AutoVolcanoMessageReceived=false
         AutoVolcanoMessageText=nil
         AutoVolcanoMessageType=nil
-        AutoVolcanoAlreadyDone=false
         AutoVolcanoWaitingForMessage=true
 
         if VolcanoDipEvent then
@@ -2276,16 +2274,6 @@ local function tryAutoPickup(egg)
         AutoVolcanoWaitingForMessage=false
 
         if not AutoPickupRunning then AutoPickupBusy=false return end
-
-        if AutoVolcanoAlreadyDone then
-            AddDebug("[AUTO MAGMA DIP] Already done, continuing to base")
-        elseif not AutoVolcanoMessageReceived then
-            AddDebug("[AUTO MAGMA DIP] Mutation message timeout")
-            AutoPickupBusy=false
-            return
-        else
-            AddDebug("[AUTO MAGMA DIP] Mutation: "..tostring(AutoVolcanoMessageText))
-        end
 
         local reachedOutside=false
         while AutoPickupRunning and not reachedOutside do
@@ -2640,12 +2628,11 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
         AutoVolcanoMessageText=message
         AutoVolcanoMessageType="Failed"
         AddDebug("[AUTO MAGMA DIP] Mutation FAILED detected")
-    elseif string.find(message,"Every Egg You Carry",1,true) then
+    elseif string.find(lowerMessage,"every egg you carry",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
-        AutoVolcanoMessageType="AlreadyDipped"
-        AutoVolcanoAlreadyDone=true
-        AddDebug("[AUTO MAGMA DIP] Egg was already dipped")
+        AutoVolcanoMessageType="Failed"
+        AddDebug("[AUTO MAGMA DIP] Already dipped / failed detected")
     end
 end)
 
