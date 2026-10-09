@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.10"
+local ver = "TEST v8.11"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -2878,6 +2878,54 @@ RAPSkripFunctions.isAutoPlacePositionOccupied = function(position)
     return false
 end
 
+-- The plot supports a maximum of 10 placed eggs. Count unique observed and
+-- locally reserved positions together so snapshot overlap is not double-counted.
+local AUTO_PLACE_MAX_EGGS = 10
+
+RAPSkripFunctions.getAutoPlaceOccupiedCount = function()
+    local positions = {}
+
+    local function addUniquePosition(position)
+        if not position then
+            return
+        end
+
+        for _, existingPosition in ipairs(positions) do
+            if (existingPosition - position).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
+                return
+            end
+        end
+
+        table.insert(positions, position)
+    end
+
+    for _, placement in ipairs(AutoPlaceObserved) do
+        addUniquePosition(placement.Position)
+    end
+
+    for _, reservedPosition in ipairs(AutoPlaceReservedPositions) do
+        addUniquePosition(reservedPosition)
+    end
+
+    return #positions
+end
+
+RAPSkripFunctions.stopAutoPlaceAtLimit = function()
+    AutoPlaceEnabled = false
+
+    if AutoPlaceToggle then
+        AutoPlaceToggle.Text = "OFF"
+        AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+    end
+
+    if AutoPlaceStatus then
+        AutoPlaceStatus.Text = "● Inactive"
+        AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+    end
+
+    RAPSkripFunctions.AddDebug("[AUTO PLACE] Plot limit reached (10/10). Auto Place stopped.")
+end
+
 RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
     for _, offset in ipairs(RAPSkripFunctions.getAutoPlaceOffsets()) do
         if not AutoPlaceEnabled then
@@ -2931,14 +2979,25 @@ RAPSkripFunctions.autoPlaceEggs = function()
 
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Starting repeat placement for " .. tostring(#selectedEggNames) .. " selected type(s)")
 
-        -- Repeat the selected list in rounds. Each round places at most one egg
-        -- of each selected type; another round starts while at least one egg was placed.
+        -- Repeat selected types in rounds, but stop at the plot's 10-egg limit.
         while AutoPlaceEnabled and Gui.Parent do
+            if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+                RAPSkripFunctions.stopAutoPlaceAtLimit()
+                break
+            end
+
             local placedThisRound = false
             local noFreePosition = false
 
             for _, eggName in ipairs(selectedEggNames) do
                 if not AutoPlaceEnabled or not Gui.Parent then
+                    break
+                end
+
+                -- Check again before every request so a round cannot exceed 10.
+                if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+                    RAPSkripFunctions.stopAutoPlaceAtLimit()
+                    noFreePosition = true
                     break
                 end
 
