@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.9"
+local ver = "TEST v8.10"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -2929,41 +2929,68 @@ RAPSkripFunctions.autoPlaceEggs = function()
             return
         end
 
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Starting placement pass for " .. tostring(#selectedEggNames) .. " selected type(s)")
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Starting repeat placement for " .. tostring(#selectedEggNames) .. " selected type(s)")
 
-        for _, eggName in ipairs(selectedEggNames) do
-            if not AutoPlaceEnabled then
-                break
-            end
+        -- Repeat the selected list in rounds. Each round places at most one egg
+        -- of each selected type; another round starts while at least one egg was placed.
+        while AutoPlaceEnabled and Gui.Parent do
+            local placedThisRound = false
+            local noFreePosition = false
 
-            local position = RAPSkripFunctions.findNextAutoPlacePosition(centerCFrame)
-            if not position then
-                RAPSkripFunctions.AddDebug("[AUTO PLACE] No free position found within " .. tostring(AUTO_PLACE_MAX_RING) .. " rings")
-                break
-            end
-
-            if RAPSkripFunctions.holdEgg(eggName) then
-                table.insert(AutoPlaceReservedPositions, position)
-
-                local sent, sendError = pcall(function()
-                    EggPlacedEvent:FireServer({
-                        PlantPosition = position
-                    })
-                end)
-
-                if sent then
-                    RAPSkripFunctions.AddDebug("[AUTO PLACE] Request sent for " .. eggName)
-                    task.wait(0.75)
-                else
-                    table.remove(AutoPlaceReservedPositions)
-                    RAPSkripFunctions.AddDebug("[AUTO PLACE] Request failed: " .. tostring(sendError))
+            for _, eggName in ipairs(selectedEggNames) do
+                if not AutoPlaceEnabled or not Gui.Parent then
+                    break
                 end
-            else
-                RAPSkripFunctions.AddDebug("[AUTO PLACE] Could not equip: " .. eggName)
+
+                local position = RAPSkripFunctions.findNextAutoPlacePosition(centerCFrame)
+                if not position then
+                    RAPSkripFunctions.AddDebug("[AUTO PLACE] No free position found within " .. tostring(AUTO_PLACE_MAX_RING) .. " rings")
+                    noFreePosition = true
+                    break
+                end
+
+                if RAPSkripFunctions.holdEgg(eggName) then
+                    -- Reserve before sending so the next egg cannot reuse this slot.
+                    table.insert(AutoPlaceReservedPositions, position)
+
+                    local sent, sendError = pcall(function()
+                        EggPlacedEvent:FireServer({
+                            PlantPosition = position
+                        })
+                    end)
+
+                    if sent then
+                        placedThisRound = true
+                        RAPSkripFunctions.AddDebug("[AUTO PLACE] Request sent for " .. eggName)
+                        task.wait(0.75)
+                    else
+                        -- Remove only this failed reservation.
+                        for index = #AutoPlaceReservedPositions, 1, -1 do
+                            if AutoPlaceReservedPositions[index] == position then
+                                table.remove(AutoPlaceReservedPositions, index)
+                                break
+                            end
+                        end
+                        RAPSkripFunctions.AddDebug("[AUTO PLACE] Request failed: " .. tostring(sendError))
+                    end
+                end
             end
+
+            if noFreePosition or not AutoPlaceEnabled or not Gui.Parent then
+                break
+            end
+
+            -- If a full round cannot equip/place any selected type, stop instead
+            -- of spinning forever after the selected eggs run out.
+            if not placedThisRound then
+                RAPSkripFunctions.AddDebug("[AUTO PLACE] No more selected eggs available; repeat placement stopped")
+                break
+            end
+
+            task.wait(0.25)
         end
 
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Placement pass finished")
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Placement loop stopped")
     end)
 
     AutoPlaceRunning = false
@@ -3240,8 +3267,8 @@ task.spawn(function()
 
         AutoPlaceObserved = updatedPlacements
         AutoPlaceSnapshotReceived = true
-        -- A fresh authoritative snapshot replaces local reservations.
-        AutoPlaceReservedPositions = {}
+        -- Keep successful local reservations: snapshots can arrive before a new
+        -- placement is reflected in the server's observed-placement list.
 
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Snapshot received: " .. tostring(#updatedPlacements) .. " placed egg(s)")
     end)
