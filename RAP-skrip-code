@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.11"
+local ver = "TEST v8.12"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -482,6 +482,50 @@ AutoPlaceFilterCount.Font = Enum.Font.Gotham
 AutoPlaceFilterCount.TextXAlignment = Enum.TextXAlignment.Left
 AutoPlaceFilterCount.Parent = AutoContent2
 
+-- Auto Hatch toggle
+local AutoHatchTitle = Instance.new("TextLabel")
+AutoHatchTitle.Name = "AutoHatchTitle"
+AutoHatchTitle.Size = UDim2.new(1, -85, 0, 19)
+AutoHatchTitle.Position = UDim2.fromOffset(5, 132)
+AutoHatchTitle.BackgroundTransparency = 1
+AutoHatchTitle.Text = "Auto Hatch"
+AutoHatchTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+AutoHatchTitle.TextSize = RAPSkripFunctions.textSize(10)
+AutoHatchTitle.Font = Enum.Font.GothamMedium
+AutoHatchTitle.TextXAlignment = Enum.TextXAlignment.Left
+AutoHatchTitle.Parent = AutoContent2
+
+local AutoHatchStatus = Instance.new("TextLabel")
+AutoHatchStatus.Name = "AutoHatchStatus"
+AutoHatchStatus.Size = UDim2.new(1, -85, 0, 22)
+AutoHatchStatus.Position = UDim2.fromOffset(5, 145)
+AutoHatchStatus.BackgroundTransparency = 1
+AutoHatchStatus.Text = "● Inactive"
+AutoHatchStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
+AutoHatchStatus.TextSize = RAPSkripFunctions.textSize(10)
+AutoHatchStatus.Font = Enum.Font.Gotham
+AutoHatchStatus.TextXAlignment = Enum.TextXAlignment.Left
+AutoHatchStatus.Parent = AutoContent2
+
+local AutoHatchToggle = Instance.new("TextButton")
+AutoHatchToggle.Name = "AutoHatchToggle"
+AutoHatchToggle.Size = UDim2.fromOffset(62, 27)
+AutoHatchToggle.Position = UDim2.new(1, -67, 0, 132)
+AutoHatchToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+AutoHatchToggle.Text = "OFF"
+AutoHatchToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
+AutoHatchToggle.TextSize = RAPSkripFunctions.textSize(10)
+AutoHatchToggle.Font = Enum.Font.GothamBold
+AutoHatchToggle.AutoButtonColor = false
+AutoHatchToggle.Active = true
+AutoHatchToggle.Selectable = true
+AutoHatchToggle.ZIndex = 10
+AutoHatchToggle.Parent = AutoContent2
+
+local AutoHatchToggleCorner = Instance.new("UICorner")
+AutoHatchToggleCorner.CornerRadius = UDim.new(0, 6)
+AutoHatchToggleCorner.Parent = AutoHatchToggle
+
 local ESPContent2 = Instance.new("Frame")
 ESPContent2.Name = "ESPContent2"
 ESPContent2.Size = UDim2.fromScale(1, 1)
@@ -877,6 +921,7 @@ local AutoPlaceRunning = false
 local AutoPlaceObserved = {}
 local AutoPlaceSnapshotReceived = false
 local AutoPlaceReservedPositions = {}
+local AutoHatchState = { Enabled = false, Running = false, Busy = false, Checked = {} }
 --==================================================
 -- 13. EGG FILTER SYSTEM
 --==================================================
@@ -2942,6 +2987,9 @@ RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
 end
 
 RAPSkripFunctions.autoPlaceEggs = function()
+    if AutoHatchState.Busy then
+        return
+    end
     if not AutoPlaceEnabled or AutoPlaceRunning then
         return
     end
@@ -3059,7 +3107,248 @@ RAPSkripFunctions.autoPlaceEggs = function()
     end
 end
 --==================================================
--- 23. ESP LOGIC
+-- 23. AUTO HATCH LOGIC
+--==================================================
+RAPSkripFunctions.getAutoHatchPromptPosition = function(prompt)
+    if not prompt or not prompt.Parent then
+        return nil
+    end
+
+    local parent = prompt.Parent
+    if parent:IsA("Attachment") then
+        return parent.WorldPosition
+    end
+    if parent:IsA("BasePart") then
+        return parent.Position
+    end
+
+    local part = parent:FindFirstChildWhichIsA("BasePart", true)
+    return part and part.Position or nil
+end
+
+RAPSkripFunctions.getAutoHatchEggEntries = function(plot)
+    if not plot then
+        return {}
+    end
+
+    local eggsFolder = plot:FindFirstChild("Eggs")
+    if not eggsFolder then
+        for _, child in ipairs(plot:GetChildren()) do
+            if string.lower(child.Name) == "eggs" then
+                eggsFolder = child
+                break
+            end
+        end
+    end
+
+    return eggsFolder and eggsFolder:GetChildren() or {}
+end
+
+RAPSkripFunctions.getAutoHatchPrompt = function(entry)
+    if not entry then
+        return nil
+    end
+
+    if entry:IsA("ProximityPrompt") then
+        return entry
+    end
+
+    return entry:FindFirstChildWhichIsA("ProximityPrompt", true)
+end
+
+RAPSkripFunctions.isAutoHatchInterrupted = function()
+    -- Auto Pickup takes priority; Auto Place must be stopped before Auto Hatch takes control.
+    return not AutoHatchState.Enabled
+        or not Gui.Parent
+        or AutoPickupRunning
+        or AutoPickupBusy
+        or AutoPlaceEnabled
+        or AutoPlaceRunning
+end
+
+RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt)
+    if not entry or not entry.Parent or not prompt or not prompt.Parent then
+        return false
+    end
+    if not prompt.Enabled then
+        return false
+    end
+
+    local root = RAPSkripFunctions.getCharacterRoot()
+    if not root then
+        return false
+    end
+
+    local promptPosition = RAPSkripFunctions.getAutoHatchPromptPosition(prompt)
+    if not promptPosition then
+        RAPSkripFunctions.AddDebug("[AUTO HATCH] Prompt position unavailable: " .. tostring(entry.Name))
+        return false
+    end
+
+    local maxDistance = math.max(1, tonumber(prompt.MaxActivationDistance) or 10)
+    if (root.Position - promptPosition).Magnitude > math.max(1, maxDistance - 1) then
+        if RAPSkripFunctions.isAutoHatchInterrupted() then
+            return false
+        end
+        root.CFrame = CFrame.new(promptPosition + Vector3.new(0, 2.5, 0))
+        task.wait(0.25)
+        root = RAPSkripFunctions.getCharacterRoot()
+        if not root or not prompt.Parent then
+            return false
+        end
+    end
+
+    local ready = prompt:GetAttribute("HatchPromptAvailable")
+    if ready == nil then
+        ready = entry:GetAttribute("HatchPromptAvailable")
+    end
+    if ready == nil and prompt.Parent then
+        ready = prompt.Parent:GetAttribute("HatchPromptAvailable")
+    end
+
+    -- The attribute may be false because the player is out of range, so retry periodically.
+    AutoHatchState.Checked[prompt] = { ready = ready, at = os.clock() }
+    if ready ~= true then
+        return false
+    end
+    if RAPSkripFunctions.isAutoHatchInterrupted() then
+        return false
+    end
+
+    local triggered = false
+    if typeof(fireproximityprompt) == "function" then
+        triggered = pcall(fireproximityprompt, prompt)
+    else
+        triggered = pcall(function()
+            prompt:InputHoldBegin()
+            task.wait(math.max(0.1, prompt.HoldDuration))
+            prompt:InputHoldEnd()
+        end)
+    end
+
+    if triggered then
+        RAPSkripFunctions.AddDebug("[AUTO HATCH] Hatch attempt: " .. tostring(entry.Name))
+        task.wait(0.6)
+        return true
+    end
+
+    RAPSkripFunctions.AddDebug("[AUTO HATCH] Could not trigger prompt: " .. tostring(entry.Name))
+    return false
+end
+
+RAPSkripFunctions.autoHatchEggs = function()
+    if not AutoHatchState.Enabled or AutoHatchState.Running then
+        return
+    end
+    AutoHatchState.Running = true
+
+    local ok, err = pcall(function()
+        RAPSkripFunctions.AddDebug("[AUTO HATCH] Waiting for character control")
+        while AutoHatchState.Enabled and Gui.Parent do
+            if not RAPSkripFunctions.isAutoHatchInterrupted() then
+                break
+            end
+            task.wait(0.25)
+        end
+        if not AutoHatchState.Enabled or not Gui.Parent then
+            return
+        end
+
+        local plot = RAPSkripFunctions.findMyPlot()
+        local center = RAPSkripFunctions.getMyRanchCFrame()
+        if not plot or not center then
+            RAPSkripFunctions.AddDebug("[AUTO HATCH] Your plot or Baseplate was not found")
+            return
+        end
+
+        local root = RAPSkripFunctions.getCharacterRoot()
+        if not root then
+            RAPSkripFunctions.AddDebug("[AUTO HATCH] Character root not found")
+            return
+        end
+
+        AutoHatchState.Busy = true
+        root.CFrame = center
+        task.wait(0.3)
+        RAPSkripFunctions.AddDebug("[AUTO HATCH] Scanning eggs from plot center")
+
+        while AutoHatchState.Enabled and Gui.Parent do
+            if AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] Paused for another automation")
+                break
+            end
+
+            plot = RAPSkripFunctions.findMyPlot()
+            if not plot then
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] Plot no longer available")
+                break
+            end
+
+            local entries = RAPSkripFunctions.getAutoHatchEggEntries(plot)
+            local sawPrompt = false
+            local attemptedHatch = false
+
+            for _, entry in ipairs(entries) do
+                if RAPSkripFunctions.isAutoHatchInterrupted() then
+                    break
+                end
+
+                local prompt = RAPSkripFunctions.getAutoHatchPrompt(entry)
+                if prompt then
+                    sawPrompt = true
+                    local lastCheck = AutoHatchState.Checked[prompt]
+                    local currentReady = prompt:GetAttribute("HatchPromptAvailable")
+                    if currentReady == nil then
+                        currentReady = entry:GetAttribute("HatchPromptAvailable")
+                    end
+
+                    local recentlyCheckedNotReady = type(lastCheck) == "table"
+                        and lastCheck.ready == false
+                        and currentReady == false
+                        and os.clock() - (lastCheck.at or 0) < 5
+
+                    if not recentlyCheckedNotReady then
+                        if RAPSkripFunctions.tryAutoHatchPrompt(entry, prompt) then
+                            attemptedHatch = true
+                            task.wait(0.35)
+                        end
+                    end
+                end
+            end
+
+            if not AutoHatchState.Enabled or not Gui.Parent then
+                break
+            end
+            if AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+                break
+            end
+
+            root = RAPSkripFunctions.getCharacterRoot()
+            center = RAPSkripFunctions.getMyRanchCFrame()
+            if root and center then
+                root.CFrame = center
+            end
+
+            if not sawPrompt then
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] No ProximityPrompt found in plot Eggs folder")
+            end
+            task.wait(attemptedHatch and 0.5 or 1)
+        end
+    end)
+
+    AutoHatchState.Busy = false
+    AutoHatchState.Running = false
+
+    if not ok then
+        RAPSkripFunctions.AddDebug("[AUTO HATCH] Error: " .. tostring(err))
+    end
+
+    if AutoPlaceEnabled and not AutoPlaceRunning and Gui.Parent then
+        task.spawn(RAPSkripFunctions.autoPlaceEggs)
+    end
+end
+--==================================================
+-- 24. ESP LOGIC
 --==================================================
 RAPSkripFunctions.getSelectedEggNames = function()
     local names = {}
@@ -3277,7 +3566,7 @@ function updateESP()
     EggCount.Text="Active Eggs: "..tostring(#eggs)
 end
 --==================================================
--- 24. EVENT CONNECTIONS
+-- 25. EVENT CONNECTIONS
 --==================================================
 -- Listen for the server's owner-specific placement snapshot.
 task.spawn(function()
@@ -3408,6 +3697,31 @@ AutoPlaceToggle.MouseButton1Click:Connect(function()
 
     if AutoPlaceEnabled then
         task.spawn(RAPSkripFunctions.autoPlaceEggs)
+    end
+end)
+
+AutoHatchToggle.MouseButton1Click:Connect(function()
+    AutoHatchState.Enabled = not AutoHatchState.Enabled
+    AutoHatchToggle.Text = AutoHatchState.Enabled and "ON" or "OFF"
+    AutoHatchToggle.BackgroundColor3 = AutoHatchState.Enabled
+        and Color3.fromRGB(55, 120, 75)
+        or Color3.fromRGB(45, 45, 53)
+    AutoHatchStatus.Text = AutoHatchState.Enabled and "● Active" or "● Inactive"
+    AutoHatchStatus.TextColor3 = AutoHatchState.Enabled
+        and Color3.fromRGB(130, 180, 140)
+        or Color3.fromRGB(150, 150, 158)
+
+    if not AutoHatchState.Enabled then
+        AutoHatchState.Checked = {}
+    end
+
+    RAPSkripFunctions.AddDebug(
+        AutoHatchState.Enabled
+        and "[AUTO HATCH] Enabled"
+        or "[AUTO HATCH] Disabled"
+    )
+    if AutoHatchState.Enabled then
+        task.spawn(RAPSkripFunctions.autoHatchEggs)
     end
 end)
 
@@ -3590,6 +3904,8 @@ Minimized.MouseButton1Click:Connect(function()
 end)
 
 Close.MouseButton1Click:Connect(function()
+    AutoHatchState.Enabled = false
+    AutoHatchState.Busy = false
     AutoPlaceEnabled = false
     AutoPlaceRunning = false
 
@@ -3650,7 +3966,7 @@ ESPFilterButton.MouseButton1Click:Connect(function()
     end
 end)
 --==================================================
--- 25. LOOPS / TASKS
+-- 26. LOOPS / TASKS
 --==================================================
 task.spawn(function()
     while Gui.Parent do
@@ -3670,7 +3986,7 @@ end)
 
 task.spawn(function()
     while Gui.Parent do
-        if AutoPickupRunning and not AutoPickupBusy then
+        if AutoPickupRunning and not AutoPickupBusy and not AutoHatchState.Busy then
             local success,err=xpcall(function()
                 RAPSkripFunctions.tryAutoPickup()
             end,function(errorMessage)
@@ -3688,7 +4004,7 @@ task.spawn(function()
     end
 end)
 --==================================================
--- 26. STARTUP / INITIALIZATION
+-- 27. STARTUP / INITIALIZATION
 --==================================================
 RAPSkripFunctions.showPage(AutoPage)
 RAPSkripFunctions.updateActivePageButton(AutoButton)
