@@ -3287,7 +3287,6 @@ RAPSkripFunctions.isAutoHatchInterrupted = function()
         or not Gui.Parent
         or AutoPickupRunning
         or AutoPickupBusy
-        or AutoPlaceEnabled
         or AutoPlaceRunning
 end
 
@@ -3402,7 +3401,7 @@ RAPSkripFunctions.autoHatchEggs = function()
         RAPSkripFunctions.AddDebug("[AUTO HATCH] Scanning eggs from plot center")
 
         while AutoHatchState.Enabled and Gui.Parent do
-            if AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+            if AutoPickupRunning or AutoPickupBusy or AutoPlaceRunning then
                 RAPSkripFunctions.AddDebug("[AUTO HATCH] Paused for another automation")
                 break
             end
@@ -3448,7 +3447,7 @@ RAPSkripFunctions.autoHatchEggs = function()
             if not AutoHatchState.Enabled or not Gui.Parent then
                 break
             end
-            if AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+            if AutoPickupRunning or AutoPickupBusy or AutoPlaceRunning then
                 break
             end
 
@@ -3470,7 +3469,7 @@ RAPSkripFunctions.autoHatchEggs = function()
 
     if not AutoHatchState.Enabled then
         RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
-    elseif AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+    elseif AutoPickupRunning or AutoPickupBusy or AutoPlaceRunning then
         RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
     elseif not ok then
         RAPSkripFunctions.setAutoHatchStatus("ERROR", Color3.fromRGB(220, 100, 100))
