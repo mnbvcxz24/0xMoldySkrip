@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.5"
+local ver = "TEST v8.6"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2741,8 +2741,20 @@ end
 -- 22. AUTO PLACE LOGIC
 --==================================================
 local function holdEgg(eggName)
-    local character = player.Character or player.CharacterAdded:Wait()
-    local backpack = player:WaitForChild("Backpack")
+    -- Safety: only proceed while Auto Place is enabled
+    if not AutoPlaceEnabled then
+        return false
+    end
+
+    local character = player.Character
+    if not character then
+        return false
+    end
+
+    local backpack = player:FindFirstChild("Backpack")
+    if not backpack then
+        return false
+    end
 
     local tool
 
@@ -3058,6 +3070,34 @@ AutoPickupFilterButton.MouseButton1Click:Connect(function()
         createAutoPickupFilterButtons()
     else
         refreshAutoPickupFilterText()
+    end
+end)
+
+-- Auto Place ON/OFF toggle
+AutoPlaceToggle.MouseButton1Click:Connect(function()
+    AutoPlaceEnabled = not AutoPlaceEnabled
+
+    AutoPlaceToggle.Text = AutoPlaceEnabled and "ON" or "OFF"
+    AutoPlaceToggle.BackgroundColor3 = AutoPlaceEnabled
+        and Color3.fromRGB(55, 120, 75)
+        or Color3.fromRGB(45, 45, 53)
+
+    AutoPlaceStatus.Text = AutoPlaceEnabled
+        and "● Active"
+        or "● Inactive"
+
+    AutoPlaceStatus.TextColor3 = AutoPlaceEnabled
+        and Color3.fromRGB(130, 180, 140)
+        or Color3.fromRGB(150, 150, 158)
+
+    AddDebug(
+        AutoPlaceEnabled
+        and "[AUTO PLACE] Enabled"
+        or "[AUTO PLACE] Disabled"
+    )
+
+    if AutoPlaceEnabled then
+        task.spawn(autoPlaceEggs)
     end
 end)
 
