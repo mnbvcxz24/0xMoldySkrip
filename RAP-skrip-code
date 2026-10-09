@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.17"
+local ver = "TEST v8.18"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -3109,9 +3109,14 @@ RAPSkripFunctions.autoPlaceEggs = function()
             return
         end
 
-        if not AutoPlaceSnapshotReceived then
+        -- Wait for the snapshot instead of returning. The snapshot event can
+        -- arrive just after Auto Place starts; returning here left it stuck on WAIT SNAP.
+        while AutoPlaceEnabled and Gui.Parent and not AutoPlaceSnapshotReceived do
             RAPSkripFunctions.setAutoPlaceStatus("WAIT SNAP", Color3.fromRGB(220, 190, 110))
-            RAPSkripFunctions.AddDebug("[AUTO PLACE] No placement snapshot received yet; no eggs placed")
+            task.wait(0.25)
+        end
+
+        if not AutoPlaceEnabled or not Gui.Parent then
             return
         end
 
