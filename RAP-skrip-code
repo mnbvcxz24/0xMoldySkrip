@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.21"
+local ver = "TEST v8.22"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -3053,15 +3053,9 @@ RAPSkripFunctions.setAutoPlaceStatus = function(status, color)
 end
 
 RAPSkripFunctions.stopAutoPlaceAtLimit = function()
-    AutoPlaceEnabled = false
-
-    if AutoPlaceToggle then
-        AutoPlaceToggle.Text = "OFF"
-        AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-    end
-
+    -- Do not disable the toggle at capacity. Stay enabled and resume when
+    -- the next server snapshot reports an available slot.
     RAPSkripFunctions.setAutoPlaceStatus("FULL (10/10)", Color3.fromRGB(220, 155, 100))
-    RAPSkripFunctions.AddDebug("[AUTO PLACE] Plot limit reached (10/10). Auto Place stopped.")
 end
 
 RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
@@ -3096,10 +3090,11 @@ RAPSkripFunctions.autoPlaceEggs = function()
             return
         end
 
-        if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+        while AutoPlaceEnabled and Gui.Parent and RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS do
             RAPSkripFunctions.stopAutoPlaceAtLimit()
-            return
+            task.wait(0.5)
         end
+        if not AutoPlaceEnabled or not Gui.Parent then return end
 
         RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
 
@@ -3144,10 +3139,12 @@ RAPSkripFunctions.autoPlaceEggs = function()
 
         -- Repeat selected types in rounds, but stop at the plot's 10-egg limit.
         while AutoPlaceEnabled and Gui.Parent do
-            if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+            while AutoPlaceEnabled and Gui.Parent and RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS do
                 RAPSkripFunctions.stopAutoPlaceAtLimit()
-                break
+                task.wait(0.5)
             end
+            if not AutoPlaceEnabled or not Gui.Parent then break end
+            RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
 
             local placedThisRound = false
             local noFreePosition = false
@@ -3158,11 +3155,11 @@ RAPSkripFunctions.autoPlaceEggs = function()
                 end
 
                 -- Check again before every request so a round cannot exceed 10.
-                if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+                while AutoPlaceEnabled and Gui.Parent and RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS do
                     RAPSkripFunctions.stopAutoPlaceAtLimit()
-                    noFreePosition = true
-                    break
+                    task.wait(0.5)
                 end
+                if not AutoPlaceEnabled or not Gui.Parent then break end
 
                 local position = RAPSkripFunctions.findNextAutoPlacePosition(centerCFrame)
                 if not position then
@@ -3282,12 +3279,11 @@ RAPSkripFunctions.setAutoHatchStatus = function(status, color)
 end
 
 RAPSkripFunctions.isAutoHatchInterrupted = function()
-    -- Auto Hatch yields whenever Auto Place is enabled or Auto Pickup is active.
+    -- Wait only while another automation is actively performing a task.
+    -- Enabled-but-idle toggles (including Auto Place at FULL) must not block hatching.
     return not AutoHatchState.Enabled
         or not Gui.Parent
-        or AutoPickupRunning
         or AutoPickupBusy
-        or AutoPlaceEnabled
         or AutoPlaceRunning
 end
 
@@ -3703,10 +3699,19 @@ task.spawn(function()
 
         AutoPlaceObserved = updatedPlacements
         AutoPlaceSnapshotReceived = true
-        -- Keep successful local reservations: snapshots can arrive before a new
-        -- placement is reflected in the server's observed-placement list.
+        -- The authoritative snapshot refreshes slot occupancy; discard stale local
+        -- reservations so hatched/removed eggs can free their positions.
+        AutoPlaceReservedPositions = {}
 
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Snapshot received: " .. tostring(#updatedPlacements) .. " placed egg(s)")
+        local occupiedCount = RAPSkripFunctions.getAutoPlaceOccupiedCount()
+        if AutoPlaceEnabled and occupiedCount >= AUTO_PLACE_MAX_EGGS then
+            RAPSkripFunctions.stopAutoPlaceAtLimit()
+        elseif AutoPlaceEnabled and not AutoPlaceRunning then
+            RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
+            task.spawn(RAPSkripFunctions.autoPlaceEggs)
+        end
+
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Snapshot received: " .. tostring(#updatedPlacements) .. " placed egg(s); slots refreshed (" .. tostring(occupiedCount) .. "/" .. tostring(AUTO_PLACE_MAX_EGGS) .. ")")
     end)
 
     RAPSkripFunctions.AddDebug("[AUTO PLACE] EggPlaced listener connected")
