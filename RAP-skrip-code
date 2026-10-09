@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.19"
+local ver = "TEST v8.20"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -3282,63 +3282,40 @@ RAPSkripFunctions.setAutoHatchStatus = function(status, color)
 end
 
 RAPSkripFunctions.isAutoHatchInterrupted = function()
-    -- Auto Pickup and Auto Place take priority; Auto Hatch waits and retries afterward.
+    -- Auto Hatch yields whenever Auto Place is enabled or Auto Pickup is active.
     return not AutoHatchState.Enabled
         or not Gui.Parent
         or AutoPickupRunning
         or AutoPickupBusy
+        or AutoPlaceEnabled
         or AutoPlaceRunning
 end
 
-RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt)
-    if not entry or not entry.Parent or not prompt or not prompt.Parent then
-        return false
+RAPSkripFunctions.setAutoHatchStatus = function(status, color)
+    if AutoHatchStatus then
+        AutoHatchStatus.Text = "● " .. tostring(status)
+        AutoHatchStatus.TextColor3 = color or Color3.fromRGB(150, 150, 158)
     end
-    if not prompt.Enabled then
-        return false
-    end
+end
 
-    local root = RAPSkripFunctions.getCharacterRoot()
-    if not root then
-        return false
-    end
-
-    local promptPosition = RAPSkripFunctions.getAutoHatchPromptPosition(prompt)
-    if not promptPosition then
-        RAPSkripFunctions.AddDebug("[AUTO HATCH] Prompt position unavailable: " .. tostring(entry.Name))
-        return false
-    end
-
-    local maxDistance = math.max(1, tonumber(prompt.MaxActivationDistance) or 10)
-    if (root.Position - promptPosition).Magnitude > math.max(1, maxDistance - 1) then
-        if RAPSkripFunctions.isAutoHatchInterrupted() then
-            return false
-        end
-        root.CFrame = CFrame.new(promptPosition + Vector3.new(0, 2.5, 0))
-        task.wait(0.25)
-        root = RAPSkripFunctions.getCharacterRoot()
-        if not root or not prompt.Parent then
-            return false
-        end
-    end
-
-    local ready = prompt:GetAttribute("HatchPromptAvailable")
-    if ready == nil then
-        ready = entry:GetAttribute("HatchPromptAvailable")
-    end
-    if ready == nil and prompt.Parent then
-        ready = prompt.Parent:GetAttribute("HatchPromptAvailable")
-    end
-
-    -- The attribute may be false because the player is out of range, so retry periodically.
-    AutoHatchState.Checked[prompt] = { ready = ready, at = os.clock() }
-    if ready ~= true then
+RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt, allowNotReady)
+    if not entry or not entry.Parent or not prompt or not prompt.Parent or not prompt.Enabled then
         return false
     end
     if RAPSkripFunctions.isAutoHatchInterrupted() then
         return false
     end
 
+    local ready = prompt:GetAttribute("HatchPromptAvailable")
+    if ready == nil then ready = entry:GetAttribute("HatchPromptAvailable") end
+    if ready == nil and prompt.Parent then ready = prompt.Parent:GetAttribute("HatchPromptAvailable") end
+    if ready ~= true and not allowNotReady then
+        AutoHatchState.Checked[prompt] = { ready = ready, at = os.clock() }
+        return false
+    end
+
+    -- Trigger the prompt from the plot-wide hatch pass without teleporting to each egg.
+    -- If this executor cannot trigger it remotely, the verification pass retries nearby.
     local triggered = false
     if typeof(fireproximityprompt) == "function" then
         triggered = pcall(fireproximityprompt, prompt)
@@ -3351,133 +3328,111 @@ RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt)
     end
 
     if triggered then
-        RAPSkripFunctions.AddDebug("[AUTO HATCH] Hatch attempt: " .. tostring(entry.Name))
-        task.wait(0.6)
+        AutoHatchState.Checked[prompt] = { ready = ready, at = os.clock(), attempted = true }
+        RAPSkripFunctions.AddDebug("[AUTO HATCH] Hatch request: " .. tostring(entry.Name))
+        task.wait(0.1)
         return true
     end
-
-    RAPSkripFunctions.AddDebug("[AUTO HATCH] Could not trigger prompt: " .. tostring(entry.Name))
+    RAPSkripFunctions.AddDebug("[AUTO HATCH] Prompt trigger failed: " .. tostring(entry.Name))
     return false
 end
 
 RAPSkripFunctions.autoHatchEggs = function()
-    if not AutoHatchState.Enabled or AutoHatchState.Running then
-        return
-    end
+    if not AutoHatchState.Enabled or AutoHatchState.Running then return end
     AutoHatchState.Running = true
 
     local ok, err = pcall(function()
-        RAPSkripFunctions.AddDebug("[AUTO HATCH] Waiting for character control")
         while AutoHatchState.Enabled and Gui.Parent do
-            if not RAPSkripFunctions.isAutoHatchInterrupted() then
-                break
+            -- Auto Place and Auto Pickup own character movement while enabled/running.
+            while AutoHatchState.Enabled and Gui.Parent and RAPSkripFunctions.isAutoHatchInterrupted() do
+                RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
+                task.wait(0.25)
             end
-            RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
-            task.wait(0.25)
-        end
-        if AutoHatchState.Enabled and Gui.Parent then
-            RAPSkripFunctions.setAutoHatchStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
-        end
-        if not AutoHatchState.Enabled or not Gui.Parent then
-            return
-        end
+            if not AutoHatchState.Enabled or not Gui.Parent then break end
 
-        local plot = RAPSkripFunctions.findMyPlot()
-        local center = RAPSkripFunctions.getMyRanchCFrame()
-        if not plot or not center then
-            RAPSkripFunctions.AddDebug("[AUTO HATCH] Your plot or Baseplate was not found")
-            return
-        end
-
-        local root = RAPSkripFunctions.getCharacterRoot()
-        if not root then
-            RAPSkripFunctions.AddDebug("[AUTO HATCH] Character root not found")
-            return
-        end
-
-        AutoHatchState.Busy = true
-        root.CFrame = center
-        task.wait(0.3)
-        RAPSkripFunctions.AddDebug("[AUTO HATCH] Scanning eggs from plot center")
-
-        while AutoHatchState.Enabled and Gui.Parent do
-            if AutoPickupRunning or AutoPickupBusy or AutoPlaceRunning then
-                RAPSkripFunctions.AddDebug("[AUTO HATCH] Paused for another automation")
-                break
-            end
-
-            plot = RAPSkripFunctions.findMyPlot()
-            if not plot then
-                RAPSkripFunctions.AddDebug("[AUTO HATCH] Plot no longer available")
-                break
-            end
-
-            local entries = RAPSkripFunctions.getAutoHatchEggEntries(plot)
-            local sawPrompt = false
-            local attemptedHatch = false
-
-            for _, entry in ipairs(entries) do
-                if RAPSkripFunctions.isAutoHatchInterrupted() then
-                    break
-                end
-
-                local prompt = RAPSkripFunctions.getAutoHatchPrompt(entry)
-                if prompt then
-                    sawPrompt = true
-                    local lastCheck = AutoHatchState.Checked[prompt]
-                    local currentReady = prompt:GetAttribute("HatchPromptAvailable")
-                    if currentReady == nil then
-                        currentReady = entry:GetAttribute("HatchPromptAvailable")
+            local plot = RAPSkripFunctions.findMyPlot()
+            local center = RAPSkripFunctions.getMyRanchCFrame()
+            local root = RAPSkripFunctions.getCharacterRoot()
+            if not plot or not center or not root then
+                RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] Waiting for plot/character")
+                task.wait(1)
+            else
+                RAPSkripFunctions.setAutoHatchStatus("SCANNING", Color3.fromRGB(130, 180, 140))
+                local entries = RAPSkripFunctions.getAutoHatchEggEntries(plot)
+                local hatchTargets = {}
+                for _, entry in ipairs(entries) do
+                    if not AutoHatchState.Enabled or RAPSkripFunctions.isAutoHatchInterrupted() then break end
+                    local prompt = RAPSkripFunctions.getAutoHatchPrompt(entry)
+                    if prompt and prompt.Parent and prompt.Enabled then
+                        local uuid = entry:GetAttribute("UUID") or entry:GetAttribute("Uuid") or entry:GetAttribute("uuid")
+                        if uuid == nil then uuid = prompt:GetAttribute("UUID") or prompt:GetAttribute("Uuid") or prompt:GetAttribute("uuid") end
+                        table.insert(hatchTargets, { entry = entry, prompt = prompt, uuid = uuid })
                     end
+                end
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] Scan complete: " .. tostring(#hatchTargets) .. " enabled egg prompts")
 
-                    local recentlyCheckedNotReady = type(lastCheck) == "table"
-                        and lastCheck.ready == false
-                        and currentReady == false
-                        and os.clock() - (lastCheck.at or 0) < 5
+                -- Batch one: trigger every scanned egg without teleporting to the center between eggs.
+                RAPSkripFunctions.setAutoHatchStatus("HATCHING", Color3.fromRGB(130, 180, 140))
+                local sent = 0
+                for _, target in ipairs(hatchTargets) do
+                    if not AutoHatchState.Enabled or RAPSkripFunctions.isAutoHatchInterrupted() then break end
+                    if target.entry.Parent and target.prompt.Parent then
+                        if RAPSkripFunctions.tryAutoHatchPrompt(target.entry, target.prompt, true) then sent = sent + 1 end
+                    end
+                end
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] Batch attempts: " .. tostring(sent) .. "/" .. tostring(#hatchTargets))
 
-                    if not recentlyCheckedNotReady then
-                        if RAPSkripFunctions.tryAutoHatchPrompt(entry, prompt) then
-                            attemptedHatch = true
-                            task.wait(0.35)
+                -- Verification pass: visit each remaining egg to find prompts that still need hatching.
+                RAPSkripFunctions.setAutoHatchStatus("VERIFYING", Color3.fromRGB(220, 190, 110))
+                for _, target in ipairs(hatchTargets) do
+                    if not AutoHatchState.Enabled or RAPSkripFunctions.isAutoHatchInterrupted() then break end
+                    local entry, prompt = target.entry, target.prompt
+                    if entry.Parent and prompt.Parent and prompt.Enabled then
+                        local promptPosition = RAPSkripFunctions.getAutoHatchPromptPosition(prompt)
+                        root = RAPSkripFunctions.getCharacterRoot()
+                        if promptPosition and root then
+                            root.CFrame = CFrame.new(promptPosition + Vector3.new(0, 2.5, 0))
+                            task.wait(0.2)
+                            if prompt.Parent and prompt.Enabled then
+                                local ready = prompt:GetAttribute("HatchPromptAvailable")
+                                if ready == nil then ready = entry:GetAttribute("HatchPromptAvailable") end
+                                if ready == nil and prompt.Parent then ready = prompt.Parent:GetAttribute("HatchPromptAvailable") end
+                                if ready == true then
+                                    RAPSkripFunctions.AddDebug("[AUTO HATCH] Still available after batch; retrying " .. tostring(entry.Name))
+                                    RAPSkripFunctions.tryAutoHatchPrompt(entry, prompt, true)
+                                end
+                            end
                         end
                     end
                 end
-            end
 
-            if not AutoHatchState.Enabled or not Gui.Parent then
-                break
+                -- Return to center once after verification, not after every individual egg.
+                if AutoHatchState.Enabled and not RAPSkripFunctions.isAutoHatchInterrupted() then
+                    root = RAPSkripFunctions.getCharacterRoot()
+                    center = RAPSkripFunctions.getMyRanchCFrame()
+                    if root and center then root.CFrame = center end
+                    RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
+                    RAPSkripFunctions.AddDebug("[AUTO HATCH] Cycle complete; idle before next scan")
+                    local idleUntil = os.clock() + 180
+                    while AutoHatchState.Enabled and Gui.Parent and os.clock() < idleUntil do
+                        if RAPSkripFunctions.isAutoHatchInterrupted() then break end
+                        task.wait(0.5)
+                    end
+                end
             end
-            if AutoPickupRunning or AutoPickupBusy or AutoPlaceRunning then
-                break
-            end
-
-            root = RAPSkripFunctions.getCharacterRoot()
-            center = RAPSkripFunctions.getMyRanchCFrame()
-            if root and center then
-                root.CFrame = center
-            end
-
-            if not sawPrompt then
-                RAPSkripFunctions.AddDebug("[AUTO HATCH] No ProximityPrompt found in plot Eggs folder")
-            end
-            task.wait(attemptedHatch and 0.5 or 1)
         end
     end)
 
     AutoHatchState.Busy = false
     AutoHatchState.Running = false
-
     if not AutoHatchState.Enabled then
         RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
-    elseif AutoPickupRunning or AutoPickupBusy or AutoPlaceRunning then
-        RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
     elseif not ok then
         RAPSkripFunctions.setAutoHatchStatus("ERROR", Color3.fromRGB(220, 100, 100))
         RAPSkripFunctions.AddDebug("[AUTO HATCH] Error: " .. tostring(err))
     end
 
-    -- The old worker exited permanently when Auto Place interrupted it.
-    -- Retry while enabled so newly placed eggs are checked after the other task finishes.
     if AutoHatchState.Enabled and Gui.Parent then
         task.delay(0.5, function()
             if AutoHatchState.Enabled and Gui.Parent and not AutoHatchState.Running then
@@ -3485,11 +3440,8 @@ RAPSkripFunctions.autoHatchEggs = function()
             end
         end)
     end
-
-    if AutoPlaceEnabled and not AutoPlaceRunning and Gui.Parent then
-        task.spawn(RAPSkripFunctions.autoPlaceEggs)
-    end
 end
+
 --==================================================
 -- 24. ESP LOGIC
 --==================================================
