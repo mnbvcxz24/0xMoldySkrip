@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.15"
+local ver = "TEST v8.16"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -206,18 +206,21 @@ local VolcanoDipEvent
 local VolcanoDipResultEvent
 local EggPlacedEvent
 
-task.spawn(function()
-    pcall(function()
-        local Remotes = ReplicatedStorage:WaitForChild("Remotes")
-        local GameRemotes = Remotes:WaitForChild("Game")
-        EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
-        EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
-        EggPlacedEvent = GameRemotes:WaitForChild("EggPlaced")
-        TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
-        VolcanoDipEvent = ReplicatedStorage.packages.Net["RE/VolcanoDip"]
-        VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
-    end)
-end)
+do
+    -- Resolve remotes before the later event listeners are registered.
+    -- The old task.spawn could leave VolcanoDipResultEvent nil when its listener was checked.
+    local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+    local GameRemotes = Remotes:WaitForChild("Game")
+    EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
+    EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
+    EggPlacedEvent = GameRemotes:WaitForChild("EggPlaced")
+    TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
+
+    local packages = ReplicatedStorage:WaitForChild("packages")
+    local net = packages:WaitForChild("Net")
+    VolcanoDipEvent = net:WaitForChild("RE/VolcanoDip")
+    VolcanoDipResultEvent = net:WaitForChild("RE/VolcanoDipResult")
+end
 --==================================================
 -- 10. GUI ROOT
 --==================================================
@@ -2172,7 +2175,7 @@ RAPSkripFunctions.glideToMyPlot = function()
 
     local startCFrame = root.CFrame
     local distance = (targetCFrame.Position - startCFrame.Position).Magnitude
-    local glideSpeed = 100 -- studs per second
+    local glideSpeed = 350 -- studs per second
     local duration = distance / glideSpeed
     local stepInterval = 0.05
     local steps = math.max(1, math.ceil(duration / stepInterval))
@@ -2369,10 +2372,20 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         AutoVolcanoMessageType=nil
         AutoVolcanoWaitingForMessage=true
 
-        if VolcanoDipEvent then
+        if not VolcanoDipEvent or not VolcanoDipEvent:IsA("RemoteEvent") then
+            RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDip remote missing or invalid")
+            AutoMagmaDipWaitingForResult=false
+            AutoVolcanoWaitingForMessage=false
+            AutoPickupBusy=false
+            return
+        end
+
+        local dipRequestOk, dipRequestError = pcall(function()
             VolcanoDipEvent:FireServer()
-        else
-            RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDip remote missing")
+        end)
+
+        if not dipRequestOk then
+            RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP ERROR] Request failed: " .. tostring(dipRequestError))
             AutoMagmaDipWaitingForResult=false
             AutoVolcanoWaitingForMessage=false
             AutoPickupBusy=false
@@ -2855,16 +2868,14 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
     end
 end)
 
-if VolcanoDipResultEvent then
+if VolcanoDipResultEvent and VolcanoDipResultEvent:IsA("RemoteEvent") then
     VolcanoDipResultEvent.OnClientEvent:Connect(function(result)
-        if not AutoMagmaDipWaitingForResult then
-            return
-        end
         AutoMagmaDipResult=result
         AutoMagmaDipWaitingForResult=false
+        RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP] Result received: " .. tostring(result))
     end)
 else
-    RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDipResult remote not found")
+    RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDipResult remote not found or invalid")
 end
 --==================================================
 -- 22. AUTO PLACE LOGIC
