@@ -204,6 +204,7 @@ local EggArrivalClaimEvent
 local TeleportToPlotEvent
 local VolcanoDipEvent
 local VolcanoDipResultEvent
+local EggPlacedEvent
 
 task.spawn(function()
     pcall(function()
@@ -211,6 +212,7 @@ task.spawn(function()
         local GameRemotes = Remotes:WaitForChild("Game")
         EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
         EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
+        EggPlacedEvent = GameRemotes:WaitForChild("EggPlaced")
         TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
         VolcanoDipEvent = ReplicatedStorage.packages.Net["RE/VolcanoDip"]
         VolcanoDipResultEvent = ReplicatedStorage.packages.Net["RE/VolcanoDipResult"]
@@ -871,6 +873,9 @@ local AutoVolcanoMessageType = nil
 --==================================================
 local AutoPlaceEnabled = false
 local AutoPlaceRunning = false
+local AutoPlaceObserved = {}
+local AutoPlaceSnapshotReceived = false
+local AutoPlaceReservedPositions = {}
 --==================================================
 -- 13. EGG FILTER SYSTEM
 --==================================================
@@ -2813,24 +2818,158 @@ local function holdEgg(eggName)
 end
 
 
-local function autoPlaceEggs()
-    -- Safety: never run unless Auto Place is explicitly enabled
-    if not AutoPlaceEnabled then
-        return
+-- Auto Place settings. Ring 1 is the first 3x3 grid; ring 2 expands to 5x5.
+local AUTO_PLACE_SPACING = 5
+local AUTO_PLACE_MAX_RING = 2
+local AUTO_PLACE_POSITION_TOLERANCE = 2
+
+local function getAutoPlaceOffsets()
+    -- Required first 3x3 order:
+    -- left-front, left-middle, left-back, center-front, center, center-back,
+    -- right-front, right-middle, right-back.
+    local offsets = {
+        Vector3.new(-1, 0,  1),
+        Vector3.new(-1, 0,  0),
+        Vector3.new(-1, 0, -1),
+        Vector3.new( 0, 0,  1),
+        Vector3.new( 0, 0,  0),
+        Vector3.new( 0, 0, -1),
+        Vector3.new( 1, 0,  1),
+        Vector3.new( 1, 0,  0),
+        Vector3.new( 1, 0, -1)
+    }
+
+    -- Add each larger square ring without duplicating the initial 3x3.
+    for ring = 2, AUTO_PLACE_MAX_RING do
+        for z = ring, -ring, -1 do
+            if z == ring or z == -ring then
+                for x = -ring, ring do
+                    table.insert(offsets, Vector3.new(x, 0, z))
+                end
+            else
+                table.insert(offsets, Vector3.new(-ring, 0, z))
+                table.insert(offsets, Vector3.new(ring, 0, z))
+            end
+        end
     end
 
-    if AutoPlaceRunning then
+    for index, offset in ipairs(offsets) do
+        offsets[index] = offset * AUTO_PLACE_SPACING
+    end
+
+    return offsets
+end
+
+local function isAutoPlacePositionOccupied(position)
+    for _, placement in ipairs(AutoPlaceObserved) do
+        if placement.Position
+            and (placement.Position - position).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
+            return true
+        end
+    end
+
+    for _, reservedPosition in ipairs(AutoPlaceReservedPositions) do
+        if (reservedPosition - position).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function findNextAutoPlacePosition(centerCFrame)
+    for _, offset in ipairs(getAutoPlaceOffsets()) do
+        if not AutoPlaceEnabled then
+            return nil
+        end
+
+        local candidate = (centerCFrame * CFrame.new(offset)).Position
+        if not isAutoPlacePositionOccupied(candidate) then
+            return candidate
+        end
+    end
+
+    return nil
+end
+
+local function autoPlaceEggs()
+    if not AutoPlaceEnabled or AutoPlaceRunning then
         return
     end
 
     AutoPlaceRunning = true
 
-    while AutoPlaceEnabled do
-        -- Auto Place logic will go here
-        break
-    end
+    local success, err = pcall(function()
+        if not EggPlacedEvent then
+            AddDebug("[AUTO PLACE] EggPlaced remote is not ready")
+            return
+        end
+
+        if not AutoPlaceSnapshotReceived then
+            AddDebug("[AUTO PLACE] No placement snapshot received yet; no eggs placed")
+            return
+        end
+
+        local centerCFrame = getMyRanchCFrame()
+        if not centerCFrame then
+            AddDebug("[AUTO PLACE] Could not find your plot Baseplate")
+            return
+        end
+
+        local selectedEggNames = {}
+        for _, eggName in ipairs(EggTypes) do
+            if eggName ~= "--" and AutoPlaceSelectedEggs[eggName] == true then
+                table.insert(selectedEggNames, eggName)
+            end
+        end
+
+        if #selectedEggNames == 0 then
+            AddDebug("[AUTO PLACE] Select at least one egg type")
+            return
+        end
+
+        AddDebug("[AUTO PLACE] Starting placement pass for " .. tostring(#selectedEggNames) .. " selected type(s)")
+
+        for _, eggName in ipairs(selectedEggNames) do
+            if not AutoPlaceEnabled then
+                break
+            end
+
+            local position = findNextAutoPlacePosition(centerCFrame)
+            if not position then
+                AddDebug("[AUTO PLACE] No free position found within " .. tostring(AUTO_PLACE_MAX_RING) .. " rings")
+                break
+            end
+
+            if holdEgg(eggName) then
+                table.insert(AutoPlaceReservedPositions, position)
+
+                local sent, sendError = pcall(function()
+                    EggPlacedEvent:FireServer({
+                        PlantPosition = position
+                    })
+                end)
+
+                if sent then
+                    AddDebug("[AUTO PLACE] Request sent for " .. eggName)
+                    task.wait(0.75)
+                else
+                    table.remove(AutoPlaceReservedPositions)
+                    AddDebug("[AUTO PLACE] Request failed: " .. tostring(sendError))
+                end
+            else
+                AddDebug("[AUTO PLACE] Could not equip: " .. eggName)
+            end
+        end
+
+        AddDebug("[AUTO PLACE] Placement pass finished")
+    end)
 
     AutoPlaceRunning = false
+
+    if not success then
+        AddDebug("[AUTO PLACE] Error: " .. tostring(err))
+    end
 end
 --==================================================
 -- 23. ESP LOGIC
@@ -3053,6 +3192,61 @@ end
 --==================================================
 -- 24. EVENT CONNECTIONS
 --==================================================
+-- Listen for the server's owner-specific placement snapshot.
+task.spawn(function()
+    -- Section 9 initializes this remote asynchronously.
+    while not EggPlacedEvent and Gui.Parent do
+        task.wait(0.1)
+    end
+
+    if not EggPlacedEvent or not Gui.Parent then
+        return
+    end
+
+    EggPlacedEvent.OnClientEvent:Connect(function(payload)
+        if type(payload) ~= "table" or payload.Snapshot ~= true then
+            return
+        end
+
+        if payload.Owner ~= player then
+            return
+        end
+
+        local updatedPlacements = {}
+        if type(payload.Placements) == "table" then
+            for _, placement in ipairs(payload.Placements) do
+                if type(placement) == "table" then
+                    local coordinate = placement.Coordinate
+                    local position
+
+                    if typeof(coordinate) == "CFrame" then
+                        position = coordinate.Position
+                    elseif typeof(coordinate) == "Vector3" then
+                        position = coordinate
+                    end
+
+                    if position then
+                        table.insert(updatedPlacements, {
+                            Position = position,
+                            EggName = placement.EggName,
+                            EggKey = placement.EggKey,
+                            NestId = placement.NestId
+                        })
+                    end
+                end
+            end
+        end
+
+        AutoPlaceObserved = updatedPlacements
+        AutoPlaceSnapshotReceived = true
+        -- A fresh authoritative snapshot replaces local reservations.
+        AutoPlaceReservedPositions = {}
+
+        AddDebug("[AUTO PLACE] Snapshot received: " .. tostring(#updatedPlacements) .. " placed egg(s)")
+    end)
+
+    AddDebug("[AUTO PLACE] EggPlaced listener connected")
+end)
 AutoPickupToggle.MouseButton1Click:Connect(function()
     local enabled=not AutoPickupRunning
     AutoPickupRunning=enabled
