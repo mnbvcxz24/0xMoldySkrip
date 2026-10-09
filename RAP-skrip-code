@@ -2708,6 +2708,7 @@ local GameMessageEvent=game:GetService("ReplicatedStorage").Remotes.Reusable.Gam
 
 GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
     if typeof(message)~="string" then return end
+    local lowerMessage = string.lower(message)
     if string.find(message,"Egg Mutated Into",1,true) then
         AutoVolcanoMessageReceived=true
         AutoVolcanoMessageText=message
@@ -3073,7 +3074,6 @@ AutoPickupFilterButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Auto Place ON/OFF toggle
 AutoPlaceToggle.MouseButton1Click:Connect(function()
     AutoPlaceEnabled = not AutoPlaceEnabled
 
