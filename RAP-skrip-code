@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.7"
+local ver = "TEST v8.8"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -83,6 +83,9 @@ local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
 local SelectedEggs = {}
 local AutoSelectedEggs = {}
 local AutoPlaceSelectedEggs = {}
+
+local AutoPickupMovementMode = "Teleport"
+local AutoPickupClaimDelay = 1.5
 
 local function saveConfig()
     if not writefile then
@@ -774,8 +777,6 @@ AutoClaimBarCorner.Parent = AutoClaimBar
 local AutoPickupRunning = false
 local AutoPickupBusy = false
 local AutoPickupDistance = math.huge
-local AutoPickupMovementMode = "Teleport"
-local AutoPickupClaimDelay = 1.5
 local AutoPickupNextEggDelay = 3
 local AutoPickupFloatHeight = 3
 local AutoPickupFloating = false
