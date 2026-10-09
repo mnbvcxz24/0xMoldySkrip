@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.14"
+local ver = "TEST v8.15"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -2171,8 +2171,11 @@ RAPSkripFunctions.glideToMyPlot = function()
     end
 
     local startCFrame = root.CFrame
-    local duration = 0.8
-    local steps = 20
+    local distance = (targetCFrame.Position - startCFrame.Position).Magnitude
+    local glideSpeed = 100 -- studs per second
+    local duration = distance / glideSpeed
+    local stepInterval = 0.05
+    local steps = math.max(1, math.ceil(duration / stepInterval))
 
     for step = 1, steps do
         if not AutoPickupRunning then
@@ -2448,7 +2451,8 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        task.wait(1)
+        -- Allow the outside-plot position to settle before dropping.
+        task.wait(0.75)
 
     -- 8. Volcanic Egg without Magma Dip
     elseif isVolcanic then
@@ -2475,7 +2479,8 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        task.wait(1)
+        -- Allow the outside-plot position to settle before dropping.
+        task.wait(0.75)
 
     -- 9. Normal Egg without Magma Dip
     else
@@ -2500,7 +2505,8 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        task.wait(0.25)
+        -- Allow the outside-plot position to settle before dropping.
+        task.wait(0.75)
     end
 
     -- 10. Prepare dropped egg detection
@@ -2527,10 +2533,16 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
     end
 
     -- 11. Drop egg
+    task.wait(0.5) -- Brief pause before sending the drop request.
+    if not AutoPickupRunning then
+        AutoPickupBusy=false
+        return
+    end
+
     AutoPickupStage="Drop"
     BasketDropEvent:FireServer()
     RAPSkripFunctions.stopAutoPickupFloat()
-    task.wait(0.25)
+    task.wait(0.75) -- Give the dropped egg time to appear in ActiveEggs.
 
     -- 12. Find newly dropped egg
     local droppedEgg
@@ -2591,6 +2603,12 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
 
     AutoPickupAwaitingUUID=nil
     AutoPickupPickupConfirmed=false
+
+    task.wait(0.5) -- Let the dropped pickup settle before returning to the plot.
+    if not AutoPickupRunning then
+        AutoPickupBusy=false
+        return
+    end
 
     -- 14. Return to plot
     AutoPickupStage="GoingToPlot"
