@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.13"
+local ver = "TEST v8.14"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -38,7 +38,6 @@ local VolcanoEntrance1Position = Vector3.new(-4918.390625,41274.457031,-3673.695
 local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198486)
 local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
 local VolcanoInside2Position = Vector3.new(-5085.847656,41253.742188,-3509.459473)
-local VolcanoEggPosition = Vector3.new(-5330.669922,40912.410156,-3575.845215)
 local VolcanoDropPosition = Vector3.new(-5067.05859375,41424.12890625,-3471.73583984375)
 --==================================================
 -- 4. UTILITY FUNCTIONS
@@ -500,7 +499,7 @@ AutoHatchStatus.Name = "AutoHatchStatus"
 AutoHatchStatus.Size = UDim2.new(1, -85, 0, 22)
 AutoHatchStatus.Position = UDim2.fromOffset(5, 145)
 AutoHatchStatus.BackgroundTransparency = 1
-AutoHatchStatus.Text = "● Inactive"
+AutoHatchStatus.Text = "● IDLE"
 AutoHatchStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoHatchStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoHatchStatus.Font = Enum.Font.Gotham
@@ -653,7 +652,7 @@ local AutoPickupStatus = Instance.new("TextLabel")
 AutoPickupStatus.Size = UDim2.new(1, -85, 0, 22)
 AutoPickupStatus.Position = UDim2.fromOffset(5, 37)
 AutoPickupStatus.BackgroundTransparency = 1
-AutoPickupStatus.Text = "● Inactive"
+AutoPickupStatus.Text = "● IDLE"
 AutoPickupStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoPickupStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoPickupStatus.Font = Enum.Font.Gotham
@@ -733,7 +732,7 @@ local AutoMagmaDipStatus = Instance.new("TextLabel")
 AutoMagmaDipStatus.Size = UDim2.new(1, -85, 0, 22)
 AutoMagmaDipStatus.Position = UDim2.fromOffset(5, 131)
 AutoMagmaDipStatus.BackgroundTransparency = 1
-AutoMagmaDipStatus.Text = "● Inactive"
+AutoMagmaDipStatus.Text = "● IDLE"
 AutoMagmaDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoMagmaDipStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoMagmaDipStatus.Font = Enum.Font.Gotham
@@ -1128,7 +1127,7 @@ ESPStatus.Name="ESPStatus"
 ESPStatus.Size=UDim2.new(1,-85,0,22)
 ESPStatus.Position=UDim2.fromOffset(5,30)
 ESPStatus.BackgroundTransparency=1
-ESPStatus.Text="● Inactive"
+ESPStatus.Text="● IDLE"
 ESPStatus.TextColor3=Color3.fromRGB(150,150,158)
 ESPStatus.TextSize=RAPSkripFunctions.textSize(10)
 ESPStatus.Font=Enum.Font.Gotham
@@ -1647,13 +1646,13 @@ RAPSkripFunctions.setAntiAFK = function(enabled)
     if AntiAFKEnabled then
         AntiAFKToggle.Text = "ON"
         AntiAFKToggle.BackgroundColor3 = Color3.fromRGB(55, 90, 60)
-        AntiAFKStatus.Text = "● Active"
+        AntiAFKStatus.Text = "● ACTIVE"
         AntiAFKStatus.TextColor3 = Color3.fromRGB(120, 210, 135)
         RAPSkripFunctions.AddDebug("[ANTI AFK] Enabled")
     else
         AntiAFKToggle.Text = "OFF"
         AntiAFKToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-        AntiAFKStatus.Text = "● Inactive"
+        AntiAFKStatus.Text = "● IDLE"
         AntiAFKStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
         RAPSkripFunctions.AddDebug("[ANTI AFK] Disabled")
     end
@@ -2006,8 +2005,15 @@ RAPSkripFunctions.enterVolcanicEgg = function(egg)
         return false
     end
 
+    -- Use the detected egg instance instead of a hardcoded world coordinate.
+    local eggPosition = RAPSkripFunctions.getEggPosition(egg)
+    if not eggPosition then
+        RAPSkripFunctions.AddDebug("[AUTO VOLCANO ERROR] Detected egg position unavailable")
+        return false
+    end
+
     root.CFrame = CFrame.new(
-        VolcanoEggPosition
+        eggPosition + Vector3.new(0, 3, 0)
     )
 
     return true
@@ -2148,6 +2154,43 @@ RAPSkripFunctions.teleportToMyPlot = function()
 
     if not success then
         return false
+    end
+
+    return true
+end
+
+-- Smoothly glide from the current position to the player's own plot center.
+-- The existing outside-plot teleport still runs after this glide.
+RAPSkripFunctions.glideToMyPlot = function()
+    local root = RAPSkripFunctions.getCharacterRoot()
+    local targetCFrame = RAPSkripFunctions.getMyRanchCFrame()
+
+    if not root or not targetCFrame then
+        RAPSkripFunctions.AddDebug("[AUTO MOVE] Cannot glide: character root or plot not found")
+        return false
+    end
+
+    local startCFrame = root.CFrame
+    local duration = 0.8
+    local steps = 20
+
+    for step = 1, steps do
+        if not AutoPickupRunning then
+            return false
+        end
+
+        local alpha = step / steps
+        local ok = pcall(function()
+            root.CFrame = startCFrame:Lerp(targetCFrame, alpha)
+            root.AssemblyLinearVelocity = Vector3.zero
+            root.AssemblyAngularVelocity = Vector3.zero
+        end)
+
+        if not ok then
+            return false
+        end
+
+        task.wait(duration / steps)
     end
 
     return true
@@ -2385,7 +2428,12 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             AutoPickupBusy=false
             return
         end
-        -- 7. Return outside the plot
+        -- 7. Glide back to the player's plot, then use the existing outside-plot teleport.
+        if not RAPSkripFunctions.glideToMyPlot() then
+            AutoPickupBusy=false
+            return
+        end
+
         local reachedOutside=false
         while AutoPickupRunning and not reachedOutside do
             if RAPSkripFunctions.teleportOutsidePlot(VolcanoDropPosition) then
@@ -2407,6 +2455,11 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         RAPSkripFunctions.exitVolcanicEgg()
 
         local currentEggPosition=RAPSkripFunctions.getEggPosition(egg) or eggPosition
+        if not RAPSkripFunctions.glideToMyPlot() then
+            AutoPickupBusy=false
+            return
+        end
+
         local reachedOutside=false
 
         while AutoPickupRunning and not reachedOutside do
@@ -2427,6 +2480,11 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
     -- 9. Normal Egg without Magma Dip
     else
         local currentEggPosition=RAPSkripFunctions.getEggPosition(egg) or eggPosition
+        if not RAPSkripFunctions.glideToMyPlot() then
+            AutoPickupBusy=false
+            return
+        end
+
         local reachedOutside=false
 
         while AutoPickupRunning and not reachedOutside do
@@ -3653,7 +3711,7 @@ AutoPickupToggle.MouseButton1Click:Connect(function()
     AutoPickupToggle.Text=enabled and "ON" or "OFF"
     AutoPickupToggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
 
-    AutoPickupStatus.Text=enabled and "● Active" or "● Inactive"
+    AutoPickupStatus.Text=enabled and "● ACTIVE" or "● IDLE"
     AutoPickupStatus.TextColor3=enabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
 
     RAPSkripFunctions.AddDebug(enabled and "[AUTO] Enabled" or "[AUTO] Disabled")
@@ -3730,7 +3788,7 @@ AutoHatchToggle.MouseButton1Click:Connect(function()
     AutoHatchToggle.BackgroundColor3 = AutoHatchState.Enabled
         and Color3.fromRGB(55, 120, 75)
         or Color3.fromRGB(45, 45, 53)
-    AutoHatchStatus.Text = AutoHatchState.Enabled and "● Active" or "● Inactive"
+    AutoHatchStatus.Text = AutoHatchState.Enabled and "● ACTIVE" or "● IDLE"
     AutoHatchStatus.TextColor3 = AutoHatchState.Enabled
         and Color3.fromRGB(130, 180, 140)
         or Color3.fromRGB(150, 150, 158)
@@ -3777,7 +3835,7 @@ AutoMagmaDipToggle.MouseButton1Click:Connect(function()
     AutoMagmaDipToggle.Text=AutoMagmaDipEnabled and "ON" or "OFF"
     AutoMagmaDipToggle.BackgroundColor3=AutoMagmaDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
 
-    AutoMagmaDipStatus.Text=AutoMagmaDipEnabled and "● Active" or "● Inactive"
+    AutoMagmaDipStatus.Text=AutoMagmaDipEnabled and "● ACTIVE" or "● IDLE"
     AutoMagmaDipStatus.TextColor3=AutoMagmaDipEnabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
 
     RAPSkripFunctions.AddDebug(AutoMagmaDipEnabled and "[AUTO MAGMA DIP] Enabled" or "[AUTO MAGMA DIP] Disabled")
@@ -3965,7 +4023,7 @@ ESPToggle.MouseButton1Click:Connect(function()
         and Color3.fromRGB(55,120,75)
         or Color3.fromRGB(45,45,53)
 
-    ESPStatus.Text=ESPEnabled and "● Active" or "● Inactive"
+    ESPStatus.Text=ESPEnabled and "● ACTIVE" or "● IDLE"
     ESPStatus.TextColor3=
         ESPEnabled
         and Color3.fromRGB(130,180,140)
