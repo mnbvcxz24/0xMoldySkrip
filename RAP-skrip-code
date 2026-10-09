@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.28"
+local ver = "TEST v8.29"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -2731,8 +2731,13 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
+    -- Server deposit confirmations can arrive after the deposit itself succeeds.
+    -- Wait longer before reporting a timeout so normal network/server delays do not
+    -- produce a false "Deposit not confirmed" message.
     local depositStart=os.clock()
-    while AutoPickupRunning and not AutoPickupDepositConfirmed and os.clock()-depositStart<5 do
+    local depositConfirmTimeout=12
+    while AutoPickupRunning and not AutoPickupDepositConfirmed
+        and os.clock()-depositStart<depositConfirmTimeout do
         task.wait(0.1)
     end
 
