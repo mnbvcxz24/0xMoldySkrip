@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.12"
+local ver = "TEST v8.13"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -412,7 +412,7 @@ AutoPlaceStatus.Name = "AutoPlaceStatus"
 AutoPlaceStatus.Size = UDim2.new(1, -85, 0, 22)
 AutoPlaceStatus.Position = UDim2.fromOffset(5, 37)
 AutoPlaceStatus.BackgroundTransparency = 1
-AutoPlaceStatus.Text = "● Inactive"
+AutoPlaceStatus.Text = "● IDLE"
 AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoPlaceStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoPlaceStatus.Font = Enum.Font.Gotham
@@ -431,7 +431,7 @@ AutoPlaceToggle.Font = Enum.Font.GothamBold
 AutoPlaceToggle.AutoButtonColor = false
 AutoPlaceToggle.Active = true
 AutoPlaceToggle.Selectable = true
-AutoPlaceToggle.ZIndex = 10
+AutoPlaceToggle.ZIndex = 50
 AutoPlaceToggle.Parent = AutoContent2
 
 local AutoPlaceToggleCorner = Instance.new("UICorner")
@@ -2955,6 +2955,13 @@ RAPSkripFunctions.getAutoPlaceOccupiedCount = function()
     return #positions
 end
 
+RAPSkripFunctions.setAutoPlaceStatus = function(status, color)
+    if AutoPlaceStatus then
+        AutoPlaceStatus.Text = "● " .. tostring(status)
+        AutoPlaceStatus.TextColor3 = color or Color3.fromRGB(150, 150, 158)
+    end
+end
+
 RAPSkripFunctions.stopAutoPlaceAtLimit = function()
     AutoPlaceEnabled = false
 
@@ -2963,11 +2970,7 @@ RAPSkripFunctions.stopAutoPlaceAtLimit = function()
         AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
     end
 
-    if AutoPlaceStatus then
-        AutoPlaceStatus.Text = "● Inactive"
-        AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
-    end
-
+    RAPSkripFunctions.setAutoPlaceStatus("FULL (10/10)", Color3.fromRGB(220, 155, 100))
     RAPSkripFunctions.AddDebug("[AUTO PLACE] Plot limit reached (10/10). Auto Place stopped.")
 end
 
@@ -2987,9 +2990,6 @@ RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
 end
 
 RAPSkripFunctions.autoPlaceEggs = function()
-    if AutoHatchState.Busy then
-        return
-    end
     if not AutoPlaceEnabled or AutoPlaceRunning then
         return
     end
@@ -2997,18 +2997,37 @@ RAPSkripFunctions.autoPlaceEggs = function()
     AutoPlaceRunning = true
 
     local success, err = pcall(function()
+        while AutoHatchState.Busy and AutoPlaceEnabled and Gui.Parent do
+            RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
+            task.wait(0.25)
+        end
+
+        if not AutoPlaceEnabled or not Gui.Parent then
+            return
+        end
+
+        if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+            RAPSkripFunctions.stopAutoPlaceAtLimit()
+            return
+        end
+
+        RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
+
         if not EggPlacedEvent then
+            RAPSkripFunctions.setAutoPlaceStatus("NO REMOTE", Color3.fromRGB(220, 155, 100))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] EggPlaced remote is not ready")
             return
         end
 
         if not AutoPlaceSnapshotReceived then
+            RAPSkripFunctions.setAutoPlaceStatus("WAIT SNAP", Color3.fromRGB(220, 190, 110))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] No placement snapshot received yet; no eggs placed")
             return
         end
 
         local centerCFrame = RAPSkripFunctions.getMyRanchCFrame()
         if not centerCFrame then
+            RAPSkripFunctions.setAutoPlaceStatus("NO PLOT", Color3.fromRGB(220, 155, 100))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] Could not find your plot Baseplate")
             return
         end
@@ -3021,6 +3040,7 @@ RAPSkripFunctions.autoPlaceEggs = function()
         end
 
         if #selectedEggNames == 0 then
+            RAPSkripFunctions.setAutoPlaceStatus("NO EGGS", Color3.fromRGB(220, 190, 110))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] Select at least one egg type")
             return
         end
@@ -3103,7 +3123,10 @@ RAPSkripFunctions.autoPlaceEggs = function()
     AutoPlaceRunning = false
 
     if not success then
+        RAPSkripFunctions.setAutoPlaceStatus("ERROR", Color3.fromRGB(220, 100, 100))
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Error: " .. tostring(err))
+    elseif not AutoPlaceEnabled and AutoPlaceStatus.Text ~= "● FULL (10/10)" then
+        RAPSkripFunctions.setAutoPlaceStatus("IDLE", Color3.fromRGB(150, 150, 158))
     end
 end
 --==================================================
@@ -3673,31 +3696,32 @@ AutoPickupFilterButton.MouseButton1Click:Connect(function()
     end
 end)
 
-AutoPlaceToggle.MouseButton1Click:Connect(function()
-    AutoPlaceEnabled = not AutoPlaceEnabled
-
-    AutoPlaceToggle.Text = AutoPlaceEnabled and "ON" or "OFF"
-    AutoPlaceToggle.BackgroundColor3 = AutoPlaceEnabled
-        and Color3.fromRGB(55, 120, 75)
-        or Color3.fromRGB(45, 45, 53)
-
-    AutoPlaceStatus.Text = AutoPlaceEnabled
-        and "● Active"
-        or "● Inactive"
-
-    AutoPlaceStatus.TextColor3 = AutoPlaceEnabled
-        and Color3.fromRGB(130, 180, 140)
-        or Color3.fromRGB(150, 150, 158)
-
-    RAPSkripFunctions.AddDebug(
-        AutoPlaceEnabled
-        and "[AUTO PLACE] Enabled"
-        or "[AUTO PLACE] Disabled"
-    )
-
+AutoPlaceToggle.Activated:Connect(function()
+    -- Always keep the control clickable, even when the plot is full.
     if AutoPlaceEnabled then
-        task.spawn(RAPSkripFunctions.autoPlaceEggs)
+        AutoPlaceEnabled = false
+        AutoPlaceToggle.Text = "OFF"
+        AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+        RAPSkripFunctions.setAutoPlaceStatus("IDLE", Color3.fromRGB(150, 150, 158))
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Disabled")
+        return
     end
+
+    if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+        AutoPlaceEnabled = false
+        AutoPlaceToggle.Text = "OFF"
+        AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+        RAPSkripFunctions.setAutoPlaceStatus("FULL (10/10)", Color3.fromRGB(220, 155, 100))
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Plot is full (10/10); clear a slot before enabling")
+        return
+    end
+
+    AutoPlaceEnabled = true
+    AutoPlaceToggle.Text = "ON"
+    AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(55, 120, 75)
+    RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
+    RAPSkripFunctions.AddDebug("[AUTO PLACE] Enabled")
+    task.spawn(RAPSkripFunctions.autoPlaceEggs)
 end)
 
 AutoHatchToggle.MouseButton1Click:Connect(function()
