@@ -2742,48 +2742,74 @@ end
 --==================================================
 -- 22. AUTO PLACE LOGIC
 --==================================================
-local function holdEgg(eggName)
-    local character = player.Character or player.CharacterAdded:Wait()
-    local backpack = player:WaitForChild("Backpack")
 
+local function holdEgg(eggName)
+    -- Safety: only equip an egg while Auto Place is enabled.
     if not AutoPlaceEnabled then
+        return false
+    end
+
+    if type(eggName) ~= "string" or eggName == "" then
+        AddDebug("[AUTO PLACE] Invalid egg name")
         return false
     end
 
     local character = player.Character
     if not character then
+        AddDebug("[AUTO PLACE] Character not available")
         return false
     end
 
     local backpack = player:FindFirstChild("Backpack")
     if not backpack then
+        AddDebug("[AUTO PLACE] Backpack not available")
         return false
     end
 
     local tool
 
+    -- Find the selected egg in the Backpack.
     for _, child in ipairs(backpack:GetChildren()) do
-        if child:IsA("Folder") then
-            tool = child:FindFirstChild(eggName, true)
-            if tool then
-                break
-            end
-        elseif child.Name == eggName then
+        if child:IsA("Tool") and child.Name == eggName then
             tool = child
             break
+        elseif child:IsA("Folder") then
+            local candidate = child:FindFirstChild(eggName, true)
+            if candidate and candidate:IsA("Tool") then
+                tool = candidate
+                break
+            end
         end
     end
 
-    if tool and tool:IsA("Tool") then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-
-        if humanoid then
-            humanoid:EquipTool(tool)
-            return true
-        end
+    if not tool then
+        AddDebug("[AUTO PLACE] Egg tool not found: " .. eggName)
+        return false
     end
 
-    return false
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then
+        AddDebug("[AUTO PLACE] Humanoid not found")
+        return false
+    end
+
+    local success, err = pcall(function()
+        humanoid:EquipTool(tool)
+    end)
+
+    if not success then
+        AddDebug("[AUTO PLACE] Equip failed: " .. tostring(err))
+        return false
+    end
+
+    -- Verify that the tool actually moved into the character.
+    if tool.Parent ~= character then
+        AddDebug("[AUTO PLACE] Egg was not equipped: " .. eggName)
+        return false
+    end
+
+    AddDebug("[AUTO PLACE] Equipped: " .. eggName)
+    return true
 end
 
 
@@ -3283,6 +3309,9 @@ Minimized.MouseButton1Click:Connect(function()
 end)
 
 Close.MouseButton1Click:Connect(function()
+    AutoPlaceEnabled = false
+    AutoPlaceRunning = false
+
     AutoPickupRunning=false
     AutoPickupBusy=false
     AutoMagmaDipEnabled=false
