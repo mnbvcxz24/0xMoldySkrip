@@ -1,2 +1,33 @@
-local BASE="https://raw.githubusercontent.com/mnbvcxz24/0xMoldySkrip/refs/heads/main/RAP-skrip-code"
-loadstring(game:HttpGet(BASE))()
+local url = "https://raw.githubusercontent.com/mnbvcxz24/0xMoldySkrip/refs/heads/main/RAP-skrip-code"
+
+if type(loadstring) ~= "function" then
+    warn("[RAPSkrip] loadstring is unavailable")
+    return
+end
+
+local ok, source = pcall(function()
+    return game:HttpGet(url)
+end)
+
+if not ok then
+    warn("[RAPSkrip] Download failed:", source)
+    return
+end
+
+if type(source) ~= "string" or #source == 0 then
+    warn("[RAPSkrip] Download returned empty content")
+    return
+end
+
+local compiled, compileError = loadstring(source)
+
+if not compiled then
+    warn("[RAPSkrip] Compilation failed:", compileError)
+    return
+end
+
+local ran, runtimeError = pcall(compiled)
+
+if not ran then
+    warn("[RAPSkrip] Runtime failed:", runtimeError)
+end
