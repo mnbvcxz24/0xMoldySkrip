@@ -205,6 +205,7 @@ local TeleportToPlotEvent
 local VolcanoDipEvent
 local VolcanoDipResultEvent
 local EggPlacedEvent
+local HatchEvent
 
 do
     -- Resolve remotes before the later event listeners are registered.
@@ -214,6 +215,7 @@ do
     EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
     EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
     EggPlacedEvent = GameRemotes:WaitForChild("EggPlaced")
+    HatchEvent = GameRemotes:WaitForChild("Hatch")
     TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
 
     local packages = ReplicatedStorage:WaitForChild("packages")
@@ -527,6 +529,52 @@ AutoHatchToggle.Parent = AutoContent2
 local AutoHatchToggleCorner = Instance.new("UICorner")
 AutoHatchToggleCorner.CornerRadius = UDim.new(0, 6)
 AutoHatchToggleCorner.Parent = AutoHatchToggle
+
+-- Compact session monitor below Auto Hatch.
+local MonitorFrame = Instance.new("Frame")
+MonitorFrame.Name = "RAPSkripMonitor"
+MonitorFrame.Size = UDim2.new(1, -10, 0, 68)
+MonitorFrame.Position = UDim2.fromOffset(5, 174)
+MonitorFrame.BackgroundColor3 = Color3.fromRGB(29, 29, 36)
+MonitorFrame.BorderSizePixel = 0
+MonitorFrame.Parent = AutoContent2
+local MonitorCorner = Instance.new("UICorner")
+MonitorCorner.CornerRadius = UDim.new(0, 6)
+MonitorCorner.Parent = MonitorFrame
+local MonitorTitle = Instance.new("TextLabel")
+MonitorTitle.Size = UDim2.new(1, -12, 0, 17)
+MonitorTitle.Position = UDim2.fromOffset(6, 3)
+MonitorTitle.BackgroundTransparency = 1
+MonitorTitle.Text = "RAPSkrip Monitor"
+MonitorTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
+MonitorTitle.TextSize = RAPSkripFunctions.textSize(10)
+MonitorTitle.Font = Enum.Font.GothamMedium
+MonitorTitle.TextXAlignment = Enum.TextXAlignment.Left
+MonitorTitle.Parent = MonitorFrame
+local MonitorRuntimeLabel = Instance.new("TextLabel")
+MonitorRuntimeLabel.Name = "Runtime"
+MonitorRuntimeLabel.Size = UDim2.new(1, -12, 0, 14)
+MonitorRuntimeLabel.Position = UDim2.fromOffset(6, 22)
+MonitorRuntimeLabel.BackgroundTransparency = 1
+MonitorRuntimeLabel.Text = "Runtime: 00:00:00"
+MonitorRuntimeLabel.TextColor3 = Color3.fromRGB(165, 165, 175)
+MonitorRuntimeLabel.TextSize = RAPSkripFunctions.textSize(9)
+MonitorRuntimeLabel.Font = Enum.Font.Gotham
+MonitorRuntimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+MonitorRuntimeLabel.Parent = MonitorFrame
+local MonitorStatsLabel = Instance.new("TextLabel")
+MonitorStatsLabel.Name = "SessionStats"
+MonitorStatsLabel.Size = UDim2.new(1, -12, 0, 25)
+MonitorStatsLabel.Position = UDim2.fromOffset(6, 38)
+MonitorStatsLabel.BackgroundTransparency = 1
+MonitorStatsLabel.Text = "Hatched: 0  |  Deposited: 0"
+MonitorStatsLabel.TextColor3 = Color3.fromRGB(165, 165, 175)
+MonitorStatsLabel.TextSize = RAPSkripFunctions.textSize(9)
+MonitorStatsLabel.Font = Enum.Font.Gotham
+MonitorStatsLabel.TextXAlignment = Enum.TextXAlignment.Left
+MonitorStatsLabel.TextYAlignment = Enum.TextYAlignment.Top
+MonitorStatsLabel.TextWrapped = true
+MonitorStatsLabel.Parent = MonitorFrame
 
 local ESPContent2 = Instance.new("Frame")
 ESPContent2.Name = "ESPContent2"
@@ -923,7 +971,14 @@ local AutoPlaceRunning = false
 local AutoPlaceObserved = {}
 local AutoPlaceSnapshotReceived = false
 local AutoPlaceReservedPositions = {}
+local AutoPlaceSavedCenterCFrame = nil -- Temporary runtime anchor; reset when this script is restarted.
 local AutoHatchState = { Enabled = false, Running = false, Busy = false, Checked = {} }
+local SessionStartedAt = os.clock()
+local SessionEggsHatched = 0
+local SessionEggsDeposited = 0
+local SessionSeenPlacedEggKeys = {}
+local SessionHatchPendingKeys = {}
+local SessionHatchCountedKeys = {}
 --==================================================
 -- 13. EGG FILTER SYSTEM
 --==================================================
@@ -3119,7 +3174,7 @@ RAPSkripFunctions.autoPlaceEggs = function()
             return
         end
 
-        local centerCFrame = RAPSkripFunctions.getMyRanchCFrame()
+        local centerCFrame = AutoPlaceSavedCenterCFrame or RAPSkripFunctions.getMyRanchCFrame()
         if not centerCFrame then
             RAPSkripFunctions.setAutoPlaceStatus("NO PLOT", Color3.fromRGB(220, 155, 100))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] Could not find your plot Baseplate")
@@ -3233,51 +3288,36 @@ end
 --==================================================
 -- 23. AUTO HATCH LOGIC
 --==================================================
-RAPSkripFunctions.getAutoHatchPromptPosition = function(prompt)
-    if not prompt or not prompt.Parent then
-        return nil
-    end
-
-    local parent = prompt.Parent
-    if parent:IsA("Attachment") then
-        return parent.WorldPosition
-    end
-    if parent:IsA("BasePart") then
-        return parent.Position
-    end
-
-    local part = parent:FindFirstChildWhichIsA("BasePart", true)
-    return part and part.Position or nil
-end
-
 RAPSkripFunctions.getAutoHatchEggEntries = function(plot)
-    if not plot then
-        return {}
-    end
-
+    if not plot then return {} end
     local eggsFolder = plot:FindFirstChild("Eggs")
     if not eggsFolder then
         for _, child in ipairs(plot:GetChildren()) do
-            if string.lower(child.Name) == "eggs" then
-                eggsFolder = child
-                break
-            end
+            if string.lower(child.Name) == "eggs" then eggsFolder = child break end
         end
     end
-
     return eggsFolder and eggsFolder:GetChildren() or {}
 end
 
-RAPSkripFunctions.getAutoHatchPrompt = function(entry)
-    if not entry then
-        return nil
+RAPSkripFunctions.getAutoHatchEggKey = function(entry)
+    if not entry then return nil end
+    local key = entry:GetAttribute("EggKey")
+    if type(key) == "string" and key ~= "" then return key end
+    local directValue = entry:FindFirstChild("EggKey")
+    if directValue and directValue:IsA("ValueBase") then
+        local ok, value = pcall(function() return directValue.Value end)
+        if ok and type(value) == "string" and value ~= "" then return value end
     end
-
-    if entry:IsA("ProximityPrompt") then
-        return entry
+    for _, descendant in ipairs(entry:GetDescendants()) do
+        if descendant.Name == "EggKey" then
+            local ok, value = pcall(function()
+                if descendant:IsA("ValueBase") then return descendant.Value end
+                return descendant:GetAttribute("Value")
+            end)
+            if ok and type(value) == "string" and value ~= "" then return value end
+        end
     end
-
-    return entry:FindFirstChildWhichIsA("ProximityPrompt", true)
+    return nil
 end
 
 RAPSkripFunctions.setAutoHatchStatus = function(status, color)
@@ -3288,8 +3328,6 @@ RAPSkripFunctions.setAutoHatchStatus = function(status, color)
 end
 
 RAPSkripFunctions.isAutoHatchInterrupted = function()
-    -- Do not hatch while pickup is moving the character or placement is in-flight.
-    -- Enabled-but-idle toggles do not block this routine.
     return not AutoHatchState.Enabled
         or not Gui.Parent
         or AutoPickupBusy
@@ -3297,49 +3335,10 @@ RAPSkripFunctions.isAutoHatchInterrupted = function()
         or not RAPSkripFunctions.isCharacterInMyPlot()
 end
 
-RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt, allowNotReady)
-    if not entry or not entry.Parent or not prompt or not prompt.Parent or not prompt.Enabled then
-        return false
-    end
-    if RAPSkripFunctions.isAutoHatchInterrupted() then
-        return false
-    end
-
-    local ready = prompt:GetAttribute("HatchPromptAvailable")
-    if ready == nil then ready = entry:GetAttribute("HatchPromptAvailable") end
-    if ready == nil and prompt.Parent then ready = prompt.Parent:GetAttribute("HatchPromptAvailable") end
-    if ready ~= true and not allowNotReady then
-        AutoHatchState.Checked[prompt] = { ready = ready, at = os.clock() }
-        return false
-    end
-
-    -- Trigger the prompt from the plot-wide hatch pass without teleporting to each egg.
-    -- If this executor cannot trigger it remotely, the verification pass retries nearby.
-    local triggered = false
-    if typeof(fireproximityprompt) == "function" then
-        triggered = pcall(fireproximityprompt, prompt)
-    else
-        triggered = pcall(function()
-            prompt:InputHoldBegin()
-            task.wait(math.max(0.1, prompt.HoldDuration))
-            prompt:InputHoldEnd()
-        end)
-    end
-
-    if triggered then
-        AutoHatchState.Checked[prompt] = { ready = ready, at = os.clock(), attempted = true }
-        RAPSkripFunctions.AddDebug("[AUTO HATCH] Hatch request: " .. tostring(entry.Name))
-        task.wait(0.1)
-        return true
-    end
-    RAPSkripFunctions.AddDebug("[AUTO HATCH] Prompt trigger failed: " .. tostring(entry.Name))
-    return false
-end
-
 RAPSkripFunctions.autoHatchEggs = function()
     if not AutoHatchState.Enabled or AutoHatchState.Running then return end
     AutoHatchState.Running = true
-
+    AutoHatchState.Busy = true
     local ok, err = pcall(function()
         while AutoHatchState.Enabled and Gui.Parent do
             while AutoHatchState.Enabled and Gui.Parent and RAPSkripFunctions.isAutoHatchInterrupted() do
@@ -3347,109 +3346,58 @@ RAPSkripFunctions.autoHatchEggs = function()
                 task.wait(0.25)
             end
             if not AutoHatchState.Enabled or not Gui.Parent then break end
-
             local plot = RAPSkripFunctions.findMyPlot()
-            local center = RAPSkripFunctions.getMyRanchCFrame()
-            local root = RAPSkripFunctions.getCharacterRoot()
-            if not plot or not center or not root then
+            if not plot then
                 RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
-                RAPSkripFunctions.AddDebug("[AUTO HATCH] Waiting for plot/character")
                 task.wait(1)
             else
-                local attempted = {}
-                local sent = 0
                 RAPSkripFunctions.setAutoHatchStatus("SCANNING", Color3.fromRGB(130, 180, 140))
-                local initialEntries = RAPSkripFunctions.getAutoHatchEggEntries(plot)
-                RAPSkripFunctions.AddDebug("[AUTO HATCH] Initial scan: " .. tostring(#initialEntries) .. " egg entr(y/ies)")
-
-                -- Before EACH hatch attempt, re-scan the plot so removed/replaced eggs
-                -- and updated prompts are reflected instead of using a stale list.
-                while AutoHatchState.Enabled and Gui.Parent and not RAPSkripFunctions.isAutoHatchInterrupted() do
-                    plot = RAPSkripFunctions.findMyPlot()
-                    if not plot then break end
-                    local freshEntries = RAPSkripFunctions.getAutoHatchEggEntries(plot)
-                    local nextTarget = nil
-                    for _, entry in ipairs(freshEntries) do
-                        local prompt = RAPSkripFunctions.getAutoHatchPrompt(entry)
-                        if prompt and prompt.Parent and prompt.Enabled then
-                            -- Use the live egg instance as the per-cycle key; UUIDs may be
-                            -- shared/missing across prompt wrappers, which could skip eggs.
-                            local key = entry
-                            if not attempted[key] then
-                                nextTarget = { entry = entry, prompt = prompt, key = key }
-                                break
+                local entries = RAPSkripFunctions.getAutoHatchEggEntries(plot)
+                local liveKeys, firedThisCycle = {}, {}
+                local sent = 0
+                for _, entry in ipairs(entries) do
+                    if not AutoHatchState.Enabled or RAPSkripFunctions.isAutoHatchInterrupted() then break end
+                    local eggKey = RAPSkripFunctions.getAutoHatchEggKey(entry)
+                    if eggKey then
+                        liveKeys[eggKey] = true
+                        if not firedThisCycle[eggKey] and HatchEvent then
+                            firedThisCycle[eggKey] = true
+                            RAPSkripFunctions.setAutoHatchStatus("HATCHING", Color3.fromRGB(130, 180, 140))
+                            local fired, fireErr = pcall(function()
+                                HatchEvent:FireServer({ EggKey = eggKey })
+                            end)
+                            if fired then
+                                sent = sent + 1
+                                SessionHatchPendingKeys[eggKey] = true
+                                RAPSkripFunctions.AddDebug("[AUTO HATCH] Hatch remote fired: " .. tostring(entry.Name))
+                            else
+                                RAPSkripFunctions.AddDebug("[AUTO HATCH] Remote failed for " .. tostring(entry.Name) .. ": " .. tostring(fireErr))
                             end
                         end
+                    else
+                        RAPSkripFunctions.AddDebug("[AUTO HATCH] EggKey not found for " .. tostring(entry.Name))
                     end
-                    if not nextTarget then
-                        RAPSkripFunctions.AddDebug("[AUTO HATCH] Fresh scan complete; no unattempted enabled prompts remain")
-                        break
-                    end
-                    attempted[nextTarget.key] = true
-                    RAPSkripFunctions.setAutoHatchStatus("HATCHING", Color3.fromRGB(130, 180, 140))
-                    if nextTarget.entry.Parent and nextTarget.prompt.Parent then
-                        if RAPSkripFunctions.tryAutoHatchPrompt(nextTarget.entry, nextTarget.prompt, true) then
-                            sent = sent + 1
-                        end
-                    end
-                    task.wait(0.15)
+                    task.wait(0.05)
                 end
-                RAPSkripFunctions.AddDebug("[AUTO HATCH] Hatch attempts: " .. tostring(sent))
-
-                -- Refresh once more for verification; only inspect eggs that still exist.
-                if AutoHatchState.Enabled and not RAPSkripFunctions.isAutoHatchInterrupted() then
-                    RAPSkripFunctions.setAutoHatchStatus("VERIFYING", Color3.fromRGB(220, 190, 110))
-                    plot = RAPSkripFunctions.findMyPlot()
-                    local verifyEntries = plot and RAPSkripFunctions.getAutoHatchEggEntries(plot) or {}
-                    for _, entry in ipairs(verifyEntries) do
-                        if not AutoHatchState.Enabled or RAPSkripFunctions.isAutoHatchInterrupted() then break end
-                        local prompt = RAPSkripFunctions.getAutoHatchPrompt(entry)
-                        if prompt and prompt.Parent and prompt.Enabled then
-                            local promptPosition = RAPSkripFunctions.getAutoHatchPromptPosition(prompt)
-                            root = RAPSkripFunctions.getCharacterRoot()
-                            if promptPosition and root then
-                                root.CFrame = CFrame.new(promptPosition + Vector3.new(0, 2.5, 0))
-                                task.wait(0.2)
-                                -- Reacquire the prompt after the teleport; the egg may have changed.
-                                plot = RAPSkripFunctions.findMyPlot()
-                                local latestEntries = plot and RAPSkripFunctions.getAutoHatchEggEntries(plot) or {}
-                                local latestPrompt = nil
-                                for _, latestEntry in ipairs(latestEntries) do
-                                    local candidate = RAPSkripFunctions.getAutoHatchPrompt(latestEntry)
-                                    if latestEntry == entry and candidate and candidate.Parent and candidate.Enabled then
-                                        latestPrompt = candidate
-                                        break
-                                    end
-                                end
-                                if latestPrompt then
-                                    local ready = latestPrompt:GetAttribute("HatchPromptAvailable")
-                                    if ready == nil then ready = entry:GetAttribute("HatchPromptAvailable") end
-                                    if ready == true then
-                                        RAPSkripFunctions.AddDebug("[AUTO HATCH] Still available after batch; retrying " .. tostring(entry.Name))
-                                        RAPSkripFunctions.tryAutoHatchPrompt(entry, latestPrompt, true)
-                                    end
-                                end
-                            end
+                for eggKey in pairs(SessionHatchPendingKeys) do
+                    if not liveKeys[eggKey] then
+                        if not SessionHatchCountedKeys[eggKey] then
+                            SessionEggsHatched = SessionEggsHatched + 1
+                            SessionHatchCountedKeys[eggKey] = true
                         end
+                        SessionHatchPendingKeys[eggKey] = nil
                     end
                 end
-
-                if AutoHatchState.Enabled and not RAPSkripFunctions.isAutoHatchInterrupted() then
-                    root = RAPSkripFunctions.getCharacterRoot()
-                    center = RAPSkripFunctions.getMyRanchCFrame()
-                    if root and center then root.CFrame = center end
-                    RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
-                    RAPSkripFunctions.AddDebug("[AUTO HATCH] Cycle complete; idle before fresh scan")
-                    local idleUntil = os.clock() + 5
-                    while AutoHatchState.Enabled and Gui.Parent and os.clock() < idleUntil do
-                        if RAPSkripFunctions.isAutoHatchInterrupted() then break end
-                        task.wait(0.5)
-                    end
+                RAPSkripFunctions.AddDebug("[AUTO HATCH] Cycle sent " .. tostring(sent) .. " request(s); next refresh in 10 seconds")
+                RAPSkripFunctions.setAutoHatchStatus("WAITING 10S", Color3.fromRGB(150, 150, 158))
+                local refreshAt = os.clock() + 10
+                while AutoHatchState.Enabled and Gui.Parent and os.clock() < refreshAt do
+                    if RAPSkripFunctions.isAutoHatchInterrupted() then break end
+                    task.wait(0.25)
                 end
             end
         end
     end)
-
     AutoHatchState.Busy = false
     AutoHatchState.Running = false
     if not AutoHatchState.Enabled then
@@ -3734,6 +3682,12 @@ task.spawn(function()
         end
 
         AutoPlaceObserved = updatedPlacements
+        for _, placement in ipairs(updatedPlacements) do
+            if type(placement.EggKey) == "string" and placement.EggKey ~= "" and not SessionSeenPlacedEggKeys[placement.EggKey] then
+                SessionSeenPlacedEggKeys[placement.EggKey] = true
+                SessionEggsDeposited = SessionEggsDeposited + 1
+            end
+        end
         AutoPlaceSnapshotReceived = true
 
         -- When the worker is idle, the fresh server snapshot supersedes stale
@@ -3826,6 +3780,12 @@ AutoPlaceToggle.Activated:Connect(function()
     end
 
     AutoPlaceEnabled = true
+    if not AutoPlaceSavedCenterCFrame then
+        AutoPlaceSavedCenterCFrame = RAPSkripFunctions.getMyRanchCFrame()
+        if AutoPlaceSavedCenterCFrame then
+            RAPSkripFunctions.AddDebug("[AUTO PLACE] Saved temporary placement center for this script session")
+        end
+    end
     AutoPlaceToggle.Text = "ON"
     AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(55, 120, 75)
     RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
@@ -4152,3 +4112,21 @@ RAPSkripFunctions.refreshESPFilterText()
 RAPSkripFunctions.createESPFilterButtons()
 
 RAPSkripFunctions.updateAntiAFKButton()
+
+
+-- Session monitor refresh; all statistics are temporary and reset on script restart.
+task.spawn(function()
+    while Gui and Gui.Parent do
+        local elapsed = math.max(0, math.floor(os.clock() - SessionStartedAt))
+        local hours = math.floor(elapsed / 3600)
+        local minutes = math.floor((elapsed % 3600) / 60)
+        local seconds = elapsed % 60
+        if MonitorRuntimeLabel and MonitorRuntimeLabel.Parent then
+            MonitorRuntimeLabel.Text = string.format("Runtime: %02d:%02d:%02d", hours, minutes, seconds)
+        end
+        if MonitorStatsLabel and MonitorStatsLabel.Parent then
+            MonitorStatsLabel.Text = "Hatched: " .. tostring(SessionEggsHatched) .. "  |  Deposited: " .. tostring(SessionEggsDeposited)
+        end
+        task.wait(1)
+    end
+end)
