@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.23"
+local ver = "TEST v8.24"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -2112,30 +2112,34 @@ RAPSkripFunctions.findMyPlot = function()
 end
 
 RAPSkripFunctions.getMyRanchCFrame = function()
-    local plot =
-        RAPSkripFunctions.findMyPlot()
+    local plot = RAPSkripFunctions.findMyPlot()
+    if not plot then return nil end
 
-    if not plot then
-        return nil
+    local baseplate = plot:FindFirstChild("Baseplate")
+    if not baseplate or not baseplate:IsA("BasePart") then return nil end
+
+    return baseplate.CFrame * CFrame.new(0, baseplate.Size.Y / 2 + 3, 0)
+end
+
+-- True only when the character root is inside the player's own plot Baseplate.
+-- Use the Baseplate's local space so rotated plots are handled correctly.
+RAPSkripFunctions.isCharacterInMyPlot = function()
+    local plot = RAPSkripFunctions.findMyPlot()
+    local root = RAPSkripFunctions.getCharacterRoot()
+    local baseplate = plot and plot:FindFirstChild("Baseplate")
+
+    if not root or not baseplate or not baseplate:IsA("BasePart") then
+        return false
     end
 
-    local baseplate =
-        plot:FindFirstChild("Baseplate")
+    local localPosition = baseplate.CFrame:PointToObjectSpace(root.Position)
+    local halfSize = baseplate.Size * 0.5
+    local margin = 8
 
-    if not baseplate then
-        return nil
-    end
-
-    if not baseplate:IsA("BasePart") then
-        return nil
-    end
-
-    return baseplate.CFrame *
-        CFrame.new(
-            0,
-            baseplate.Size.Y / 2 + 3,
-            0
-        )
+    return math.abs(localPosition.X) <= halfSize.X + margin
+        and math.abs(localPosition.Z) <= halfSize.Z + margin
+        and localPosition.Y >= -halfSize.Y - 12
+        and localPosition.Y <= halfSize.Y + 80
 end
 
 RAPSkripFunctions.teleportToMyPlot = function()
@@ -3081,7 +3085,7 @@ RAPSkripFunctions.autoPlaceEggs = function()
     AutoPlaceRunning = true
 
     local success, err = pcall(function()
-        while AutoHatchState.Busy and AutoPlaceEnabled and Gui.Parent do
+        while AutoPlaceEnabled and Gui.Parent and (AutoHatchState.Busy or AutoPickupBusy or not RAPSkripFunctions.isCharacterInMyPlot()) do
             RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
             task.wait(0.25)
         end
@@ -3139,11 +3143,15 @@ RAPSkripFunctions.autoPlaceEggs = function()
 
         -- Repeat selected types in rounds, but stop at the plot's 10-egg limit.
         while AutoPlaceEnabled and Gui.Parent do
+            while AutoPlaceEnabled and Gui.Parent and (AutoPickupBusy or not RAPSkripFunctions.isCharacterInMyPlot()) do
+                RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
+                task.wait(0.25)
+            end
+            if not AutoPlaceEnabled or not Gui.Parent then break end
             if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
                 RAPSkripFunctions.stopAutoPlaceAtLimit()
                 break
             end
-            if not AutoPlaceEnabled or not Gui.Parent then break end
             RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
 
             local placedThisRound = false
@@ -3280,12 +3288,13 @@ RAPSkripFunctions.setAutoHatchStatus = function(status, color)
 end
 
 RAPSkripFunctions.isAutoHatchInterrupted = function()
-    -- Wait only while another automation is actively performing a task.
-    -- Enabled-but-idle toggles (including Auto Place at FULL) must not block hatching.
+    -- Do not hatch while pickup is moving the character or placement is in-flight.
+    -- Enabled-but-idle toggles do not block this routine.
     return not AutoHatchState.Enabled
         or not Gui.Parent
         or AutoPickupBusy
         or AutoPlaceRunning
+        or not RAPSkripFunctions.isCharacterInMyPlot()
 end
 
 RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt, allowNotReady)
@@ -3363,9 +3372,9 @@ RAPSkripFunctions.autoHatchEggs = function()
                     for _, entry in ipairs(freshEntries) do
                         local prompt = RAPSkripFunctions.getAutoHatchPrompt(entry)
                         if prompt and prompt.Parent and prompt.Enabled then
-                            local uuid = entry:GetAttribute("UUID") or entry:GetAttribute("Uuid") or entry:GetAttribute("uuid")
-                            if uuid == nil then uuid = prompt:GetAttribute("UUID") or prompt:GetAttribute("Uuid") or prompt:GetAttribute("uuid") end
-                            local key = uuid ~= nil and ("UUID:" .. tostring(uuid)) or entry
+                            -- Use the live egg instance as the per-cycle key; UUIDs may be
+                            -- shared/missing across prompt wrappers, which could skip eggs.
+                            local key = entry
                             if not attempted[key] then
                                 nextTarget = { entry = entry, prompt = prompt, key = key }
                                 break
@@ -3431,7 +3440,7 @@ RAPSkripFunctions.autoHatchEggs = function()
                     if root and center then root.CFrame = center end
                     RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
                     RAPSkripFunctions.AddDebug("[AUTO HATCH] Cycle complete; idle before fresh scan")
-                    local idleUntil = os.clock() + 180
+                    local idleUntil = os.clock() + 5
                     while AutoHatchState.Enabled and Gui.Parent and os.clock() < idleUntil do
                         if RAPSkripFunctions.isAutoHatchInterrupted() then break end
                         task.wait(0.5)
