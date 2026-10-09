@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.27"
+local ver = "TEST v8.28"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -968,6 +968,8 @@ local AutoVolcanoMessageType = nil
 --==================================================
 local AutoPlaceEnabled = false
 local AutoPlaceRunning = false
+local AutoPlaceActionBusy = false
+local AutoHatchActionBusy = false
 local AutoPlaceObserved = {}
 local AutoPlaceSnapshotReceived = false
 local AutoPlaceReservedPositions = {}
@@ -2944,7 +2946,7 @@ end
 -- 22. AUTO PLACE LOGIC
 --==================================================
 
-RAPSkripFunctions.holdEgg = function(eggName)
+RAPSkripFunctions.holdEgg = function(eggName, quiet)
     -- Safety: only equip an egg while Auto Place is enabled.
     if not AutoPlaceEnabled then
         return false
@@ -2984,7 +2986,7 @@ RAPSkripFunctions.holdEgg = function(eggName)
     end
 
     if not tool then
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Egg tool not found: " .. eggName)
+        if not quiet then RAPSkripFunctions.AddDebug("[AUTO PLACE] Egg tool not found: " .. eggName) end
         return false
     end
 
@@ -3115,60 +3117,45 @@ end
 
 RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
     for _, offset in ipairs(RAPSkripFunctions.getAutoPlaceOffsets()) do
-        if not AutoPlaceEnabled then
-            return nil
-        end
-
+        if not AutoPlaceEnabled then return nil end
         local candidate = (centerCFrame * CFrame.new(offset)).Position
         if not RAPSkripFunctions.isAutoPlacePositionOccupied(candidate) then
             return candidate
         end
     end
-
     return nil
 end
 
-RAPSkripFunctions.autoPlaceEggs = function()
-    if not AutoPlaceEnabled or AutoPlaceRunning then
-        return
-    end
+RAPSkripFunctions.isCharacterIdleForAutoPlace = function()
+    if AutoPickupBusy or AutoPickupFloating then return false end
+    local character = player.Character
+    if not character then return false end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not humanoid or not root then return false end
+    if humanoid.MoveDirection.Magnitude > 0.05 then return false end
+    if humanoid.FloorMaterial == Enum.Material.Air then return false end
+    if root.AssemblyLinearVelocity.Magnitude > 1.5 then return false end
+    return true
+end
 
+RAPSkripFunctions.autoPlaceEggs = function()
+    if not AutoPlaceEnabled or AutoPlaceRunning then return end
     AutoPlaceRunning = true
 
     local success, err = pcall(function()
-        while AutoPlaceEnabled and Gui.Parent and (AutoPickupBusy or not RAPSkripFunctions.isCharacterInMyPlot()) do
-            RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
-            task.wait(0.25)
-        end
-
-        if not AutoPlaceEnabled or not Gui.Parent then
-            return
-        end
-
-        if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
-            RAPSkripFunctions.stopAutoPlaceAtLimit()
-            return
-        end
-        if not AutoPlaceEnabled or not Gui.Parent then return end
-
-        RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
-
         if not EggPlacedEvent then
             RAPSkripFunctions.setAutoPlaceStatus("NO REMOTE", Color3.fromRGB(220, 155, 100))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] EggPlaced remote is not ready")
             return
         end
 
-        -- Wait for the snapshot instead of returning. The snapshot event can
-        -- arrive just after Auto Place starts; returning here left it stuck on WAIT SNAP.
+        -- Wait for the server snapshot before deciding which positions are free.
         while AutoPlaceEnabled and Gui.Parent and not AutoPlaceSnapshotReceived do
             RAPSkripFunctions.setAutoPlaceStatus("WAIT SNAP", Color3.fromRGB(220, 190, 110))
             task.wait(0.25)
         end
-
-        if not AutoPlaceEnabled or not Gui.Parent then
-            return
-        end
+        if not AutoPlaceEnabled or not Gui.Parent then return end
 
         local centerCFrame = AutoPlaceSavedCenterCFrame or RAPSkripFunctions.getMyRanchCFrame()
         if not centerCFrame then
@@ -3183,67 +3170,88 @@ RAPSkripFunctions.autoPlaceEggs = function()
                 table.insert(selectedEggNames, eggName)
             end
         end
-
         if #selectedEggNames == 0 then
             RAPSkripFunctions.setAutoPlaceStatus("NO EGGS", Color3.fromRGB(220, 190, 110))
             RAPSkripFunctions.AddDebug("[AUTO PLACE] Select at least one egg type")
             return
         end
 
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Starting repeat placement for " .. tostring(#selectedEggNames) .. " selected type(s)")
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Monitoring slots for " .. tostring(#selectedEggNames) .. " selected type(s)")
 
-        -- Repeat selected types in rounds, but stop at the plot's 10-egg limit.
+        -- Stay alive as a monitor: full plots, moving characters, and other actions
+        -- pause placement without switching the user's toggle off.
         while AutoPlaceEnabled and Gui.Parent do
-            while AutoPlaceEnabled and Gui.Parent and (AutoPickupBusy or not RAPSkripFunctions.isCharacterInMyPlot()) do
-                RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
-                task.wait(0.25)
+            local ready = false
+            while AutoPlaceEnabled and Gui.Parent and not ready do
+                local characterReady =
+                    not AutoPickupBusy
+                    and not AutoPickupFloating
+                    and not AutoHatchActionBusy
+                    and not AutoPlaceActionBusy
+                    and RAPSkripFunctions.isCharacterInMyPlot()
+                    and RAPSkripFunctions.isCharacterIdleForAutoPlace()
+                local occupiedCount = RAPSkripFunctions.getAutoPlaceOccupiedCount()
+                if not characterReady then
+                    RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
+                    task.wait(0.25)
+                elseif occupiedCount >= AUTO_PLACE_MAX_EGGS then
+                    RAPSkripFunctions.stopAutoPlaceAtLimit()
+                    task.wait(0.5)
+                else
+                    ready = true
+                end
             end
             if not AutoPlaceEnabled or not Gui.Parent then break end
-            if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
-                RAPSkripFunctions.stopAutoPlaceAtLimit()
-                break
-            end
-            RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
 
+            RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
             local placedThisRound = false
-            local noFreePosition = false
+            local retryNextCycle = false
 
             for _, eggName in ipairs(selectedEggNames) do
-                if not AutoPlaceEnabled or not Gui.Parent then
-                    break
-                end
+                if not AutoPlaceEnabled or not Gui.Parent then break end
 
-                -- Check again before every request so a round cannot exceed 10.
-                if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
-                    RAPSkripFunctions.stopAutoPlaceAtLimit()
-                    noFreePosition = true
-                    break
+                local canPlace = false
+                while AutoPlaceEnabled and Gui.Parent and not canPlace do
+                    local characterReady =
+                        not AutoPickupBusy
+                        and not AutoPickupFloating
+                        and not AutoHatchActionBusy
+                        and not AutoPlaceActionBusy
+                        and RAPSkripFunctions.isCharacterInMyPlot()
+                        and RAPSkripFunctions.isCharacterIdleForAutoPlace()
+                    local occupiedCount = RAPSkripFunctions.getAutoPlaceOccupiedCount()
+                    if not characterReady then
+                        RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
+                        task.wait(0.25)
+                    elseif occupiedCount >= AUTO_PLACE_MAX_EGGS then
+                        RAPSkripFunctions.stopAutoPlaceAtLimit()
+                        task.wait(0.5)
+                    else
+                        canPlace = true
+                    end
                 end
                 if not AutoPlaceEnabled or not Gui.Parent then break end
 
                 local position = RAPSkripFunctions.findNextAutoPlacePosition(centerCFrame)
                 if not position then
-                    RAPSkripFunctions.AddDebug("[AUTO PLACE] No free position found within " .. tostring(AUTO_PLACE_MAX_RING) .. " rings")
-                    noFreePosition = true
+                    RAPSkripFunctions.setAutoPlaceStatus("WAIT SLOT", Color3.fromRGB(220, 190, 110))
+                    RAPSkripFunctions.AddDebug("[AUTO PLACE] No free placement position found; will retry")
+                    retryNextCycle = true
                     break
                 end
 
-                if RAPSkripFunctions.holdEgg(eggName) then
-                    -- Reserve before sending so the next egg cannot reuse this slot.
+                AutoPlaceActionBusy = true
+                local held = RAPSkripFunctions.holdEgg(eggName, true)
+                if held then
                     table.insert(AutoPlaceReservedPositions, position)
-
                     local sent, sendError = pcall(function()
-                        EggPlacedEvent:FireServer({
-                            PlantPosition = position
-                        })
+                        EggPlacedEvent:FireServer({ PlantPosition = position })
                     end)
-
                     if sent then
                         placedThisRound = true
                         RAPSkripFunctions.AddDebug("[AUTO PLACE] Request sent for " .. eggName)
                         task.wait(0.75)
                     else
-                        -- Remove only this failed reservation.
                         for index = #AutoPlaceReservedPositions, 1, -1 do
                             if AutoPlaceReservedPositions[index] == position then
                                 table.remove(AutoPlaceReservedPositions, index)
@@ -3253,34 +3261,35 @@ RAPSkripFunctions.autoPlaceEggs = function()
                         RAPSkripFunctions.AddDebug("[AUTO PLACE] Request failed: " .. tostring(sendError))
                     end
                 end
+                AutoPlaceActionBusy = false
             end
 
-            if noFreePosition or not AutoPlaceEnabled or not Gui.Parent then
-                break
+            if not AutoPlaceEnabled or not Gui.Parent then break end
+            if retryNextCycle then
+                task.wait(0.5)
+            elseif not placedThisRound then
+                -- Inventory can change while AFK (for example, after Auto Pickup).
+                -- Keep monitoring without repeatedly logging missing selected eggs.
+                RAPSkripFunctions.setAutoPlaceStatus("WAIT EGGS", Color3.fromRGB(220, 190, 110))
+                task.wait(2)
+            else
+                task.wait(0.25)
             end
-
-            -- If a full round cannot equip/place any selected type, stop instead
-            -- of spinning forever after the selected eggs run out.
-            if not placedThisRound then
-                RAPSkripFunctions.AddDebug("[AUTO PLACE] No more selected eggs available; repeat placement stopped")
-                break
-            end
-
-            task.wait(0.25)
         end
 
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Placement loop stopped")
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Placement monitor stopped")
     end)
 
+    AutoPlaceActionBusy = false
     AutoPlaceRunning = false
-
     if not success then
         RAPSkripFunctions.setAutoPlaceStatus("ERROR", Color3.fromRGB(220, 100, 100))
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Error: " .. tostring(err))
-    elseif not AutoPlaceEnabled and AutoPlaceStatus.Text ~= "● FULL (10/10)" then
+    elseif not AutoPlaceEnabled then
         RAPSkripFunctions.setAutoPlaceStatus("IDLE", Color3.fromRGB(150, 150, 158))
     end
 end
+
 --==================================================
 -- 23. AUTO HATCH LOGIC
 --==================================================
@@ -3327,6 +3336,7 @@ RAPSkripFunctions.isAutoHatchInterrupted = function()
     return not AutoHatchState.Enabled
         or not Gui.Parent
         or AutoPickupBusy
+        or AutoPlaceActionBusy
         or not RAPSkripFunctions.isCharacterInMyPlot()
 end
 
@@ -3358,9 +3368,11 @@ RAPSkripFunctions.autoHatchEggs = function()
                         if not firedThisCycle[eggKey] and HatchEvent then
                             firedThisCycle[eggKey] = true
                             RAPSkripFunctions.setAutoHatchStatus("HATCHING", Color3.fromRGB(130, 180, 140))
+                            AutoHatchActionBusy = true
                             local fired, fireErr = pcall(function()
                                 HatchEvent:FireServer({ EggKey = eggKey })
                             end)
+                            AutoHatchActionBusy = false
                             if fired then
                                 sent = sent + 1
                                 SessionHatchPendingKeys[eggKey] = true
@@ -3759,15 +3771,6 @@ AutoPlaceToggle.Activated:Connect(function()
         return
     end
 
-    if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
-        AutoPlaceEnabled = false
-        AutoPlaceToggle.Text = "OFF"
-        AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
-        RAPSkripFunctions.setAutoPlaceStatus("FULL (10/10)", Color3.fromRGB(220, 155, 100))
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Plot is full (10/10); clear a slot before enabling")
-        return
-    end
-
     AutoPlaceEnabled = true
     if not AutoPlaceSavedCenterCFrame then
         AutoPlaceSavedCenterCFrame = RAPSkripFunctions.getMyRanchCFrame()
@@ -3777,8 +3780,12 @@ AutoPlaceToggle.Activated:Connect(function()
     end
     AutoPlaceToggle.Text = "ON"
     AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(55, 120, 75)
-    RAPSkripFunctions.setAutoPlaceStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
-    RAPSkripFunctions.AddDebug("[AUTO PLACE] Enabled")
+    if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
+        RAPSkripFunctions.stopAutoPlaceAtLimit()
+    else
+        RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
+    end
+    RAPSkripFunctions.AddDebug("[AUTO PLACE] Enabled; monitoring slots and waiting for an idle character")
     task.spawn(RAPSkripFunctions.autoPlaceEggs)
 end)
 
@@ -3790,7 +3797,7 @@ AutoHatchToggle.MouseButton1Click:Connect(function()
         or Color3.fromRGB(45, 45, 53)
     if not AutoHatchState.Enabled then
         RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
-    elseif AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+    elseif AutoPickupBusy or AutoPlaceActionBusy or AutoHatchActionBusy then
         RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
     else
         RAPSkripFunctions.setAutoHatchStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
@@ -3993,6 +4000,8 @@ Close.MouseButton1Click:Connect(function()
     AutoHatchState.Busy = false
     AutoPlaceEnabled = false
     AutoPlaceRunning = false
+    AutoPlaceActionBusy = false
+    AutoHatchActionBusy = false
 
     AutoPickupRunning=false
     AutoPickupBusy=false
@@ -4072,7 +4081,7 @@ end)
 task.spawn(function()
     while Gui.Parent do
         -- Auto Pickup has priority; Auto Hatch already pauses itself while a pickup is busy.
-        if AutoPickupRunning and not AutoPickupBusy then
+        if AutoPickupRunning and not AutoPickupBusy and not AutoPlaceActionBusy and not AutoHatchActionBusy then
             local success,err=xpcall(function()
                 RAPSkripFunctions.tryAutoPickup()
             end,function(errorMessage)
