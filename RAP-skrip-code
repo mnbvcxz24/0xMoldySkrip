@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.26"
+local ver = "TEST v8.27"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -567,7 +567,7 @@ MonitorStatsLabel.Name = "SessionStats"
 MonitorStatsLabel.Size = UDim2.new(1, -12, 0, 25)
 MonitorStatsLabel.Position = UDim2.fromOffset(6, 38)
 MonitorStatsLabel.BackgroundTransparency = 1
-MonitorStatsLabel.Text = "Hatched: 0  |  Deposited: 0"
+MonitorStatsLabel.Text = "Hatched: 0  |  Auto Pickup deposits: 0"
 MonitorStatsLabel.TextColor3 = Color3.fromRGB(165, 165, 175)
 MonitorStatsLabel.TextSize = RAPSkripFunctions.textSize(9)
 MonitorStatsLabel.Font = Enum.Font.Gotham
@@ -2737,7 +2737,8 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
     AutoPickupAwaitingDeposit=false
 
     if AutoPickupDepositConfirmed then
-        RAPSkripFunctions.AddDebug("Deposited: "..tostring(eggName))
+        SessionEggsDeposited = SessionEggsDeposited + 1
+        RAPSkripFunctions.AddDebug("Deposited: "..tostring(eggName).." (session total: "..tostring(SessionEggsDeposited)..")")
     else
         RAPSkripFunctions.AddDebug("[AUTO ERROR] Deposit not confirmed")
     end
@@ -3077,31 +3078,26 @@ end
 local AUTO_PLACE_MAX_EGGS = 10
 
 RAPSkripFunctions.getAutoPlaceOccupiedCount = function()
-    local positions = {}
+    -- The server snapshot is authoritative: count egg records, not unique
+    -- coordinates. Multiple eggs can report nearby/equal coordinates.
+    local observedCount = #AutoPlaceObserved
+    local extraReservations = 0
 
-    local function addUniquePosition(position)
-        if not position then
-            return
-        end
-
-        for _, existingPosition in ipairs(positions) do
-            if (existingPosition - position).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
-                return
+    -- Only add reservations that are not yet represented by an observed egg.
+    for _, reservedPosition in ipairs(AutoPlaceReservedPositions) do
+        local representedInSnapshot = false
+        for _, placement in ipairs(AutoPlaceObserved) do
+            if placement.Position and (placement.Position - reservedPosition).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
+                representedInSnapshot = true
+                break
             end
         end
-
-        table.insert(positions, position)
+        if not representedInSnapshot then
+            extraReservations = extraReservations + 1
+        end
     end
 
-    for _, placement in ipairs(AutoPlaceObserved) do
-        addUniquePosition(placement.Position)
-    end
-
-    for _, reservedPosition in ipairs(AutoPlaceReservedPositions) do
-        addUniquePosition(reservedPosition)
-    end
-
-    return #positions
+    return observedCount + extraReservations
 end
 
 RAPSkripFunctions.setAutoPlaceStatus = function(status, color)
@@ -3681,12 +3677,6 @@ task.spawn(function()
         end
 
         AutoPlaceObserved = updatedPlacements
-        for _, placement in ipairs(updatedPlacements) do
-            if type(placement.EggKey) == "string" and placement.EggKey ~= "" and not SessionSeenPlacedEggKeys[placement.EggKey] then
-                SessionSeenPlacedEggKeys[placement.EggKey] = true
-                SessionEggsDeposited = SessionEggsDeposited + 1
-            end
-        end
         AutoPlaceSnapshotReceived = true
 
         -- When the worker is idle, the fresh server snapshot supersedes stale
@@ -4124,7 +4114,7 @@ task.spawn(function()
             MonitorRuntimeLabel.Text = string.format("Runtime: %02d:%02d:%02d", hours, minutes, seconds)
         end
         if MonitorStatsLabel and MonitorStatsLabel.Parent then
-            MonitorStatsLabel.Text = "Hatched: " .. tostring(SessionEggsHatched) .. "  |  Deposited: " .. tostring(SessionEggsDeposited)
+            MonitorStatsLabel.Text = "Hatched: " .. tostring(SessionEggsHatched) .. "  |  Auto Pickup deposits: " .. tostring(SessionEggsDeposited)
         end
         task.wait(1)
     end
