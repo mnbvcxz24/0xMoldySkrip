@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.18"
+local ver = "TEST v8.19"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -3274,8 +3274,15 @@ RAPSkripFunctions.getAutoHatchPrompt = function(entry)
     return entry:FindFirstChildWhichIsA("ProximityPrompt", true)
 end
 
+RAPSkripFunctions.setAutoHatchStatus = function(status, color)
+    if AutoHatchStatus then
+        AutoHatchStatus.Text = "● " .. tostring(status)
+        AutoHatchStatus.TextColor3 = color or Color3.fromRGB(150, 150, 158)
+    end
+end
+
 RAPSkripFunctions.isAutoHatchInterrupted = function()
-    -- Auto Pickup takes priority; Auto Place must be stopped before Auto Hatch takes control.
+    -- Auto Pickup and Auto Place take priority; Auto Hatch waits and retries afterward.
     return not AutoHatchState.Enabled
         or not Gui.Parent
         or AutoPickupRunning
@@ -3366,7 +3373,11 @@ RAPSkripFunctions.autoHatchEggs = function()
             if not RAPSkripFunctions.isAutoHatchInterrupted() then
                 break
             end
+            RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
             task.wait(0.25)
+        end
+        if AutoHatchState.Enabled and Gui.Parent then
+            RAPSkripFunctions.setAutoHatchStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
         end
         if not AutoHatchState.Enabled or not Gui.Parent then
             return
@@ -3457,8 +3468,23 @@ RAPSkripFunctions.autoHatchEggs = function()
     AutoHatchState.Busy = false
     AutoHatchState.Running = false
 
-    if not ok then
+    if not AutoHatchState.Enabled then
+        RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
+    elseif AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+        RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
+    elseif not ok then
+        RAPSkripFunctions.setAutoHatchStatus("ERROR", Color3.fromRGB(220, 100, 100))
         RAPSkripFunctions.AddDebug("[AUTO HATCH] Error: " .. tostring(err))
+    end
+
+    -- The old worker exited permanently when Auto Place interrupted it.
+    -- Retry while enabled so newly placed eggs are checked after the other task finishes.
+    if AutoHatchState.Enabled and Gui.Parent then
+        task.delay(0.5, function()
+            if AutoHatchState.Enabled and Gui.Parent and not AutoHatchState.Running then
+                task.spawn(RAPSkripFunctions.autoHatchEggs)
+            end
+        end)
     end
 
     if AutoPlaceEnabled and not AutoPlaceRunning and Gui.Parent then
@@ -3825,10 +3851,13 @@ AutoHatchToggle.MouseButton1Click:Connect(function()
     AutoHatchToggle.BackgroundColor3 = AutoHatchState.Enabled
         and Color3.fromRGB(55, 120, 75)
         or Color3.fromRGB(45, 45, 53)
-    AutoHatchStatus.Text = AutoHatchState.Enabled and "● ACTIVE" or "● IDLE"
-    AutoHatchStatus.TextColor3 = AutoHatchState.Enabled
-        and Color3.fromRGB(130, 180, 140)
-        or Color3.fromRGB(150, 150, 158)
+    if not AutoHatchState.Enabled then
+        RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
+    elseif AutoPickupRunning or AutoPickupBusy or AutoPlaceEnabled or AutoPlaceRunning then
+        RAPSkripFunctions.setAutoHatchStatus("WAITING", Color3.fromRGB(220, 190, 110))
+    else
+        RAPSkripFunctions.setAutoHatchStatus("PROCESSING", Color3.fromRGB(130, 180, 140))
+    end
 
     if not AutoHatchState.Enabled then
         AutoHatchState.Checked = {}
