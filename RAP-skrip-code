@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.20"
+local ver = "TEST v8.21"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -3289,13 +3289,6 @@ RAPSkripFunctions.isAutoHatchInterrupted = function()
         or AutoPickupBusy
         or AutoPlaceEnabled
         or AutoPlaceRunning
-end
-
-RAPSkripFunctions.setAutoHatchStatus = function(status, color)
-    if AutoHatchStatus then
-        AutoHatchStatus.Text = "● " .. tostring(status)
-        AutoHatchStatus.TextColor3 = color or Color3.fromRGB(150, 150, 158)
-    end
 end
 
 RAPSkripFunctions.tryAutoHatchPrompt = function(entry, prompt, allowNotReady)
