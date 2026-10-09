@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.6"
+local ver = "TEST v8.7"
 --==================================================
 -- 2. SERVICES
 --==================================================
@@ -2742,7 +2742,9 @@ end
 -- 22. AUTO PLACE LOGIC
 --==================================================
 local function holdEgg(eggName)
-    -- Safety: only proceed while Auto Place is enabled
+    local character = player.Character or player.CharacterAdded:Wait()
+    local backpack = player:WaitForChild("Backpack")
+
     if not AutoPlaceEnabled then
         return false
     end
