@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.30"
+local ver = "TEST v8.31"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -200,7 +200,6 @@ RAPSkripFunctions.loadConfig()
 -- 9. REMOTES
 --==================================================
 local EggPickupEvent
-local EggArrivalClaimEvent
 local TeleportToPlotEvent
 local VolcanoDipEvent
 local VolcanoDipResultEvent
@@ -213,7 +212,6 @@ do
     local Remotes = ReplicatedStorage:WaitForChild("Remotes")
     local GameRemotes = Remotes:WaitForChild("Game")
     EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
-    EggArrivalClaimEvent = GameRemotes:WaitForChild("EggArrivalClaim")
     EggPlacedEvent = GameRemotes:WaitForChild("EggPlaced")
     HatchEvent = GameRemotes:WaitForChild("Hatch")
     TeleportToPlotEvent = GameRemotes:FindFirstChild("TeleportToPlot")
@@ -1810,6 +1808,76 @@ RAPSkripFunctions.getEggUUID = function(egg)
     return uuid
 end
 
+-- Snapshot inventory egg tools before returning to the plot.
+-- EggKey/UUID-like values help distinguish an arriving egg from existing inventory.
+local function getInventoryToolKey(tool)
+    if not tool then return nil end
+
+    for _, keyName in ipairs({"EggKey", "UUID", "Uuid", "Id", "ID"}) do
+        local value = tool:GetAttribute(keyName)
+        if value ~= nil and tostring(value) ~= "" then
+            return keyName .. ":" .. tostring(value)
+        end
+
+        local child = tool:FindFirstChild(keyName)
+        if child and child:IsA("ValueBase") and child.Value ~= nil
+            and tostring(child.Value) ~= "" then
+            return keyName .. ":" .. tostring(child.Value)
+        end
+    end
+
+    return nil
+end
+
+local function getPlayerEggToolSnapshot()
+    local snapshot = {instances = {}, keys = {}, counts = {}}
+    local backpack = player:FindFirstChild("Backpack")
+    local character = player.Character
+    local containers = {backpack, character}
+
+    for _, container in ipairs(containers) do
+        if container then
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool") then
+                    snapshot.instances[item] = true
+                    snapshot.counts[item.Name] = (snapshot.counts[item.Name] or 0) + 1
+                    local key = getInventoryToolKey(item)
+                    if key then snapshot.keys[key] = true end
+                end
+            end
+        end
+    end
+
+    return snapshot
+end
+
+local function hasNewInventoryEggTool(eggName, snapshot)
+    if not snapshot then return false end
+
+    local backpack = player:FindFirstChild("Backpack")
+    local character = player.Character
+    local containers = {backpack, character}
+
+    for _, container in ipairs(containers) do
+        if container then
+            for _, item in ipairs(container:GetChildren()) do
+                if item:IsA("Tool") and item.Name == eggName then
+                    local key = getInventoryToolKey(item)
+                    if key then
+                        if not snapshot.keys[key] then
+                            return true
+                        end
+                    elseif not snapshot.instances[item] then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+
+    return false
+end
+
 RAPSkripFunctions.isAutoPickupEggSelected = function(eggName)
     return AutoSelectedEggs[eggName] == true
 end
@@ -2688,7 +2756,9 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
-    -- 14. Return to plot
+    -- 14. Snapshot inventory, then return to the plot.
+    -- The game adds the deposited egg to the hotbar/backpack on arrival.
+    local inventoryBeforeArrival=getPlayerEggToolSnapshot()
     AutoPickupStage="GoingToPlot"
     local reachedPlot=false
 
@@ -2720,35 +2790,25 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
-    local arrivalPosition=ranchCFrame.Position
-    local serverTime=workspace:GetServerTimeNow()
-
-    if EggArrivalClaimEvent then
-        EggArrivalClaimEvent:FireServer(serverTime,arrivalPosition,{droppedUUID})
-    else
-        RAPSkripFunctions.AddDebug("[AUTO ERROR] Arrival claim remote missing")
-        AutoPickupAwaitingDeposit=false
-        AutoPickupBusy=false
-        return
-    end
-
-    -- Server deposit confirmations can arrive after the deposit itself succeeds.
-    -- Wait longer before reporting a timeout so normal network/server delays do not
-    -- produce a false "Deposit not confirmed" message.
+    -- Do not manually fire EggArrivalClaim: the game handles that request.
+    -- Confirm deposit by detecting this egg arriving as a new inventory/hotbar Tool.
     local depositStart=os.clock()
     local depositConfirmTimeout=12
-    while AutoPickupRunning and not AutoPickupDepositConfirmed
+    while AutoPickupRunning
+        and not hasNewInventoryEggTool(eggName,inventoryBeforeArrival)
         and os.clock()-depositStart<depositConfirmTimeout do
         task.wait(0.1)
     end
 
     AutoPickupAwaitingDeposit=false
 
-    if AutoPickupDepositConfirmed then
+    if hasNewInventoryEggTool(eggName,inventoryBeforeArrival) then
+        AutoPickupDepositConfirmed=true
         SessionEggsDeposited = SessionEggsDeposited + 1
         RAPSkripFunctions.AddDebug("Deposited: "..tostring(eggName).." (session total: "..tostring(SessionEggsDeposited)..")")
     else
-        RAPSkripFunctions.AddDebug("[AUTO ERROR] Deposit not confirmed")
+        AutoPickupDepositConfirmed=false
+        RAPSkripFunctions.AddDebug("[AUTO ERROR] Deposit not confirmed (egg not found in hotbar/backpack)")
     end
 
     AutoPickupDepositConfirmed=false
@@ -3906,14 +3966,6 @@ if EggPickupEvent then
                 AutoPickupAwaitingPickup=false
             end
 
-        elseif action=="Deposited" then
-
-            if AutoPickupStage=="Deposit"
-                and AutoPickupAwaitingDeposit then
-
-                AutoPickupDepositConfirmed=true
-                AutoPickupAwaitingDeposit=false
-            end
         end
     end)
 else
