@@ -4071,7 +4071,8 @@ end)
 
 task.spawn(function()
     while Gui.Parent do
-        if AutoPickupRunning and not AutoPickupBusy and not AutoHatchState.Busy then
+        -- Auto Pickup has priority; Auto Hatch already pauses itself while a pickup is busy.
+        if AutoPickupRunning and not AutoPickupBusy then
             local success,err=xpcall(function()
                 RAPSkripFunctions.tryAutoPickup()
             end,function(errorMessage)
