@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.29"
+local ver = "TEST v8.30"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -971,6 +971,7 @@ local AutoPlaceRunning = false
 local AutoPlaceActionBusy = false
 local AutoHatchActionBusy = false
 local AutoPlaceObserved = {}
+local AutoPlaceSnapshotCount = 0
 local AutoPlaceSnapshotReceived = false
 local AutoPlaceReservedPositions = {}
 local AutoPlaceSavedCenterCFrame = nil -- Temporary runtime anchor; reset when this script is restarted.
@@ -3080,31 +3081,39 @@ RAPSkripFunctions.isAutoPlacePositionOccupied = function(position)
     return false
 end
 
--- The plot supports a maximum of 10 placed eggs. Count unique observed and
--- locally reserved positions together so snapshot overlap is not double-counted.
+-- The plot supports a maximum of 10 placed eggs.
 local AUTO_PLACE_MAX_EGGS = 10
 
+-- UI/counting uses only the latest server snapshot, never local reservations.
 RAPSkripFunctions.getAutoPlaceOccupiedCount = function()
-    -- The server snapshot is authoritative: count egg records, not unique
-    -- coordinates. Multiple eggs can report nearby/equal coordinates.
-    local observedCount = #AutoPlaceObserved
-    local extraReservations = 0
+    return AutoPlaceSnapshotCount
+end
 
-    -- Only add reservations that are not yet represented by an observed egg.
+-- Reservations are used only as a safety guard while placement requests are
+-- still in flight and have not appeared in the latest server snapshot.
+RAPSkripFunctions.getAutoPlacePendingReservationCount = function()
+    local pendingCount = 0
+
     for _, reservedPosition in ipairs(AutoPlaceReservedPositions) do
         local representedInSnapshot = false
         for _, placement in ipairs(AutoPlaceObserved) do
-            if placement.Position and (placement.Position - reservedPosition).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
+            if placement.Position
+                and (placement.Position - reservedPosition).Magnitude <= AUTO_PLACE_POSITION_TOLERANCE then
                 representedInSnapshot = true
                 break
             end
         end
         if not representedInSnapshot then
-            extraReservations = extraReservations + 1
+            pendingCount = pendingCount + 1
         end
     end
 
-    return observedCount + extraReservations
+    return pendingCount
+end
+
+RAPSkripFunctions.getAutoPlaceEffectiveCount = function()
+    return RAPSkripFunctions.getAutoPlaceOccupiedCount()
+        + RAPSkripFunctions.getAutoPlacePendingReservationCount()
 end
 
 RAPSkripFunctions.setAutoPlaceStatus = function(status, color)
@@ -3196,11 +3205,16 @@ RAPSkripFunctions.autoPlaceEggs = function()
                     and RAPSkripFunctions.isCharacterInMyPlot()
                     and RAPSkripFunctions.isCharacterIdleForAutoPlace()
                 local occupiedCount = RAPSkripFunctions.getAutoPlaceOccupiedCount()
+                local effectiveCount = RAPSkripFunctions.getAutoPlaceEffectiveCount()
                 if not characterReady then
                     RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
                     task.wait(0.25)
-                elseif occupiedCount >= AUTO_PLACE_MAX_EGGS then
-                    RAPSkripFunctions.stopAutoPlaceAtLimit()
+                elseif effectiveCount >= AUTO_PLACE_MAX_EGGS then
+                    if occupiedCount >= AUTO_PLACE_MAX_EGGS then
+                        RAPSkripFunctions.stopAutoPlaceAtLimit()
+                    else
+                        RAPSkripFunctions.setAutoPlaceStatus("WAIT SNAP", Color3.fromRGB(220, 190, 110))
+                    end
                     task.wait(0.5)
                 else
                     ready = true
@@ -3225,11 +3239,16 @@ RAPSkripFunctions.autoPlaceEggs = function()
                         and RAPSkripFunctions.isCharacterInMyPlot()
                         and RAPSkripFunctions.isCharacterIdleForAutoPlace()
                     local occupiedCount = RAPSkripFunctions.getAutoPlaceOccupiedCount()
+                    local effectiveCount = RAPSkripFunctions.getAutoPlaceEffectiveCount()
                     if not characterReady then
                         RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
                         task.wait(0.25)
-                    elseif occupiedCount >= AUTO_PLACE_MAX_EGGS then
-                        RAPSkripFunctions.stopAutoPlaceAtLimit()
+                    elseif effectiveCount >= AUTO_PLACE_MAX_EGGS then
+                        if occupiedCount >= AUTO_PLACE_MAX_EGGS then
+                            RAPSkripFunctions.stopAutoPlaceAtLimit()
+                        else
+                            RAPSkripFunctions.setAutoPlaceStatus("WAIT SNAP", Color3.fromRGB(220, 190, 110))
+                        end
                         task.wait(0.5)
                     else
                         canPlace = true
@@ -3669,6 +3688,12 @@ task.spawn(function()
         end
 
         local updatedPlacements = {}
+        -- Keep the slot total exactly aligned with the raw server snapshot.
+        -- Some snapshot records may not contain a supported coordinate format,
+        -- but they still count as placed eggs for the slot limit.
+        AutoPlaceSnapshotCount = type(payload.Placements) == "table"
+            and #payload.Placements or 0
+
         if type(payload.Placements) == "table" then
             for _, placement in ipairs(payload.Placements) do
                 if type(placement) == "table" then
@@ -3710,7 +3735,7 @@ task.spawn(function()
             task.spawn(RAPSkripFunctions.autoPlaceEggs)
         end
 
-        RAPSkripFunctions.AddDebug("[AUTO PLACE] Snapshot received: " .. tostring(#updatedPlacements) .. " placed egg(s); slots refreshed (" .. tostring(occupiedCount) .. "/" .. tostring(AUTO_PLACE_MAX_EGGS) .. ")")
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Snapshot received: " .. tostring(AutoPlaceSnapshotCount) .. " placed egg(s); slots refreshed (" .. tostring(AutoPlaceSnapshotCount) .. "/" .. tostring(AUTO_PLACE_MAX_EGGS) .. ")")
     end)
 
     RAPSkripFunctions.AddDebug("[AUTO PLACE] EggPlaced listener connected")
