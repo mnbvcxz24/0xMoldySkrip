@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.25"
+local ver = "TEST v8.26"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -3140,7 +3140,7 @@ RAPSkripFunctions.autoPlaceEggs = function()
     AutoPlaceRunning = true
 
     local success, err = pcall(function()
-        while AutoPlaceEnabled and Gui.Parent and (AutoHatchState.Busy or AutoPickupBusy or not RAPSkripFunctions.isCharacterInMyPlot()) do
+        while AutoPlaceEnabled and Gui.Parent and (AutoPickupBusy or not RAPSkripFunctions.isCharacterInMyPlot()) do
             RAPSkripFunctions.setAutoPlaceStatus("WAITING", Color3.fromRGB(220, 190, 110))
             task.wait(0.25)
         end
@@ -3331,7 +3331,6 @@ RAPSkripFunctions.isAutoHatchInterrupted = function()
     return not AutoHatchState.Enabled
         or not Gui.Parent
         or AutoPickupBusy
-        or AutoPlaceRunning
         or not RAPSkripFunctions.isCharacterInMyPlot()
 end
 
