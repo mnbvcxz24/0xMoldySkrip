@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.33"
+local ver = "TEST v8.34"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -83,6 +83,7 @@ local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
 local SelectedEggs = {}
 local AutoSelectedEggs = {}
 local AutoPlaceSelectedEggs = {}
+local SelectedColorTheme = "Midnight"
 
 local AutoPickupMovementMode = "Teleport"
 local AutoPickupClaimDelay = 1.5
@@ -767,7 +768,6 @@ FusionFilterButton.MouseButton1Click:Connect(function()
 end)
 
 -- Settings page: dynamic color themes (selection is saved with the existing config).
-local SelectedColorTheme = SelectedColorTheme or "Midnight"
 local ThemeNames = {"Midnight", "Ocean", "Emerald", "Crimson", "Violet", "Light"}
 local ThemePalette = {
     Midnight = {bg=Color3.fromRGB(17,19,24), panel=Color3.fromRGB(29,32,41), card=Color3.fromRGB(37,40,50), accent=Color3.fromRGB(124,131,255), text=Color3.fromRGB(241,242,247), muted=Color3.fromRGB(190,194,208)},
