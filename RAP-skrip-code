@@ -1,11 +1,5 @@
---==================================================
--- 1. VERSION
---==================================================
-local ver = "TEST v8.37"
+local ver = "TEST v8.38"
 local RAPSkripFunctions = {}
---==================================================
--- 2. SERVICES
---==================================================
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,9 +20,6 @@ pcall(function()
         oldESP:Destroy()
     end
 end)
---==================================================
--- 3. CONSTANTS / GENERAL SETTINGS / GLOBAL LOCAL
---==================================================
 local TEXT_SCALE = 0.80
 RAPSkripFunctions.textSize = function(size)
     return math.floor(size * TEXT_SCALE)
@@ -39,13 +30,7 @@ local VolcanoEntrance2Position = Vector3.new(-4933.537109,41275.101562,-3672.198
 local VolcanoInside1Position = Vector3.new(-4958.368164,41277.191406,-3669.209473)
 local VolcanoInside2Position = Vector3.new(-5085.847656,41253.742188,-3509.459473)
 local VolcanoDropPosition = Vector3.new(-5067.05859375,41424.12890625,-3471.73583984375)
---==================================================
--- 4. UTILITY FUNCTIONS
---==================================================
 
---==================================================
--- 5. DEBUG SYSTEM
---==================================================
 local DebugLines={}
 
 local DebugText
@@ -74,9 +59,6 @@ RAPSkripFunctions.AddDebug = function(message)
         end)
     end
 end
---==================================================
--- 6. CONFIGURATION
---==================================================
 local CONFIG_FOLDER = "RAPSkrip"
 local CONFIG_FILE = CONFIG_FOLDER .. "/rap_skrip_config.json"
 
@@ -194,17 +176,7 @@ RAPSkripFunctions.AddDebug("[SYSTEM] RAPSkrip initialized.")
 RAPSkripFunctions.AddDebug("[SYSTEM] Version: "..tostring(ver))
 RAPSkripFunctions.AddDebug("[SYSTEM] Ready.")
 RAPSkripFunctions.loadConfig()
---==================================================
--- 7. PLAYER / CHARACTER REFERENCES
---==================================================
 
---==================================================
--- 8. GAME OBJECT / FOLDER REFERENCES
---==================================================
-
---==================================================
--- 9. REMOTES
---==================================================
 local EggPickupEvent
 local TeleportToPlotEvent
 local VolcanoDipEvent
@@ -213,8 +185,6 @@ local EggPlacedEvent
 local HatchEvent
 
 do
-    -- Resolve remotes before the later event listeners are registered.
-    -- The old task.spawn could leave VolcanoDipResultEvent nil when its listener was checked.
     local Remotes = ReplicatedStorage:WaitForChild("Remotes")
     local GameRemotes = Remotes:WaitForChild("Game")
     EggPickupEvent = GameRemotes:WaitForChild("EggPickup")
@@ -227,18 +197,12 @@ do
     VolcanoDipEvent = net:WaitForChild("RE/VolcanoDip")
     VolcanoDipResultEvent = net:WaitForChild("RE/VolcanoDipResult")
 end
---==================================================
--- 10. GUI ROOT
---==================================================
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "RAPGUIskrip"
 Gui.ResetOnSpawn = false
 Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 Gui.Enabled = true
 Gui.Parent = CoreGui
---==================================================
--- 11. MAIN NAVIGATION
---==================================================
 local Main = Instance.new("Frame")
 Main.Name = "Main"
 Main.Size = UDim2.fromOffset(400, 300)
@@ -534,7 +498,6 @@ local AutoHatchToggleCorner = Instance.new("UICorner")
 AutoHatchToggleCorner.CornerRadius = UDim.new(0, 6)
 AutoHatchToggleCorner.Parent = AutoHatchToggle
 
--- Compact session monitor below Auto Hatch.
 local MonitorFrame = Instance.new("Frame")
 MonitorFrame.Name = "RAPSkripMonitor"
 MonitorFrame.Size = UDim2.new(1, -10, 0, 68)
@@ -904,7 +867,6 @@ for themeName, themeButton in pairs(ThemeButtons) do
     end)
 end
 
-
 task.defer(function()
     applyColorTheme(SelectedColorTheme or "Midnight")
 end)
@@ -995,7 +957,6 @@ local ESPPage = RAPSkripFunctions.createPage()
 local DebugPage = RAPSkripFunctions.createPage()
 local SettingsPage = RAPSkripFunctions.createPage()
 
--- Keep the new Progress controls inside Content1's page, not the side Content2 panel.
 local progressLuckSection = ProgressContent2:FindFirstChild("AutoBuyLuckSection")
 local progressFusionSection = ProgressContent2:FindFirstChild("AutoFusionSection")
 if progressLuckSection then progressLuckSection.Parent = ProgressPage end
@@ -1055,9 +1016,6 @@ local DebugButton = RAPSkripFunctions.createSidebarButton("Debug")
 local SettingsButton = RAPSkripFunctions.createSidebarButton("Settings")
 
 task.defer(RAPSkripFunctions.updateSidebarSize)
---==================================================
--- 12. AUTO PAGE
---==================================================
 local ESPEnabled=false
 
 local AutoTitle = Instance.new("TextLabel")
@@ -1251,9 +1209,6 @@ AutoClaimBar.Parent = AutoPage
 local AutoClaimBarCorner = Instance.new("UICorner")
 AutoClaimBarCorner.CornerRadius = UDim.new(1, 0)
 AutoClaimBarCorner.Parent = AutoClaimBar
---==================================================
--- 12.1 AUTO PICKUP VARIABLES
---==================================================
 local AutoPickupRunning = false
 local AutoPickupBusy = false
 local AutoPickupDistance = math.huge
@@ -1336,9 +1291,6 @@ UserInputService.InputEnded:Connect(function(input)
         claimDragging = false
     end
 end)
---==================================================
--- 12.2 AUTO MAGMA DIP VARIABLES
---==================================================
 local AutoMagmaDipEnabled = false
 local AutoMagmaDipResult = nil
 local AutoMagmaDipWaitingForResult = false
@@ -1346,9 +1298,6 @@ local AutoVolcanoMessageReceived = false
 local AutoVolcanoMessageText = nil
 local AutoVolcanoWaitingForMessage = false
 local AutoVolcanoMessageType = nil
---==================================================
--- 12.4 AUTO PLACE EGGS VARIABLES
---==================================================
 local AutoPlaceEnabled = false
 local AutoPlaceRunning = false
 local AutoPlaceActionBusy = false
@@ -1365,9 +1314,6 @@ local SessionEggsDeposited = 0
 local SessionSeenPlacedEggKeys = {}
 local SessionHatchPendingKeys = {}
 local SessionHatchCountedKeys = {}
---==================================================
--- 13. EGG FILTER SYSTEM
---==================================================
 local EggTypes = {
     "--",
     "White Egg",
@@ -1439,9 +1385,6 @@ end
 
 RAPSkripFunctions.setupFilterScrolling(AutoPickupFilterFrame,AutoPickupFilterLayout)
 RAPSkripFunctions.setupFilterScrolling(AutoPlaceFilterFrame,AutoPlaceFilterLayout)
---==================================================
--- 13.1 AUTO PICKUP EGG FILTER FUNCTION
---==================================================
 RAPSkripFunctions.refreshAutoPickupFilterText = function()
     local selected={}
 
@@ -1498,9 +1441,6 @@ RAPSkripFunctions.createAutoPickupFilterButtons = function()
         end)
     end
 end
---==================================================
--- 13.3 AUTO PLACE EGG FILTER FUNCTION
---==================================================
 RAPSkripFunctions.refreshAutoPlaceFilterText = function()
     local selected={}
     for _,eggName in ipairs(EggTypes) do
@@ -1551,9 +1491,6 @@ RAPSkripFunctions.createAutoPlaceFilterButtons = function()
         end)
     end
 end
--- ============================================================
--- #14 ESP PAGE
--- ============================================================
 local ESPTitle=Instance.new("TextLabel")
 ESPTitle.Name="ESPTitle"
 ESPTitle.Size=UDim2.new(1,-10,0,25)
@@ -1767,9 +1704,6 @@ ESPFilterLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function
         ESPFilterLayout.AbsoluteContentSize.Y+5
     )
 end)
---==================================================
--- 15. DEBUG PAGE
---==================================================
 local DebugTitle = Instance.new("TextLabel")
 DebugTitle.Size = UDim2.new(1, -10, 0, 30)
 DebugTitle.Position = UDim2.fromOffset(5, 5)
@@ -1890,9 +1824,6 @@ ScanButton.MouseButton1Click:Connect(function()
         RAPSkripFunctions.AddDebug(tostring(err))
     end
 end)
---==================================================
--- 16. SETTINGS PAGE
---==================================================
 local SettingsTitle = Instance.new("TextLabel")
 SettingsTitle.Size = UDim2.new(1, -10, 0, 30)
 SettingsTitle.Position = UDim2.fromOffset(5, 5)
@@ -2070,9 +2001,6 @@ AutoExecuteButton.MouseButton1Click:Connect(function()
 end)
 
 RAPSkripFunctions.updateAntiAFKButton()
---==================================================
--- 17. ANTI-AFK
---==================================================
 player.Idled:Connect(function()
     if not AntiAFKEnabled then
         return
@@ -2101,9 +2029,6 @@ RAPSkripFunctions.setAntiAFK = function(enabled)
         RAPSkripFunctions.AddDebug("[ANTI AFK] Disabled")
     end
 end
---==================================================
--- 18. HELPER / GAME FUNCTIONS
---==================================================
 RAPSkripFunctions.getActiveEggs = function()
     local ServerData =
         ReplicatedStorage:FindFirstChild("ServerData")
@@ -2193,8 +2118,6 @@ RAPSkripFunctions.getEggUUID = function(egg)
     return uuid
 end
 
--- Snapshot inventory egg tools before returning to the plot.
--- EggKey/UUID-like values help distinguish an arriving egg from existing inventory.
 local function getInventoryToolKey(tool)
     if not tool then return nil end
 
@@ -2519,7 +2442,6 @@ RAPSkripFunctions.enterVolcanicEgg = function(egg)
         return false
     end
 
-    -- Use the detected egg instance instead of a hardcoded world coordinate.
     local eggPosition = RAPSkripFunctions.getEggPosition(egg)
     if not eggPosition then
         RAPSkripFunctions.AddDebug("[AUTO VOLCANO ERROR] Detected egg position unavailable")
@@ -2632,8 +2554,6 @@ RAPSkripFunctions.getMyRanchCFrame = function()
     return baseplate.CFrame * CFrame.new(0, baseplate.Size.Y / 2 + 3, 0)
 end
 
--- True only when the character root is inside the player's own plot Baseplate.
--- Use the Baseplate's local space so rotated plots are handled correctly.
 RAPSkripFunctions.isCharacterInMyPlot = function()
     local plot = RAPSkripFunctions.findMyPlot()
     local root = RAPSkripFunctions.getCharacterRoot()
@@ -2677,8 +2597,6 @@ RAPSkripFunctions.teleportToMyPlot = function()
     return true
 end
 
--- Smoothly glide from the current position to the player's own plot center.
--- The existing outside-plot teleport still runs after this glide.
 RAPSkripFunctions.glideToMyPlot = function()
     local root = RAPSkripFunctions.getCharacterRoot()
     local targetCFrame = RAPSkripFunctions.getMyRanchCFrame()
@@ -2688,8 +2606,6 @@ RAPSkripFunctions.glideToMyPlot = function()
         return false
     end
 
-    -- Glide only halfway toward the plot. The caller then teleports to the
-    -- outside-drop position, preserving the drop/pickup/return sequence.
     local startCFrame = root.CFrame
     local halfwayCFrame = startCFrame:Lerp(targetCFrame, 0.5)
     local distance = (halfwayCFrame.Position - startCFrame.Position).Magnitude
@@ -2792,9 +2708,6 @@ RAPSkripFunctions.teleportOutsidePlot = function(eggPosition)
 end
 local findNextAutoPickupEgg
 local waitForDroppedEgg
---==================================================
--- 19. AUTO FARM LOGIC
---==================================================
 RAPSkripFunctions.tryAutoPickup = function(egg)
     if not AutoPickupRunning or AutoPickupBusy then return end
     if not egg then egg=findNextAutoPickupEgg() end
@@ -2814,7 +2727,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
 
     RAPSkripFunctions.AddDebug("[AUTO] Pickup: "..tostring(eggName))
 
-    -- 1. Move to egg
     if isVolcanic then
         if not RAPSkripFunctions.enterVolcanicEgg(egg) then
             AutoPickupBusy=false
@@ -2827,7 +2739,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
 
     task.wait(AutoPickupClaimDelay)
 
-    -- 2. Get pickup UUID
     local pickupUUID=RAPSkripFunctions.getEggUUID(egg)
     if not pickupUUID then
         RAPSkripFunctions.AddDebug("[AUTO ERROR] Pickup UUID not found")
@@ -2835,7 +2746,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
-    -- 3. Pick up original egg
     AutoPickupStage="InitialPickup"
     AutoPickupAwaitingUUID=tostring(pickupUUID)
     AutoPickupAwaitingPickup=true
@@ -2864,7 +2774,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
     AutoPickupAwaitingUUID=nil
     AutoPickupPickupConfirmed=false
 
-    -- 4. Auto Magma Dip
     if shouldAutoMagmaDip then
         local root=RAPSkripFunctions.getCharacterRoot()
         if not root then
@@ -2910,7 +2819,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        -- 5. Wait for either result OR mutation message
         local dipStart=os.clock()
         while AutoPickupRunning and os.clock()-dipStart<10 do
             if AutoVolcanoMessageReceived then
@@ -2930,7 +2838,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        -- 6. Handle the response
         if AutoVolcanoMessageReceived then
             if AutoVolcanoMessageType=="Failed" then
             elseif AutoVolcanoMessageType=="Success" then
@@ -2938,8 +2845,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             end
         elseif AutoMagmaDipResult~=nil then
 
-            -- A result was received, now give the mutation message
-            -- time to arrive if it is sent separately.
             local messageStart=os.clock()
             while AutoPickupRunning and not AutoVolcanoMessageReceived and os.clock()-messageStart<12 do
                 task.wait(5)
@@ -2962,7 +2867,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             AutoPickupBusy=false
             return
         end
-        -- 7. Glide back to the player's plot, then use the existing outside-plot teleport.
         if not RAPSkripFunctions.glideToMyPlot() then
             AutoPickupBusy=false
             return
@@ -2982,10 +2886,8 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        -- Allow the outside-plot position to settle before dropping.
         task.wait(0.75)
 
-    -- 8. Volcanic Egg without Magma Dip
     elseif isVolcanic then
         RAPSkripFunctions.exitVolcanicEgg()
 
@@ -3010,10 +2912,8 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        -- Allow the outside-plot position to settle before dropping.
         task.wait(0.75)
 
-    -- 9. Normal Egg without Magma Dip
     else
         local currentEggPosition=RAPSkripFunctions.getEggPosition(egg) or eggPosition
         if not RAPSkripFunctions.glideToMyPlot() then
@@ -3036,11 +2936,9 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
             return
         end
 
-        -- Allow the outside-plot position to settle before dropping.
         task.wait(0.75)
     end
 
-    -- 10. Prepare dropped egg detection
     local BasketDropEvent=ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Game"):WaitForChild("BasketDrop")
     local previousDroppedUUIDs={}
     local activeEggsBeforeDrop=RAPSkripFunctions.getActiveEggs()
@@ -3063,7 +2961,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
-    -- 11. Drop egg
     task.wait(0.5) -- Brief pause before sending the drop request.
     if not AutoPickupRunning then
         AutoPickupBusy=false
@@ -3075,7 +2972,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
     RAPSkripFunctions.stopAutoPickupFloat()
     task.wait(0.75) -- Give the dropped egg time to appear in ActiveEggs.
 
-    -- 12. Find newly dropped egg
     local droppedEgg
     local dropStart=os.clock()
 
@@ -3106,7 +3002,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
 
     droppedUUID=tostring(droppedUUID)
 
-    -- 13. Pick up dropped egg
     AutoPickupStage="DroppedPickup"
     AutoPickupAwaitingUUID=droppedUUID
     AutoPickupAwaitingPickup=true
@@ -3141,8 +3036,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
-    -- 14. Snapshot inventory, then return to the plot.
-    -- The game adds the deposited egg to the hotbar/backpack on arrival.
     local inventoryBeforeArrival=getPlayerEggToolSnapshot()
     AutoPickupStage="GoingToPlot"
     local reachedPlot=false
@@ -3162,7 +3055,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
 
     task.wait(1)
 
-    -- 15. Deposit egg
     AutoPickupStage="Deposit"
     AutoPickupAwaitingDeposit=true
     AutoPickupDepositConfirmed=false
@@ -3175,8 +3067,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
         return
     end
 
-    -- Do not manually fire EggArrivalClaim: the game handles that request.
-    -- Confirm deposit by detecting this egg arriving as a new inventory/hotbar Tool.
     local depositStart=os.clock()
     local depositConfirmTimeout=12
     while AutoPickupRunning
@@ -3200,9 +3090,6 @@ RAPSkripFunctions.tryAutoPickup = function(egg)
     AutoPickupStage="Idle"
     AutoPickupBusy=false
 end
---==================================================
--- 20. AUTO PICKUP LOGIC
---==================================================
 findNextAutoPickupEgg=function()
     local ActiveEggs=RAPSkripFunctions.getActiveEggs()
 
@@ -3358,9 +3245,6 @@ waitForDroppedEgg=function(eggName,previousUUIDs,dropPosition,timeout)
     RAPSkripFunctions.AddDebug("[AUTO ERROR] New dropped egg not found")
     return nil
 end
---==================================================
--- 21. AUTO MAGMA DIP LOGIC
---==================================================
 local GameMessageEvent=game:GetService("ReplicatedStorage").Remotes.Reusable.GameMessage
 
 GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
@@ -3393,12 +3277,8 @@ if VolcanoDipResultEvent and VolcanoDipResultEvent:IsA("RemoteEvent") then
 else
     RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP ERROR] VolcanoDipResult remote not found or invalid")
 end
---==================================================
--- 22. AUTO PLACE LOGIC
---==================================================
 
 RAPSkripFunctions.holdEgg = function(eggName, quiet)
-    -- Safety: only equip an egg while Auto Place is enabled.
     if not AutoPlaceEnabled then
         return false
     end
@@ -3456,7 +3336,6 @@ RAPSkripFunctions.holdEgg = function(eggName, quiet)
         return false
     end
 
-    -- Verify that the tool actually moved into the character.
     if tool.Parent ~= character then
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Egg was not equipped: " .. eggName)
         return false
@@ -3466,16 +3345,12 @@ RAPSkripFunctions.holdEgg = function(eggName, quiet)
     return true
 end
 
-
 -- Auto Place settings. Ring 1 is the first 3x3 grid; ring 2 expands to 5x5.
 local AUTO_PLACE_SPACING = 30
 local AUTO_PLACE_MAX_RING = 2
 local AUTO_PLACE_POSITION_TOLERANCE = 2
 
 RAPSkripFunctions.getAutoPlaceOffsets = function()
-    -- Required first 3x3 order:
-    -- left-front, left-middle, left-back, center-front, center, center-back,
-    -- right-front, right-middle, right-back.
     local offsets = {
         Vector3.new(-1, 0,  1),
         Vector3.new(-1, 0,  0),
@@ -3488,7 +3363,6 @@ RAPSkripFunctions.getAutoPlaceOffsets = function()
         Vector3.new( 1, 0, -1)
     }
 
-    -- Add each larger square ring without duplicating the initial 3x3.
     for ring = 2, AUTO_PLACE_MAX_RING do
         for z = ring, -ring, -1 do
             if z == ring or z == -ring then
@@ -3526,7 +3400,6 @@ RAPSkripFunctions.isAutoPlacePositionOccupied = function(position)
     return false
 end
 
--- The plot supports a maximum of 10 placed eggs.
 local AUTO_PLACE_MAX_EGGS = 10
 
 -- UI/counting uses only the latest server snapshot, never local reservations.
@@ -3534,8 +3407,6 @@ RAPSkripFunctions.getAutoPlaceOccupiedCount = function()
     return AutoPlaceSnapshotCount
 end
 
--- Reservations are used only as a safety guard while placement requests are
--- still in flight and have not appeared in the latest server snapshot.
 RAPSkripFunctions.getAutoPlacePendingReservationCount = function()
     local pendingCount = 0
 
@@ -3569,8 +3440,6 @@ RAPSkripFunctions.setAutoPlaceStatus = function(status, color)
 end
 
 RAPSkripFunctions.stopAutoPlaceAtLimit = function()
-    -- Do not disable the toggle at capacity. Stay enabled and resume when
-    -- the next server snapshot reports an available slot.
     RAPSkripFunctions.setAutoPlaceStatus("FULL (10/10)", Color3.fromRGB(220, 155, 100))
 end
 
@@ -3582,9 +3451,6 @@ RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
         return nil
     end
 
-    -- Check candidates in the Baseplate's local space so rotated plots are handled.
-    -- Keep a small margin from the edges; 30-stud spacing can otherwise put outer
-    -- ring positions outside smaller plots.
     local edgeMargin = 3
     local halfX = (baseplate.Size.X / 2) - edgeMargin
     local halfZ = (baseplate.Size.Z / 2) - edgeMargin
@@ -3631,7 +3497,6 @@ RAPSkripFunctions.autoPlaceEggs = function()
             return
         end
 
-        -- Wait for the server snapshot before deciding which positions are free.
         while AutoPlaceEnabled and Gui.Parent and not AutoPlaceSnapshotReceived do
             RAPSkripFunctions.setAutoPlaceStatus("WAIT SNAP", Color3.fromRGB(220, 190, 110))
             task.wait(0.25)
@@ -3659,8 +3524,6 @@ RAPSkripFunctions.autoPlaceEggs = function()
 
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Monitoring slots for " .. tostring(#selectedEggNames) .. " selected type(s)")
 
-        -- Stay alive as a monitor: full plots, moving characters, and other actions
-        -- pause placement without switching the user's toggle off.
         while AutoPlaceEnabled and Gui.Parent do
             local ready = false
             while AutoPlaceEnabled and Gui.Parent and not ready do
@@ -3759,8 +3622,6 @@ RAPSkripFunctions.autoPlaceEggs = function()
             if retryNextCycle then
                 task.wait(0.5)
             elseif not placedThisRound then
-                -- Inventory can change while AFK (for example, after Auto Pickup).
-                -- Keep monitoring without repeatedly logging missing selected eggs.
                 RAPSkripFunctions.setAutoPlaceStatus("WAIT EGGS", Color3.fromRGB(220, 190, 110))
                 task.wait(2)
             else
@@ -3781,9 +3642,6 @@ RAPSkripFunctions.autoPlaceEggs = function()
     end
 end
 
---==================================================
--- 23. AUTO HATCH LOGIC
---==================================================
 RAPSkripFunctions.getAutoHatchEggEntries = function(plot)
     if not plot then return {} end
     local eggsFolder = plot:FindFirstChild("Eggs")
@@ -3913,9 +3771,6 @@ RAPSkripFunctions.autoHatchEggs = function()
     end
 end
 
---==================================================
--- 24. ESP LOGIC
---==================================================
 RAPSkripFunctions.getSelectedEggNames = function()
     local names = {}
     for _, eggName in ipairs(EggTypes) do
@@ -3987,22 +3842,22 @@ local ESPFolder=Instance.new("Folder")
 ESPFolder.Name="EggESP"
 ESPFolder.Parent=workspace
 
-local ESPObjects={}
+RAPSkripFunctions.ESPObjects = {}
 
 RAPSkripFunctions.clearESP = function()
-    for egg, data in pairs(ESPObjects) do
+    for egg, data in pairs(RAPSkripFunctions.ESPObjects) do
         if data and data.Part then
             pcall(function()
                 data.Part:Destroy()
             end)
         end
 
-        ESPObjects[egg]=nil
+        RAPSkripFunctions.ESPObjects[egg]=nil
     end
 end
 
 RAPSkripFunctions.createESP = function(egg)
-    if ESPObjects[egg] then
+    if RAPSkripFunctions.ESPObjects[egg] then
         return
     end
 
@@ -4044,7 +3899,7 @@ RAPSkripFunctions.createESP = function(egg)
     label.Font=Enum.Font.GothamBold
     label.Parent=billboard
 
-    ESPObjects[egg]={
+    RAPSkripFunctions.ESPObjects[egg]={
         Part=part,
         Label=label
     }
@@ -4085,12 +3940,12 @@ function updateESP()
             local weight=tonumber(egg:GetAttribute("Weight"))
             local position=RAPSkripFunctions.getEggPosition(egg)
 
-            if not ESPObjects[egg] then
+            if not RAPSkripFunctions.ESPObjects[egg] then
                 RAPSkripFunctions.createESP(egg)
             end
 
-            if ESPObjects[egg] then
-                local data=ESPObjects[egg]
+            if RAPSkripFunctions.ESPObjects[egg] then
+                local data=RAPSkripFunctions.ESPObjects[egg]
 
                 if position and data.Part then
                     data.Part.Position=position
@@ -4117,7 +3972,7 @@ function updateESP()
         end
     end
 
-    for egg, data in pairs(ESPObjects) do
+    for egg, data in pairs(RAPSkripFunctions.ESPObjects) do
         if not activeEggSet[egg] then
             if data and data.Part then
                 pcall(function()
@@ -4125,18 +3980,14 @@ function updateESP()
                 end)
             end
 
-            ESPObjects[egg]=nil
+            RAPSkripFunctions.ESPObjects[egg]=nil
         end
     end
 
     EggCount.Text="Active Eggs: "..tostring(#eggs)
 end
---==================================================
--- 25. EVENT CONNECTIONS
---==================================================
 -- Listen for the server's owner-specific placement snapshot.
 task.spawn(function()
-    -- Section 9 initializes this remote asynchronously.
     while not EggPlacedEvent and Gui.Parent do
         task.wait(0.1)
     end
@@ -4155,9 +4006,6 @@ task.spawn(function()
         end
 
         local updatedPlacements = {}
-        -- Keep the slot total exactly aligned with the raw server snapshot.
-        -- Some snapshot records may not contain a supported coordinate format,
-        -- but they still count as placed eggs for the slot limit.
         AutoPlaceSnapshotCount = type(payload.Placements) == "table"
             and #payload.Placements or 0
 
@@ -4188,8 +4036,6 @@ task.spawn(function()
         AutoPlaceObserved = updatedPlacements
         AutoPlaceSnapshotReceived = true
 
-        -- When the worker is idle, the fresh server snapshot supersedes stale
-        -- local reservations. Never clear in-flight reservations mid-placement.
         if not AutoPlaceRunning then
             AutoPlaceReservedPositions = {}
         end
@@ -4258,7 +4104,6 @@ AutoPickupFilterButton.MouseButton1Click:Connect(function()
 end)
 
 AutoPlaceToggle.Activated:Connect(function()
-    -- Always keep the control clickable, even when the plot is full.
     if AutoPlaceEnabled then
         AutoPlaceEnabled = false
         AutoPlaceToggle.Text = "OFF"
@@ -4553,9 +4398,6 @@ ESPFilterButton.MouseButton1Click:Connect(function()
         RAPSkripFunctions.refreshESPFilterText()
     end
 end)
---==================================================
--- 26. LOOPS / TASKS
---==================================================
 task.spawn(function()
     while Gui.Parent do
         pcall(function()
@@ -4592,9 +4434,6 @@ task.spawn(function()
         task.wait(0.25)
     end
 end)
---==================================================
--- 27. STARTUP / INITIALIZATION
---==================================================
 RAPSkripFunctions.showPage(AutoPage)
 RAPSkripFunctions.updateActivePageButton(AutoButton)
 
@@ -4606,8 +4445,6 @@ RAPSkripFunctions.createESPFilterButtons()
 
 RAPSkripFunctions.updateAntiAFKButton()
 
-
--- Session monitor refresh; all statistics are temporary and reset on script restart.
 task.spawn(function()
     while Gui and Gui.Parent do
         local elapsed = math.max(0, math.floor(os.clock() - SessionStartedAt))
