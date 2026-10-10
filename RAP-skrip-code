@@ -3083,7 +3083,7 @@ end
 
 
 -- Auto Place settings. Ring 1 is the first 3x3 grid; ring 2 expands to 5x5.
-local AUTO_PLACE_SPACING = 5
+local AUTO_PLACE_SPACING = 10
 local AUTO_PLACE_MAX_RING = 2
 local AUTO_PLACE_POSITION_TOLERANCE = 2
 
