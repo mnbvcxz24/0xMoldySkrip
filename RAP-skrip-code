@@ -1,4 +1,4 @@
-local ver = "TEST v8.38"
+local ver = "TEST v8.39"
 local RAPSkripFunctions = {}
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -367,6 +367,17 @@ AutoContent2.ClipsDescendants = false
 AutoContent2.Visible = true
 AutoContent2.Parent = Content2
 
+local AutoPlaceCard = Instance.new("Frame")
+AutoPlaceCard.Name = "AutoPlaceCard"
+AutoPlaceCard.Size = UDim2.new(1, -10, 0, 120)
+AutoPlaceCard.Position = UDim2.fromOffset(5, 10)
+AutoPlaceCard.BackgroundColor3 = Color3.fromRGB(29, 32, 41)
+AutoPlaceCard.BorderSizePixel = 0
+AutoPlaceCard.Parent = AutoContent2
+local AutoPlaceCardCorner = Instance.new("UICorner")
+AutoPlaceCardCorner.CornerRadius = UDim.new(0, 7)
+AutoPlaceCardCorner.Parent = AutoPlaceCard
+
 local AutoPlaceTitle = Instance.new("TextLabel")
 AutoPlaceTitle.Name = "AutoPlaceTitle"
 AutoPlaceTitle.Size = UDim2.new(1, -85, 0, 19)
@@ -377,7 +388,7 @@ AutoPlaceTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
 AutoPlaceTitle.TextSize = RAPSkripFunctions.textSize(10)
 AutoPlaceTitle.Font = Enum.Font.GothamMedium
 AutoPlaceTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceTitle.Parent = AutoContent2
+AutoPlaceTitle.Parent = AutoPlaceCard
 
 local AutoPlaceStatus = Instance.new("TextLabel")
 AutoPlaceStatus.Name = "AutoPlaceStatus"
@@ -389,7 +400,7 @@ AutoPlaceStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoPlaceStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoPlaceStatus.Font = Enum.Font.Gotham
 AutoPlaceStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceStatus.Parent = AutoContent2
+AutoPlaceStatus.Parent = AutoPlaceCard
 
 local AutoPlaceToggle = Instance.new("TextButton")
 AutoPlaceToggle.Name = "AutoPlaceToggle"
@@ -404,7 +415,7 @@ AutoPlaceToggle.AutoButtonColor = false
 AutoPlaceToggle.Active = true
 AutoPlaceToggle.Selectable = true
 AutoPlaceToggle.ZIndex = 50
-AutoPlaceToggle.Parent = AutoContent2
+AutoPlaceToggle.Parent = AutoPlaceCard
 
 local AutoPlaceToggleCorner = Instance.new("UICorner")
 AutoPlaceToggleCorner.CornerRadius = UDim.new(0, 6)
@@ -420,7 +431,7 @@ AutoPlaceFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
 AutoPlaceFilterLabel.TextSize = RAPSkripFunctions.textSize(10)
 AutoPlaceFilterLabel.Font = Enum.Font.GothamMedium
 AutoPlaceFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceFilterLabel.Parent = AutoContent2
+AutoPlaceFilterLabel.Parent = AutoPlaceCard
 
 local AutoPlaceFilterButton = Instance.new("TextButton")
 AutoPlaceFilterButton.Name = "AutoPlaceFilterButton"
@@ -436,7 +447,7 @@ AutoPlaceFilterButton.AutoButtonColor = false
 AutoPlaceFilterButton.Active = true
 AutoPlaceFilterButton.Selectable = true
 AutoPlaceFilterButton.ZIndex = 10
-AutoPlaceFilterButton.Parent = AutoContent2
+AutoPlaceFilterButton.Parent = AutoPlaceCard
 
 local AutoPlaceFilterButtonCorner = Instance.new("UICorner")
 AutoPlaceFilterButtonCorner.CornerRadius = UDim.new(0,6)
@@ -452,7 +463,7 @@ AutoPlaceFilterCount.TextColor3 = Color3.fromRGB(145,145,155)
 AutoPlaceFilterCount.TextSize = RAPSkripFunctions.textSize(9)
 AutoPlaceFilterCount.Font = Enum.Font.Gotham
 AutoPlaceFilterCount.TextXAlignment = Enum.TextXAlignment.Left
-AutoPlaceFilterCount.Parent = AutoContent2
+AutoPlaceFilterCount.Parent = AutoPlaceCard
 
 -- Auto Hatch toggle
 local AutoHatchTitle = Instance.new("TextLabel")
@@ -652,11 +663,11 @@ local function createProgressToggle(parent, name, y, statusLabel, statusText)
     return toggle
 end
 
-local LuckSection = createProgressSection("AutoBuyLuckSection", "Auto Buy Luck MAX", 145, 66)
+local LuckSection = createProgressSection("AutoBuyLuckSection", "Auto Buy Luck MAX", 5, 66)
 ProgressUI.LuckStatus = createProgressStatus(LuckSection, "LuckStatus", "IDLE", 29)
 ProgressUI.LuckToggle = createProgressToggle(LuckSection, "AutoBuyLuckToggle", 25, ProgressUI.LuckStatus, "VISUAL PREVIEW")
 
-local FusionSection = createProgressSection("AutoFusionSection", "Auto Fusion", 220, 118)
+local FusionSection = createProgressSection("AutoFusionSection", "Auto Fusion", 80, 118)
 ProgressUI.FusionStatus = createProgressStatus(FusionSection, "FusionStatus", "IDLE", 29)
 ProgressUI.FusionToggle = createProgressToggle(FusionSection, "AutoFusionToggle", 25, ProgressUI.FusionStatus, "VISUAL PREVIEW")
 
@@ -730,6 +741,91 @@ end
 FusionFilterButton.MouseButton1Click:Connect(function()
     FusionFilterMenu.Visible = not FusionFilterMenu.Visible
 end)
+
+
+
+local ProgressTitle = Instance.new("TextLabel")
+ProgressTitle.Name = "ProgressTitle"
+ProgressTitle.Size = UDim2.new(1, -10, 0, 25)
+ProgressTitle.Position = UDim2.fromOffset(5, 0)
+ProgressTitle.BackgroundTransparency = 1
+ProgressTitle.Text = "Progress & Automation"
+ProgressTitle.TextColor3 = Color3.fromRGB(224, 226, 235)
+ProgressTitle.TextSize = RAPSkripFunctions.textSize(15)
+ProgressTitle.Font = Enum.Font.GothamBold
+ProgressTitle.TextXAlignment = Enum.TextXAlignment.Left
+ProgressTitle.Parent = ProgressPage
+
+local ProgressCard = Instance.new("Frame")
+ProgressCard.Name = "ProgressCard"
+ProgressCard.Size = UDim2.new(1, -10, 0, 100)
+ProgressCard.Position = UDim2.fromOffset(5, 32)
+ProgressCard.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
+ProgressCard.BorderSizePixel = 0
+ProgressCard.Parent = ProgressContent2
+local ProgressCardCorner = Instance.new("UICorner")
+ProgressCardCorner.CornerRadius = UDim.new(0, 7)
+ProgressCardCorner.Parent = ProgressCard
+
+local ProgressRuntimeLabel = Instance.new("TextLabel")
+ProgressRuntimeLabel.Name = "ProgressRuntime"
+ProgressRuntimeLabel.Size = UDim2.new(1, -16, 0, 20)
+ProgressRuntimeLabel.Position = UDim2.fromOffset(8, 8)
+ProgressRuntimeLabel.BackgroundTransparency = 1
+ProgressRuntimeLabel.Text = "Runtime: 00:00:00"
+ProgressRuntimeLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
+ProgressRuntimeLabel.TextSize = RAPSkripFunctions.textSize(11)
+ProgressRuntimeLabel.Font = Enum.Font.GothamMedium
+ProgressRuntimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressRuntimeLabel.Parent = ProgressCard
+
+local ProgressHatchedLabel = Instance.new("TextLabel")
+ProgressHatchedLabel.Name = "ProgressHatched"
+ProgressHatchedLabel.Size = UDim2.new(1, -16, 0, 20)
+ProgressHatchedLabel.Position = UDim2.fromOffset(8, 34)
+ProgressHatchedLabel.BackgroundTransparency = 1
+ProgressHatchedLabel.Text = "Eggs hatched: 0"
+ProgressHatchedLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
+ProgressHatchedLabel.TextSize = RAPSkripFunctions.textSize(11)
+ProgressHatchedLabel.Font = Enum.Font.Gotham
+ProgressHatchedLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressHatchedLabel.Parent = ProgressCard
+
+local ProgressDepositedLabel = Instance.new("TextLabel")
+ProgressDepositedLabel.Name = "ProgressDeposited"
+ProgressDepositedLabel.Size = UDim2.new(1, -16, 0, 20)
+ProgressDepositedLabel.Position = UDim2.fromOffset(8, 60)
+ProgressDepositedLabel.BackgroundTransparency = 1
+ProgressDepositedLabel.Text = "Auto Pickup deposits: 0"
+ProgressDepositedLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
+ProgressDepositedLabel.TextSize = RAPSkripFunctions.textSize(11)
+ProgressDepositedLabel.Font = Enum.Font.Gotham
+ProgressDepositedLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressDepositedLabel.Parent = ProgressCard
+
+local ContentDivider = Instance.new("Frame")
+ContentDivider.Name = "ContentDivider"
+ContentDivider.Size = UDim2.new(0, 1, 1, -8)
+ContentDivider.Position = UDim2.new(0.5, 0, 0, 4)
+ContentDivider.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
+ContentDivider.BorderSizePixel = 0
+ContentDivider.Parent = Content
+
+RAPSkripFunctions.createPage = function()
+    local page = Instance.new("Frame")
+    page.Size = UDim2.fromScale(1, 1)
+    page.BackgroundTransparency = 1
+    page.Visible = false
+    page.ClipsDescendants = false
+    page.Parent = Content1
+    return page
+end
+
+local AutoPage = RAPSkripFunctions.createPage()
+local ProgressPage = RAPSkripFunctions.createPage()
+local ESPPage = RAPSkripFunctions.createPage()
+local DebugPage = RAPSkripFunctions.createPage()
+local SettingsPage = RAPSkripFunctions.createPage()
 
 ;(function()
 -- Settings page: dynamic color themes (selection is saved with the existing config).
@@ -826,12 +922,17 @@ for index, themeName in ipairs(ThemeNames) do
     ThemeButtons[themeName] = themeButton
 end
 
+local ThemeOriginalColors = {}
 local function applyColorTheme(themeName)
     local palette = ThemePalette[themeName] or ThemePalette.Midnight
     SelectedColorTheme = ThemePalette[themeName] and themeName or "Midnight"
     for _, object in ipairs(Gui:GetDescendants()) do
         if object:IsA("GuiObject") then
-            local bg = object.BackgroundColor3
+            if not ThemeOriginalColors[object] then
+                ThemeOriginalColors[object] = {bg=object.BackgroundColor3, text=(object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox")) and object.TextColor3 or nil}
+            end
+            local original = ThemeOriginalColors[object]
+            local bg = original.bg
             if object.BackgroundTransparency < 1 then
                 if object == Main or object == Content or object == Content1 or object == Content2 then
                     object.BackgroundColor3 = palette.bg
@@ -842,7 +943,7 @@ local function applyColorTheme(themeName)
                 end
             end
             if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
-                local tc = object.TextColor3
+                local tc = original.text or object.TextColor3
                 if tc.R > 0.68 and tc.G > 0.68 and tc.B > 0.68 then
                     object.TextColor3 = palette.text
                 elseif tc.R > 0.48 and tc.G > 0.48 and tc.B > 0.48 and tc.R < 0.82 then
@@ -873,89 +974,6 @@ end)
 end)()
 
 end)()
-
-local ProgressTitle = Instance.new("TextLabel")
-ProgressTitle.Name = "ProgressTitle"
-ProgressTitle.Size = UDim2.new(1, -10, 0, 25)
-ProgressTitle.Position = UDim2.fromOffset(5, 0)
-ProgressTitle.BackgroundTransparency = 1
-ProgressTitle.Text = "Progress & Automation"
-ProgressTitle.TextColor3 = Color3.fromRGB(224, 226, 235)
-ProgressTitle.TextSize = RAPSkripFunctions.textSize(15)
-ProgressTitle.Font = Enum.Font.GothamBold
-ProgressTitle.TextXAlignment = Enum.TextXAlignment.Left
-ProgressTitle.Parent = ProgressPage
-
-local ProgressCard = Instance.new("Frame")
-ProgressCard.Name = "ProgressCard"
-ProgressCard.Size = UDim2.new(1, -10, 0, 100)
-ProgressCard.Position = UDim2.fromOffset(5, 32)
-ProgressCard.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
-ProgressCard.BorderSizePixel = 0
-ProgressCard.Parent = ProgressContent2
-local ProgressCardCorner = Instance.new("UICorner")
-ProgressCardCorner.CornerRadius = UDim.new(0, 7)
-ProgressCardCorner.Parent = ProgressCard
-
-local ProgressRuntimeLabel = Instance.new("TextLabel")
-ProgressRuntimeLabel.Name = "ProgressRuntime"
-ProgressRuntimeLabel.Size = UDim2.new(1, -16, 0, 20)
-ProgressRuntimeLabel.Position = UDim2.fromOffset(8, 8)
-ProgressRuntimeLabel.BackgroundTransparency = 1
-ProgressRuntimeLabel.Text = "Runtime: 00:00:00"
-ProgressRuntimeLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
-ProgressRuntimeLabel.TextSize = RAPSkripFunctions.textSize(11)
-ProgressRuntimeLabel.Font = Enum.Font.GothamMedium
-ProgressRuntimeLabel.TextXAlignment = Enum.TextXAlignment.Left
-ProgressRuntimeLabel.Parent = ProgressCard
-
-local ProgressHatchedLabel = Instance.new("TextLabel")
-ProgressHatchedLabel.Name = "ProgressHatched"
-ProgressHatchedLabel.Size = UDim2.new(1, -16, 0, 20)
-ProgressHatchedLabel.Position = UDim2.fromOffset(8, 34)
-ProgressHatchedLabel.BackgroundTransparency = 1
-ProgressHatchedLabel.Text = "Eggs hatched: 0"
-ProgressHatchedLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
-ProgressHatchedLabel.TextSize = RAPSkripFunctions.textSize(11)
-ProgressHatchedLabel.Font = Enum.Font.Gotham
-ProgressHatchedLabel.TextXAlignment = Enum.TextXAlignment.Left
-ProgressHatchedLabel.Parent = ProgressCard
-
-local ProgressDepositedLabel = Instance.new("TextLabel")
-ProgressDepositedLabel.Name = "ProgressDeposited"
-ProgressDepositedLabel.Size = UDim2.new(1, -16, 0, 20)
-ProgressDepositedLabel.Position = UDim2.fromOffset(8, 60)
-ProgressDepositedLabel.BackgroundTransparency = 1
-ProgressDepositedLabel.Text = "Auto Pickup deposits: 0"
-ProgressDepositedLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
-ProgressDepositedLabel.TextSize = RAPSkripFunctions.textSize(11)
-ProgressDepositedLabel.Font = Enum.Font.Gotham
-ProgressDepositedLabel.TextXAlignment = Enum.TextXAlignment.Left
-ProgressDepositedLabel.Parent = ProgressCard
-
-local ContentDivider = Instance.new("Frame")
-ContentDivider.Name = "ContentDivider"
-ContentDivider.Size = UDim2.new(0, 1, 1, -8)
-ContentDivider.Position = UDim2.new(0.5, 0, 0, 4)
-ContentDivider.BackgroundColor3 = Color3.fromRGB(45, 45, 52)
-ContentDivider.BorderSizePixel = 0
-ContentDivider.Parent = Content
-
-RAPSkripFunctions.createPage = function()
-    local page = Instance.new("Frame")
-    page.Size = UDim2.fromScale(1, 1)
-    page.BackgroundTransparency = 1
-    page.Visible = false
-    page.ClipsDescendants = false
-    page.Parent = Content1
-    return page
-end
-
-local AutoPage = RAPSkripFunctions.createPage()
-local ProgressPage = RAPSkripFunctions.createPage()
-local ESPPage = RAPSkripFunctions.createPage()
-local DebugPage = RAPSkripFunctions.createPage()
-local SettingsPage = RAPSkripFunctions.createPage()
 
 local progressLuckSection = ProgressContent2:FindFirstChild("AutoBuyLuckSection")
 local progressFusionSection = ProgressContent2:FindFirstChild("AutoFusionSection")
