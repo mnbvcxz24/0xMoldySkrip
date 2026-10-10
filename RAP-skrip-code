@@ -66,6 +66,12 @@ local SelectedEggs = {}
 local AutoSelectedEggs = {}
 local AutoPlaceSelectedEggs = {}
 local SelectedColorTheme = "Midnight"
+local ActiveThemePalette = {bg=Color3.fromRGB(17,19,24),panel=Color3.fromRGB(29,32,41),card=Color3.fromRGB(37,40,50),accent=Color3.fromRGB(124,131,255),text=Color3.fromRGB(241,242,247),muted=Color3.fromRGB(190,194,208)}
+RAPSkripFunctions.styleToggle = function(button, enabled)
+    if not button then return end
+    button.Text = enabled and "ON" or "OFF"
+    button.BackgroundColor3 = enabled and ActiveThemePalette.accent or ActiveThemePalette.card
+end
 
 local AutoPickupMovementMode = "Teleport"
 local AutoPickupClaimDelay = 1.5
@@ -369,7 +375,7 @@ AutoContent2.Parent = Content2
 
 local AutoPlaceCard = Instance.new("Frame")
 AutoPlaceCard.Name = "AutoPlaceCard"
-AutoPlaceCard.Size = UDim2.new(1, -10, 0, 120)
+AutoPlaceCard.Size = UDim2.new(1, -10, 0, 126)
 AutoPlaceCard.Position = UDim2.fromOffset(5, 10)
 AutoPlaceCard.BackgroundColor3 = Color3.fromRGB(29, 32, 41)
 AutoPlaceCard.BorderSizePixel = 0
@@ -465,35 +471,46 @@ AutoPlaceFilterCount.Font = Enum.Font.Gotham
 AutoPlaceFilterCount.TextXAlignment = Enum.TextXAlignment.Left
 AutoPlaceFilterCount.Parent = AutoPlaceCard
 
--- Auto Hatch toggle
+-- Auto Hatch card
+local AutoHatchCard = Instance.new("Frame")
+AutoHatchCard.Name = "AutoHatchCard"
+AutoHatchCard.Size = UDim2.new(1, -10, 0, 72)
+AutoHatchCard.Position = UDim2.fromOffset(5, 140)
+AutoHatchCard.BackgroundColor3 = Color3.fromRGB(29, 32, 41)
+AutoHatchCard.BorderSizePixel = 0
+AutoHatchCard.Parent = AutoContent2
+local AutoHatchCardCorner = Instance.new("UICorner")
+AutoHatchCardCorner.CornerRadius = UDim.new(0, 7)
+AutoHatchCardCorner.Parent = AutoHatchCard
+
 local AutoHatchTitle = Instance.new("TextLabel")
 AutoHatchTitle.Name = "AutoHatchTitle"
 AutoHatchTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoHatchTitle.Position = UDim2.fromOffset(5, 132)
+AutoHatchTitle.Position = UDim2.fromOffset(10, 10)
 AutoHatchTitle.BackgroundTransparency = 1
 AutoHatchTitle.Text = "Auto Hatch"
 AutoHatchTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
 AutoHatchTitle.TextSize = RAPSkripFunctions.textSize(10)
 AutoHatchTitle.Font = Enum.Font.GothamMedium
 AutoHatchTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoHatchTitle.Parent = AutoContent2
+AutoHatchTitle.Parent = AutoHatchCard
 
 local AutoHatchStatus = Instance.new("TextLabel")
 AutoHatchStatus.Name = "AutoHatchStatus"
 AutoHatchStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoHatchStatus.Position = UDim2.fromOffset(5, 145)
+AutoHatchStatus.Position = UDim2.fromOffset(10, 29)
 AutoHatchStatus.BackgroundTransparency = 1
 AutoHatchStatus.Text = "● IDLE"
 AutoHatchStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoHatchStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoHatchStatus.Font = Enum.Font.Gotham
 AutoHatchStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoHatchStatus.Parent = AutoContent2
+AutoHatchStatus.Parent = AutoHatchCard
 
 local AutoHatchToggle = Instance.new("TextButton")
 AutoHatchToggle.Name = "AutoHatchToggle"
 AutoHatchToggle.Size = UDim2.fromOffset(62, 27)
-AutoHatchToggle.Position = UDim2.new(1, -67, 0, 132)
+AutoHatchToggle.Position = UDim2.new(1, -72, 0, 12)
 AutoHatchToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoHatchToggle.Text = "OFF"
 AutoHatchToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -503,7 +520,7 @@ AutoHatchToggle.AutoButtonColor = false
 AutoHatchToggle.Active = true
 AutoHatchToggle.Selectable = true
 AutoHatchToggle.ZIndex = 10
-AutoHatchToggle.Parent = AutoContent2
+AutoHatchToggle.Parent = AutoHatchCard
 
 local AutoHatchToggleCorner = Instance.new("UICorner")
 AutoHatchToggleCorner.CornerRadius = UDim.new(0, 6)
@@ -512,7 +529,7 @@ AutoHatchToggleCorner.Parent = AutoHatchToggle
 local MonitorFrame = Instance.new("Frame")
 MonitorFrame.Name = "RAPSkripMonitor"
 MonitorFrame.Size = UDim2.new(1, -10, 0, 68)
-MonitorFrame.Position = UDim2.fromOffset(5, 174)
+MonitorFrame.Position = UDim2.fromOffset(5, 222)
 MonitorFrame.BackgroundColor3 = Color3.fromRGB(29, 29, 36)
 MonitorFrame.BorderSizePixel = 0
 MonitorFrame.Parent = AutoContent2
@@ -656,7 +673,7 @@ local function createProgressToggle(parent, name, y, statusLabel, statusText)
     toggle.MouseButton1Click:Connect(function()
         enabled = not enabled
         toggle.Text = enabled and "ON" or "OFF"
-        toggle.BackgroundColor3 = enabled and Color3.fromRGB(55, 105, 72) or Color3.fromRGB(48, 49, 59)
+        toggle.BackgroundColor3 = enabled and ActiveThemePalette.accent or ActiveThemePalette.card
         statusLabel.Text = enabled and ("● UI ONLY — " .. statusText) or "● IDLE"
         statusLabel.TextColor3 = enabled and Color3.fromRGB(184, 205, 176) or Color3.fromRGB(170, 174, 188)
     end)
@@ -846,7 +863,7 @@ ThemeTitle.TextColor3 = Color3.fromRGB(224, 226, 235)
 ThemeTitle.TextSize = RAPSkripFunctions.textSize(15)
 ThemeTitle.Font = Enum.Font.GothamBold
 ThemeTitle.TextXAlignment = Enum.TextXAlignment.Left
-ThemeTitle.Parent = SettingsPage
+ThemeTitle.Parent = SettingsContent2
 
 local ThemeSection = Instance.new("Frame")
 ThemeSection.Name = "ColorThemeSection"
@@ -854,7 +871,7 @@ ThemeSection.Size = UDim2.new(1, -10, 0, 186)
 ThemeSection.Position = UDim2.fromOffset(5, 32)
 ThemeSection.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
 ThemeSection.BorderSizePixel = 0
-ThemeSection.Parent = SettingsPage
+ThemeSection.Parent = SettingsContent2
 local ThemeSectionCorner = Instance.new("UICorner")
 ThemeSectionCorner.CornerRadius = UDim.new(0, 7)
 ThemeSectionCorner.Parent = ThemeSection
@@ -949,11 +966,14 @@ local function applyColorTheme(themeName)
                     object.TextColor3 = palette.muted
                 end
             end
-            if object:IsA("TextButton") and (string.find(object.Name, "Theme_") or string.find(object.Name, "Toggle")) then
-                object.BackgroundColor3 = palette.accent
+            if object:IsA("TextButton") and string.find(object.Name, "Theme_") then
+                -- Selection styling is applied below.
+            elseif object:IsA("TextButton") and string.find(object.Name, "Toggle") then
+                object.BackgroundColor3 = object.Text == "ON" and palette.accent or palette.card
             end
         end
     end
+    ActiveThemePalette = palette
     for name, button in pairs(ThemeButtons) do
         local selected = name == SelectedColorTheme
         button.BackgroundColor3 = selected and palette.accent or palette.card
@@ -1044,31 +1064,42 @@ AutoTitle.Font = Enum.Font.GothamBold
 AutoTitle.TextXAlignment = Enum.TextXAlignment.Left
 AutoTitle.Parent = AutoPage
 
+local AutoPickupCard = Instance.new("Frame")
+AutoPickupCard.Name = "AutoPickupCard"
+AutoPickupCard.Size = UDim2.new(1, -10, 0, 145)
+AutoPickupCard.Position = UDim2.fromOffset(5, 10)
+AutoPickupCard.BackgroundColor3 = Color3.fromRGB(29, 32, 41)
+AutoPickupCard.BorderSizePixel = 0
+AutoPickupCard.Parent = AutoPage
+local AutoPickupCardCorner = Instance.new("UICorner")
+AutoPickupCardCorner.CornerRadius = UDim.new(0, 7)
+AutoPickupCardCorner.Parent = AutoPickupCard
+
 local AutoPickupTitle = Instance.new("TextLabel")
 AutoPickupTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoPickupTitle.Position = UDim2.fromOffset(5, 24)
+AutoPickupTitle.Position = UDim2.fromOffset(10, 10)
 AutoPickupTitle.BackgroundTransparency = 1
 AutoPickupTitle.Text = "Auto Pickup"
 AutoPickupTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
 AutoPickupTitle.TextSize = RAPSkripFunctions.textSize(10)
 AutoPickupTitle.Font = Enum.Font.GothamMedium
 AutoPickupTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoPickupTitle.Parent = AutoPage
+AutoPickupTitle.Parent = AutoPickupCard
 
 local AutoPickupStatus = Instance.new("TextLabel")
 AutoPickupStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoPickupStatus.Position = UDim2.fromOffset(5, 37)
+AutoPickupStatus.Position = UDim2.fromOffset(10, 27)
 AutoPickupStatus.BackgroundTransparency = 1
 AutoPickupStatus.Text = "● IDLE"
 AutoPickupStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoPickupStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoPickupStatus.Font = Enum.Font.Gotham
 AutoPickupStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoPickupStatus.Parent = AutoPage
+AutoPickupStatus.Parent = AutoPickupCard
 
 local AutoPickupToggle = Instance.new("TextButton")
 AutoPickupToggle.Size = UDim2.fromOffset(62, 27)
-AutoPickupToggle.Position = UDim2.new(1, -67, 0, 24)
+AutoPickupToggle.Position = UDim2.new(1, -72, 0, 10)
 AutoPickupToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoPickupToggle.Text = "OFF"
 AutoPickupToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -1078,7 +1109,7 @@ AutoPickupToggle.AutoButtonColor = false
 AutoPickupToggle.Active = true
 AutoPickupToggle.Selectable = true
 AutoPickupToggle.ZIndex = 10
-AutoPickupToggle.Parent = AutoPage
+AutoPickupToggle.Parent = AutoPickupCard
 
 local AutoPickupToggleCorner = Instance.new("UICorner")
 AutoPickupToggleCorner.CornerRadius = UDim.new(0, 6)
@@ -1086,18 +1117,18 @@ AutoPickupToggleCorner.Parent = AutoPickupToggle
 
 local AutoPickupFilterLabel = Instance.new("TextLabel")
 AutoPickupFilterLabel.Size = UDim2.new(1, -10, 0, 19)
-AutoPickupFilterLabel.Position = UDim2.fromOffset(5, 54)
+AutoPickupFilterLabel.Position = UDim2.fromOffset(10, 48)
 AutoPickupFilterLabel.BackgroundTransparency = 1
 AutoPickupFilterLabel.Text = "Egg Filter"
 AutoPickupFilterLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
 AutoPickupFilterLabel.TextSize = RAPSkripFunctions.textSize(10)
 AutoPickupFilterLabel.Font = Enum.Font.GothamMedium
 AutoPickupFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
-AutoPickupFilterLabel.Parent = AutoPage
+AutoPickupFilterLabel.Parent = AutoPickupCard
 
 local AutoPickupFilterButton = Instance.new("TextButton")
 AutoPickupFilterButton.Size = UDim2.new(1, -10, 0, 27)
-AutoPickupFilterButton.Position = UDim2.fromOffset(5, 71)
+AutoPickupFilterButton.Position = UDim2.fromOffset(10, 65)
 AutoPickupFilterButton.BackgroundColor3 = Color3.fromRGB(35, 35, 42)
 AutoPickupFilterButton.Text = "  -- ▼"
 AutoPickupFilterButton.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -1107,7 +1138,7 @@ AutoPickupFilterButton.TextXAlignment = Enum.TextXAlignment.Left
 AutoPickupFilterButton.AutoButtonColor = false
 AutoPickupFilterButton.Active = true
 AutoPickupFilterButton.Selectable = true
-AutoPickupFilterButton.Parent = AutoPage
+AutoPickupFilterButton.Parent = AutoPickupCard
 
 local AutoPickupFilterButtonCorner = Instance.new("UICorner")
 AutoPickupFilterButtonCorner.CornerRadius = UDim.new(0, 6)
@@ -1115,40 +1146,51 @@ AutoPickupFilterButtonCorner.Parent = AutoPickupFilterButton
 
 local AutoPickupFilterCount = Instance.new("TextLabel")
 AutoPickupFilterCount.Size = UDim2.new(1, -10, 0, 18)
-AutoPickupFilterCount.Position = UDim2.fromOffset(5, 100)
+AutoPickupFilterCount.Position = UDim2.fromOffset(10, 94)
 AutoPickupFilterCount.BackgroundTransparency = 1
 AutoPickupFilterCount.Text = "Selected eggs: 0"
 AutoPickupFilterCount.TextColor3 = Color3.fromRGB(145, 145, 155)
 AutoPickupFilterCount.TextSize = RAPSkripFunctions.textSize(9)
 AutoPickupFilterCount.Font = Enum.Font.Gotham
 AutoPickupFilterCount.TextXAlignment = Enum.TextXAlignment.Left
-AutoPickupFilterCount.Parent = AutoPage
+AutoPickupFilterCount.Parent = AutoPickupCard
+
+local AutoMagmaDipCard = Instance.new("Frame")
+AutoMagmaDipCard.Name = "AutoMagmaDipCard"
+AutoMagmaDipCard.Size = UDim2.new(1, -10, 0, 58)
+AutoMagmaDipCard.Position = UDim2.fromOffset(5, 165)
+AutoMagmaDipCard.BackgroundColor3 = Color3.fromRGB(29, 32, 41)
+AutoMagmaDipCard.BorderSizePixel = 0
+AutoMagmaDipCard.Parent = AutoPage
+local AutoMagmaDipCardCorner = Instance.new("UICorner")
+AutoMagmaDipCardCorner.CornerRadius = UDim.new(0, 7)
+AutoMagmaDipCardCorner.Parent = AutoMagmaDipCard
 
 local AutoMagmaDipTitle = Instance.new("TextLabel")
 AutoMagmaDipTitle.Size = UDim2.new(1, -85, 0, 19)
-AutoMagmaDipTitle.Position = UDim2.fromOffset(5, 118)
+AutoMagmaDipTitle.Position = UDim2.fromOffset(10, 7)
 AutoMagmaDipTitle.BackgroundTransparency = 1
 AutoMagmaDipTitle.Text = "Auto Magma DIP"
 AutoMagmaDipTitle.TextColor3 = Color3.fromRGB(210, 210, 218)
 AutoMagmaDipTitle.TextSize = RAPSkripFunctions.textSize(10)
 AutoMagmaDipTitle.Font = Enum.Font.GothamMedium
 AutoMagmaDipTitle.TextXAlignment = Enum.TextXAlignment.Left
-AutoMagmaDipTitle.Parent = AutoPage
+AutoMagmaDipTitle.Parent = AutoMagmaDipCard
 
 local AutoMagmaDipStatus = Instance.new("TextLabel")
 AutoMagmaDipStatus.Size = UDim2.new(1, -85, 0, 22)
-AutoMagmaDipStatus.Position = UDim2.fromOffset(5, 131)
+AutoMagmaDipStatus.Position = UDim2.fromOffset(10, 26)
 AutoMagmaDipStatus.BackgroundTransparency = 1
 AutoMagmaDipStatus.Text = "● IDLE"
 AutoMagmaDipStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
 AutoMagmaDipStatus.TextSize = RAPSkripFunctions.textSize(10)
 AutoMagmaDipStatus.Font = Enum.Font.Gotham
 AutoMagmaDipStatus.TextXAlignment = Enum.TextXAlignment.Left
-AutoMagmaDipStatus.Parent = AutoPage
+AutoMagmaDipStatus.Parent = AutoMagmaDipCard
 
 local AutoMagmaDipToggle = Instance.new("TextButton")
 AutoMagmaDipToggle.Size = UDim2.fromOffset(62, 27)
-AutoMagmaDipToggle.Position = UDim2.new(1, -67, 0, 118)
+AutoMagmaDipToggle.Position = UDim2.new(1, -72, 0, 9)
 AutoMagmaDipToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoMagmaDipToggle.Text = "OFF"
 AutoMagmaDipToggle.TextColor3 = Color3.fromRGB(220, 220, 225)
@@ -1158,7 +1200,7 @@ AutoMagmaDipToggle.AutoButtonColor = false
 AutoMagmaDipToggle.Active = true
 AutoMagmaDipToggle.Selectable = true
 AutoMagmaDipToggle.ZIndex = 10
-AutoMagmaDipToggle.Parent = AutoPage
+AutoMagmaDipToggle.Parent = AutoMagmaDipCard
 
 local AutoMagmaDipToggleCorner = Instance.new("UICorner")
 AutoMagmaDipToggleCorner.CornerRadius = UDim.new(0, 6)
@@ -1166,7 +1208,7 @@ AutoMagmaDipToggleCorner.Parent = AutoMagmaDipToggle
 
 local AutoMovementLabel = Instance.new("TextLabel")
 AutoMovementLabel.Size = UDim2.new(1, -10, 0, 18)
-AutoMovementLabel.Position = UDim2.fromOffset(5, 149)
+AutoMovementLabel.Position = UDim2.fromOffset(5, 232)
 AutoMovementLabel.BackgroundTransparency = 1
 AutoMovementLabel.Text = "Movement"
 AutoMovementLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -1177,7 +1219,7 @@ AutoMovementLabel.Parent = AutoPage
 
 local AutoMovementButton = Instance.new("TextButton")
 AutoMovementButton.Size = UDim2.new(1, -10, 0, 27)
-AutoMovementButton.Position = UDim2.fromOffset(5, 166)
+AutoMovementButton.Position = UDim2.fromOffset(5, 249)
 AutoMovementButton.BackgroundColor3 = Color3.fromRGB(55, 85, 60)
 AutoMovementButton.Text = "Teleport"
 AutoMovementButton.TextColor3 = Color3.fromRGB(225, 225, 230)
@@ -1194,7 +1236,7 @@ AutoMovementCorner.Parent = AutoMovementButton
 
 local AutoMovementInfo = Instance.new("TextLabel")
 AutoMovementInfo.Size = UDim2.new(1, -10, 0, 16)
-AutoMovementInfo.Position = UDim2.fromOffset(5, 193)
+AutoMovementInfo.Position = UDim2.fromOffset(5, 276)
 AutoMovementInfo.BackgroundTransparency = 1
 AutoMovementInfo.Text = "Teleport active"
 AutoMovementInfo.TextColor3 = Color3.fromRGB(130, 180, 140)
@@ -1205,7 +1247,7 @@ AutoMovementInfo.Parent = AutoPage
 
 local AutoClaimLabel = Instance.new("TextLabel")
 AutoClaimLabel.Size = UDim2.new(1, -10, 0, 18)
-AutoClaimLabel.Position = UDim2.fromOffset(5, 209)
+AutoClaimLabel.Position = UDim2.fromOffset(5, 292)
 AutoClaimLabel.BackgroundTransparency = 1
 AutoClaimLabel.Text = "Claim Delay: 1.5s"
 AutoClaimLabel.TextColor3 = Color3.fromRGB(210, 210, 218)
@@ -1216,7 +1258,7 @@ AutoClaimLabel.Parent = AutoPage
 
 local AutoClaimBar = Instance.new("Frame")
 AutoClaimBar.Size = UDim2.new(1, -10, 0, 6)
-AutoClaimBar.Position = UDim2.fromOffset(5, 227)
+AutoClaimBar.Position = UDim2.fromOffset(5, 310)
 AutoClaimBar.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
 AutoClaimBar.BorderSizePixel = 0
 AutoClaimBar.Parent = AutoPage
@@ -1363,7 +1405,7 @@ local FilterButtons = {}
 local AutoPickupFilterFrame = Instance.new("ScrollingFrame")
 AutoPickupFilterFrame.Name = "AutoPickupFilterFrame"
 AutoPickupFilterFrame.Size = UDim2.new(1, -10, 0, 160)
-AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 100)
+AutoPickupFilterFrame.Position = UDim2.fromOffset(5, 110)
 AutoPickupFilterFrame.BackgroundColor3 = Color3.fromRGB(27, 27, 33)
 AutoPickupFilterFrame.BorderSizePixel = 0
 AutoPickupFilterFrame.ScrollBarThickness = 3
@@ -2031,14 +2073,12 @@ RAPSkripFunctions.setAntiAFK = function(enabled)
     AntiAFKEnabled = enabled
 
     if AntiAFKEnabled then
-        AntiAFKToggle.Text = "ON"
-        AntiAFKToggle.BackgroundColor3 = Color3.fromRGB(55, 90, 60)
+        RAPSkripFunctions.styleToggle(AntiAFKToggle, true)
         AntiAFKStatus.Text = "● ACTIVE"
         AntiAFKStatus.TextColor3 = Color3.fromRGB(120, 210, 135)
         RAPSkripFunctions.AddDebug("[ANTI AFK] Enabled")
     else
-        AntiAFKToggle.Text = "OFF"
-        AntiAFKToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+        RAPSkripFunctions.styleToggle(AntiAFKToggle, false)
         AntiAFKStatus.Text = "● IDLE"
         AntiAFKStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
         RAPSkripFunctions.AddDebug("[ANTI AFK] Disabled")
@@ -3903,8 +3943,7 @@ AutoPickupToggle.MouseButton1Click:Connect(function()
     local enabled=not AutoPickupRunning
     AutoPickupRunning=enabled
 
-    AutoPickupToggle.Text=enabled and "ON" or "OFF"
-    AutoPickupToggle.BackgroundColor3=enabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+    RAPSkripFunctions.styleToggle(AutoPickupToggle, enabled)
 
     AutoPickupStatus.Text=enabled and "● ACTIVE" or "● IDLE"
     AutoPickupStatus.TextColor3=enabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
@@ -3952,8 +3991,7 @@ end)
 AutoPlaceToggle.Activated:Connect(function()
     if AutoPlaceEnabled then
         AutoPlaceEnabled = false
-        AutoPlaceToggle.Text = "OFF"
-        AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(45, 45, 53)
+        RAPSkripFunctions.styleToggle(AutoPlaceToggle, false)
         RAPSkripFunctions.setAutoPlaceStatus("IDLE", Color3.fromRGB(150, 150, 158))
         RAPSkripFunctions.AddDebug("[AUTO PLACE] Disabled")
         return
@@ -3966,8 +4004,7 @@ AutoPlaceToggle.Activated:Connect(function()
             RAPSkripFunctions.AddDebug("[AUTO PLACE] Saved temporary placement center for this script session")
         end
     end
-    AutoPlaceToggle.Text = "ON"
-    AutoPlaceToggle.BackgroundColor3 = Color3.fromRGB(55, 120, 75)
+    RAPSkripFunctions.styleToggle(AutoPlaceToggle, true)
     if RAPSkripFunctions.getAutoPlaceOccupiedCount() >= AUTO_PLACE_MAX_EGGS then
         RAPSkripFunctions.stopAutoPlaceAtLimit()
     else
@@ -3979,10 +4016,7 @@ end)
 
 AutoHatchToggle.MouseButton1Click:Connect(function()
     AutoHatchState.Enabled = not AutoHatchState.Enabled
-    AutoHatchToggle.Text = AutoHatchState.Enabled and "ON" or "OFF"
-    AutoHatchToggle.BackgroundColor3 = AutoHatchState.Enabled
-        and Color3.fromRGB(55, 120, 75)
-        or Color3.fromRGB(45, 45, 53)
+    RAPSkripFunctions.styleToggle(AutoHatchToggle, AutoHatchState.Enabled)
     if not AutoHatchState.Enabled then
         RAPSkripFunctions.setAutoHatchStatus("IDLE", Color3.fromRGB(150, 150, 158))
     elseif AutoPickupBusy or AutoPlaceActionBusy or AutoHatchActionBusy then
@@ -4030,8 +4064,7 @@ end)
 AutoMagmaDipToggle.MouseButton1Click:Connect(function()
     AutoMagmaDipEnabled=not AutoMagmaDipEnabled
 
-    AutoMagmaDipToggle.Text=AutoMagmaDipEnabled and "ON" or "OFF"
-    AutoMagmaDipToggle.BackgroundColor3=AutoMagmaDipEnabled and Color3.fromRGB(55,120,75) or Color3.fromRGB(45,45,53)
+    RAPSkripFunctions.styleToggle(AutoMagmaDipToggle, AutoMagmaDipEnabled)
 
     AutoMagmaDipStatus.Text=AutoMagmaDipEnabled and "● ACTIVE" or "● IDLE"
     AutoMagmaDipStatus.TextColor3=AutoMagmaDipEnabled and Color3.fromRGB(130,180,140) or Color3.fromRGB(150,150,158)
@@ -4214,11 +4247,7 @@ end)
 ESPToggle.MouseButton1Click:Connect(function()
     ESPEnabled=not ESPEnabled
 
-    ESPToggle.Text=ESPEnabled and "ON" or "OFF"
-    ESPToggle.BackgroundColor3=
-        ESPEnabled
-        and Color3.fromRGB(55,120,75)
-        or Color3.fromRGB(45,45,53)
+    RAPSkripFunctions.styleToggle(ESPToggle, ESPEnabled)
 
     ESPStatus.Text=ESPEnabled and "● ACTIVE" or "● IDLE"
     ESPStatus.TextColor3=
