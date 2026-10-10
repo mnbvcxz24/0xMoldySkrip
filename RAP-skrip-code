@@ -3083,7 +3083,7 @@ end
 
 
 -- Auto Place settings. Ring 1 is the first 3x3 grid; ring 2 expands to 5x5.
-local AUTO_PLACE_SPACING = 10
+local AUTO_PLACE_SPACING = 30
 local AUTO_PLACE_MAX_RING = 2
 local AUTO_PLACE_POSITION_TOLERANCE = 2
 
@@ -3190,10 +3190,32 @@ RAPSkripFunctions.stopAutoPlaceAtLimit = function()
 end
 
 RAPSkripFunctions.findNextAutoPlacePosition = function(centerCFrame)
+    local plot = RAPSkripFunctions.findMyPlot()
+    local baseplate = plot and plot:FindFirstChild("Baseplate")
+    if not baseplate or not baseplate:IsA("BasePart") then
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Cannot validate plot bounds; Baseplate not found")
+        return nil
+    end
+
+    -- Check candidates in the Baseplate's local space so rotated plots are handled.
+    -- Keep a small margin from the edges; 30-stud spacing can otherwise put outer
+    -- ring positions outside smaller plots.
+    local edgeMargin = 3
+    local halfX = (baseplate.Size.X / 2) - edgeMargin
+    local halfZ = (baseplate.Size.Z / 2) - edgeMargin
+    if halfX <= 0 or halfZ <= 0 then
+        RAPSkripFunctions.AddDebug("[AUTO PLACE] Baseplate is too small for safe placement")
+        return nil
+    end
+
     for _, offset in ipairs(RAPSkripFunctions.getAutoPlaceOffsets()) do
         if not AutoPlaceEnabled then return nil end
         local candidate = (centerCFrame * CFrame.new(offset)).Position
-        if not RAPSkripFunctions.isAutoPlacePositionOccupied(candidate) then
+        local localPosition = baseplate.CFrame:PointToObjectSpace(candidate)
+        local insidePlot = math.abs(localPosition.X) <= halfX
+            and math.abs(localPosition.Z) <= halfZ
+
+        if insidePlot and not RAPSkripFunctions.isAutoPlacePositionOccupied(candidate) then
             return candidate
         end
     end
