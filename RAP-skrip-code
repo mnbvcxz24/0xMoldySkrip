@@ -598,6 +598,74 @@ SettingsContent2.ClipsDescendants = false
 SettingsContent2.Visible = false
 SettingsContent2.Parent = Content2
 
+-- Progress page content (session counters are updated by the existing monitor loop).
+local ProgressContent2 = Instance.new("Frame")
+ProgressContent2.Name = "ProgressContent2"
+ProgressContent2.Size = UDim2.fromScale(1, 1)
+ProgressContent2.BackgroundTransparency = 1
+ProgressContent2.ClipsDescendants = false
+ProgressContent2.Visible = false
+ProgressContent2.Parent = Content2
+
+local ProgressTitle = Instance.new("TextLabel")
+ProgressTitle.Name = "ProgressTitle"
+ProgressTitle.Size = UDim2.new(1, -10, 0, 25)
+ProgressTitle.Position = UDim2.fromOffset(5, 0)
+ProgressTitle.BackgroundTransparency = 1
+ProgressTitle.Text = "Session Progress"
+ProgressTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+ProgressTitle.TextSize = RAPSkripFunctions.textSize(15)
+ProgressTitle.Font = Enum.Font.GothamBold
+ProgressTitle.TextXAlignment = Enum.TextXAlignment.Left
+ProgressTitle.Parent = ProgressPage
+
+local ProgressCard = Instance.new("Frame")
+ProgressCard.Name = "ProgressCard"
+ProgressCard.Size = UDim2.new(1, -10, 0, 100)
+ProgressCard.Position = UDim2.fromOffset(5, 32)
+ProgressCard.BackgroundColor3 = Color3.fromRGB(29, 29, 36)
+ProgressCard.BorderSizePixel = 0
+ProgressCard.Parent = ProgressContent2
+local ProgressCardCorner = Instance.new("UICorner")
+ProgressCardCorner.CornerRadius = UDim.new(0, 7)
+ProgressCardCorner.Parent = ProgressCard
+
+local ProgressRuntimeLabel = Instance.new("TextLabel")
+ProgressRuntimeLabel.Name = "ProgressRuntime"
+ProgressRuntimeLabel.Size = UDim2.new(1, -16, 0, 20)
+ProgressRuntimeLabel.Position = UDim2.fromOffset(8, 8)
+ProgressRuntimeLabel.BackgroundTransparency = 1
+ProgressRuntimeLabel.Text = "Runtime: 00:00:00"
+ProgressRuntimeLabel.TextColor3 = Color3.fromRGB(190, 190, 200)
+ProgressRuntimeLabel.TextSize = RAPSkripFunctions.textSize(11)
+ProgressRuntimeLabel.Font = Enum.Font.GothamMedium
+ProgressRuntimeLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressRuntimeLabel.Parent = ProgressCard
+
+local ProgressHatchedLabel = Instance.new("TextLabel")
+ProgressHatchedLabel.Name = "ProgressHatched"
+ProgressHatchedLabel.Size = UDim2.new(1, -16, 0, 20)
+ProgressHatchedLabel.Position = UDim2.fromOffset(8, 34)
+ProgressHatchedLabel.BackgroundTransparency = 1
+ProgressHatchedLabel.Text = "Eggs hatched: 0"
+ProgressHatchedLabel.TextColor3 = Color3.fromRGB(190, 190, 200)
+ProgressHatchedLabel.TextSize = RAPSkripFunctions.textSize(11)
+ProgressHatchedLabel.Font = Enum.Font.Gotham
+ProgressHatchedLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressHatchedLabel.Parent = ProgressCard
+
+local ProgressDepositedLabel = Instance.new("TextLabel")
+ProgressDepositedLabel.Name = "ProgressDeposited"
+ProgressDepositedLabel.Size = UDim2.new(1, -16, 0, 20)
+ProgressDepositedLabel.Position = UDim2.fromOffset(8, 60)
+ProgressDepositedLabel.BackgroundTransparency = 1
+ProgressDepositedLabel.Text = "Auto Pickup deposits: 0"
+ProgressDepositedLabel.TextColor3 = Color3.fromRGB(190, 190, 200)
+ProgressDepositedLabel.TextSize = RAPSkripFunctions.textSize(11)
+ProgressDepositedLabel.Font = Enum.Font.Gotham
+ProgressDepositedLabel.TextXAlignment = Enum.TextXAlignment.Left
+ProgressDepositedLabel.Parent = ProgressCard
+
 local ContentDivider = Instance.new("Frame")
 ContentDivider.Name = "ContentDivider"
 ContentDivider.Size = UDim2.new(0, 1, 1, -8)
@@ -617,6 +685,7 @@ RAPSkripFunctions.createPage = function()
 end
 
 local AutoPage = RAPSkripFunctions.createPage()
+local ProgressPage = RAPSkripFunctions.createPage()
 local ESPPage = RAPSkripFunctions.createPage()
 local DebugPage = RAPSkripFunctions.createPage()
 local SettingsPage = RAPSkripFunctions.createPage()
@@ -626,13 +695,17 @@ RAPSkripFunctions.showPage = function(page)
     ESPPage.Visible = false
     DebugPage.Visible = false
     SettingsPage.Visible = false
+    ProgressPage.Visible = false
     AutoContent2.Visible = false
     ESPContent2.Visible = false
     DebugContent2.Visible = false
     SettingsContent2.Visible = false
+    ProgressContent2.Visible = false
     page.Visible = true
     if page == AutoPage then
         AutoContent2.Visible = true
+    elseif page == ProgressPage then
+        ProgressContent2.Visible = true
     elseif page == ESPPage then
         ESPContent2.Visible = true
     elseif page == DebugPage then
@@ -665,6 +738,7 @@ RAPSkripFunctions.createSidebarButton = function(text)
 end
 
 local AutoButton = RAPSkripFunctions.createSidebarButton("Auto")
+local ProgressButton = RAPSkripFunctions.createSidebarButton("Progress")
 local ESPButton = RAPSkripFunctions.createSidebarButton("ESP")
 local DebugButton = RAPSkripFunctions.createSidebarButton("Debug")
 local SettingsButton = RAPSkripFunctions.createSidebarButton("Settings")
@@ -4064,7 +4138,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 RAPSkripFunctions.updateActivePageButton = function(activeButton)
-    local buttons={AutoButton,ESPButton,DebugButton,SettingsButton}
+    local buttons={AutoButton,ProgressButton,ESPButton,DebugButton,SettingsButton}
     for _,button in ipairs(buttons) do
         button.BackgroundColor3=button==activeButton and Color3.fromRGB(55,85,60) or Color3.fromRGB(35,35,42)
     end
@@ -4072,6 +4146,11 @@ end
 AutoButton.MouseButton1Click:Connect(function()
     RAPSkripFunctions.showPage(AutoPage)
     RAPSkripFunctions.updateActivePageButton(AutoButton)
+end)
+
+ProgressButton.MouseButton1Click:Connect(function()
+    RAPSkripFunctions.showPage(ProgressPage)
+    RAPSkripFunctions.updateActivePageButton(ProgressButton)
 end)
 
 ESPButton.MouseButton1Click:Connect(function()
@@ -4229,6 +4308,15 @@ task.spawn(function()
         end
         if MonitorStatsLabel and MonitorStatsLabel.Parent then
             MonitorStatsLabel.Text = "Hatched: " .. tostring(SessionEggsHatched) .. "  |  Auto Pickup deposits: " .. tostring(SessionEggsDeposited)
+        end
+        if ProgressRuntimeLabel and ProgressRuntimeLabel.Parent then
+            ProgressRuntimeLabel.Text = string.format("Runtime: %02d:%02d:%02d", hours, minutes, seconds)
+        end
+        if ProgressHatchedLabel and ProgressHatchedLabel.Parent then
+            ProgressHatchedLabel.Text = "Eggs hatched: " .. tostring(SessionEggsHatched)
+        end
+        if ProgressDepositedLabel and ProgressDepositedLabel.Parent then
+            ProgressDepositedLabel.Text = "Auto Pickup deposits: " .. tostring(SessionEggsDeposited)
         end
         task.wait(1)
     end
