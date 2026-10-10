@@ -1,4 +1,4 @@
-local ver = "TEST v8.40"
+local ver = "TEST v8.41"
 local RAPSkripFunctions = {}
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -741,8 +741,7 @@ end
 FusionFilterButton.MouseButton1Click:Connect(function()
     FusionFilterMenu.Visible = not FusionFilterMenu.Visible
 end)
-
-
+end)()
 
 local ProgressTitle = Instance.new("TextLabel")
 ProgressTitle.Name = "ProgressTitle"
@@ -971,8 +970,6 @@ end
 task.defer(function()
     applyColorTheme(SelectedColorTheme or "Midnight")
 end)
-end)()
-
 end)()
 
 local progressLuckSection = ProgressContent2:FindFirstChild("AutoBuyLuckSection")
