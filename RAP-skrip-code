@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.32"
+local ver = "TEST v8.33"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -117,7 +117,8 @@ RAPSkripFunctions.saveConfig = function()
             autoSelectedEggs = autoSelected,
             movementMode = AutoPickupMovementMode,
             claimDelay = AutoPickupClaimDelay,
-            antiAFK = AntiAFKEnabled
+            antiAFK = AntiAFKEnabled,
+            colorTheme = SelectedColorTheme or "Midnight"
         }))
 
         RAPSkripFunctions.AddDebug("[CONFIG] Saved successfully")
@@ -180,6 +181,10 @@ RAPSkripFunctions.loadConfig = function()
 
     if type(data.antiAFK) == "boolean" then
         AntiAFKEnabled = data.antiAFK
+    end
+
+    if type(data.colorTheme) == "string" then
+        SelectedColorTheme = data.colorTheme
     end
 
     RAPSkripFunctions.AddDebug("[CONFIG] Loaded saved config")
@@ -703,28 +708,200 @@ FusionFilterLabel.Font = Enum.Font.GothamMedium
 FusionFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
 FusionFilterLabel.Parent = FusionSection
 
-local FusionFilterInput = Instance.new("TextBox")
-FusionFilterInput.Name = "FusionPetNameFilter"
-FusionFilterInput.Size = UDim2.new(1, -16, 0, 27)
-FusionFilterInput.Position = UDim2.fromOffset(8, 76)
-FusionFilterInput.BackgroundColor3 = Color3.fromRGB(38, 39, 48)
-FusionFilterInput.BorderSizePixel = 0
-FusionFilterInput.ClearTextOnFocus = false
-FusionFilterInput.PlaceholderText = "e.g. Cat, Dragon, ..."
-FusionFilterInput.Text = ""
-FusionFilterInput.PlaceholderColor3 = Color3.fromRGB(135, 139, 153)
-FusionFilterInput.TextColor3 = Color3.fromRGB(218, 220, 230)
-FusionFilterInput.TextSize = RAPSkripFunctions.textSize(10)
-FusionFilterInput.Font = Enum.Font.Gotham
-FusionFilterInput.TextXAlignment = Enum.TextXAlignment.Left
-FusionFilterInput.Parent = FusionSection
+local FusionPetNames = {"Cat", "Dog", "Dragon", "Bunny", "Fox"}
+local SelectedFusionPet = "Cat"
+local FusionFilterButton = Instance.new("TextButton")
+FusionFilterButton.Name = "FusionPetNameFilter"
+FusionFilterButton.Size = UDim2.new(1, -16, 0, 27)
+FusionFilterButton.Position = UDim2.fromOffset(8, 76)
+FusionFilterButton.BackgroundColor3 = Color3.fromRGB(38, 39, 48)
+FusionFilterButton.BorderSizePixel = 0
+FusionFilterButton.Text = "  Cat  ▼"
+FusionFilterButton.TextColor3 = Color3.fromRGB(218, 220, 230)
+FusionFilterButton.TextSize = RAPSkripFunctions.textSize(10)
+FusionFilterButton.Font = Enum.Font.Gotham
+FusionFilterButton.TextXAlignment = Enum.TextXAlignment.Left
+FusionFilterButton.AutoButtonColor = false
+FusionFilterButton.ZIndex = 20
+FusionFilterButton.Parent = FusionSection
 local FusionFilterCorner = Instance.new("UICorner")
 FusionFilterCorner.CornerRadius = UDim.new(0, 5)
-FusionFilterCorner.Parent = FusionFilterInput
-local FusionFilterPadding = Instance.new("UIPadding")
-FusionFilterPadding.PaddingLeft = UDim.new(0, 7)
-FusionFilterPadding.PaddingRight = UDim.new(0, 7)
-FusionFilterPadding.Parent = FusionFilterInput
+FusionFilterCorner.Parent = FusionFilterButton
+
+local FusionFilterMenu = Instance.new("Frame")
+FusionFilterMenu.Name = "FusionPetNameMenu"
+FusionFilterMenu.Size = UDim2.new(1, -16, 0, #FusionPetNames * 25)
+FusionFilterMenu.Position = UDim2.fromOffset(8, 105)
+FusionFilterMenu.BackgroundColor3 = Color3.fromRGB(30, 31, 39)
+FusionFilterMenu.BorderSizePixel = 0
+FusionFilterMenu.Visible = false
+FusionFilterMenu.ZIndex = 30
+FusionFilterMenu.Parent = FusionSection
+local FusionFilterMenuCorner = Instance.new("UICorner")
+FusionFilterMenuCorner.CornerRadius = UDim.new(0, 5)
+FusionFilterMenuCorner.Parent = FusionFilterMenu
+
+for index, petName in ipairs(FusionPetNames) do
+    local option = Instance.new("TextButton")
+    option.Name = "PetOption_" .. petName
+    option.Size = UDim2.new(1, 0, 0, 25)
+    option.Position = UDim2.fromOffset(0, (index - 1) * 25)
+    option.BackgroundColor3 = Color3.fromRGB(30, 31, 39)
+    option.BorderSizePixel = 0
+    option.Text = "  " .. petName
+    option.TextColor3 = Color3.fromRGB(218, 220, 230)
+    option.TextSize = RAPSkripFunctions.textSize(10)
+    option.Font = Enum.Font.Gotham
+    option.TextXAlignment = Enum.TextXAlignment.Left
+    option.AutoButtonColor = false
+    option.ZIndex = 31
+    option.Parent = FusionFilterMenu
+    option.MouseButton1Click:Connect(function()
+        SelectedFusionPet = petName
+        FusionFilterButton.Text = "  " .. petName .. "  ▼"
+        FusionFilterMenu.Visible = false
+    end)
+end
+FusionFilterButton.MouseButton1Click:Connect(function()
+    FusionFilterMenu.Visible = not FusionFilterMenu.Visible
+end)
+
+-- Settings page: dynamic color themes (selection is saved with the existing config).
+local SelectedColorTheme = SelectedColorTheme or "Midnight"
+local ThemeNames = {"Midnight", "Ocean", "Emerald", "Crimson", "Violet", "Light"}
+local ThemePalette = {
+    Midnight = {bg=Color3.fromRGB(17,19,24), panel=Color3.fromRGB(29,32,41), card=Color3.fromRGB(37,40,50), accent=Color3.fromRGB(124,131,255), text=Color3.fromRGB(241,242,247), muted=Color3.fromRGB(190,194,208)},
+    Ocean = {bg=Color3.fromRGB(16,26,34), panel=Color3.fromRGB(25,42,54), card=Color3.fromRGB(31,52,66), accent=Color3.fromRGB(53,189,224), text=Color3.fromRGB(234,248,252), muted=Color3.fromRGB(183,211,220)},
+    Emerald = {bg=Color3.fromRGB(16,27,24), panel=Color3.fromRGB(28,43,37), card=Color3.fromRGB(35,54,46), accent=Color3.fromRGB(67,214,160), text=Color3.fromRGB(239,250,244), muted=Color3.fromRGB(185,216,201)},
+    Crimson = {bg=Color3.fromRGB(32,19,22), panel=Color3.fromRGB(48,32,37), card=Color3.fromRGB(60,39,45), accent=Color3.fromRGB(255,107,129), text=Color3.fromRGB(255,240,242), muted=Color3.fromRGB(225,190,197)},
+    Violet = {bg=Color3.fromRGB(25,19,34), panel=Color3.fromRGB(40,32,54), card=Color3.fromRGB(51,40,68), accent=Color3.fromRGB(192,132,252), text=Color3.fromRGB(247,240,255), muted=Color3.fromRGB(208,190,226)},
+    Light = {bg=Color3.fromRGB(241,243,248), panel=Color3.fromRGB(255,255,255), card=Color3.fromRGB(230,233,242), accent=Color3.fromRGB(91,97,232), text=Color3.fromRGB(32,35,51), muted=Color3.fromRGB(82,87,105)}
+}
+local ThemeTitle = Instance.new("TextLabel")
+ThemeTitle.Name = "ThemeTitle"
+ThemeTitle.Size = UDim2.new(1, -10, 0, 25)
+ThemeTitle.Position = UDim2.fromOffset(5, 0)
+ThemeTitle.BackgroundTransparency = 1
+ThemeTitle.Text = "Appearance"
+ThemeTitle.TextColor3 = Color3.fromRGB(224, 226, 235)
+ThemeTitle.TextSize = RAPSkripFunctions.textSize(15)
+ThemeTitle.Font = Enum.Font.GothamBold
+ThemeTitle.TextXAlignment = Enum.TextXAlignment.Left
+ThemeTitle.Parent = SettingsPage
+
+local ThemeSection = Instance.new("Frame")
+ThemeSection.Name = "ColorThemeSection"
+ThemeSection.Size = UDim2.new(1, -10, 0, 186)
+ThemeSection.Position = UDim2.fromOffset(5, 32)
+ThemeSection.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
+ThemeSection.BorderSizePixel = 0
+ThemeSection.Parent = SettingsContent2
+local ThemeSectionCorner = Instance.new("UICorner")
+ThemeSectionCorner.CornerRadius = UDim.new(0, 7)
+ThemeSectionCorner.Parent = ThemeSection
+
+local ThemeLabel = Instance.new("TextLabel")
+ThemeLabel.Name = "ColorThemeLabel"
+ThemeLabel.Size = UDim2.new(1, -16, 0, 22)
+ThemeLabel.Position = UDim2.fromOffset(8, 7)
+ThemeLabel.BackgroundTransparency = 1
+ThemeLabel.Text = "Color Theme"
+ThemeLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
+ThemeLabel.TextSize = RAPSkripFunctions.textSize(11)
+ThemeLabel.Font = Enum.Font.GothamSemibold
+ThemeLabel.TextXAlignment = Enum.TextXAlignment.Left
+ThemeLabel.Parent = ThemeSection
+
+local ThemeHint = Instance.new("TextLabel")
+ThemeHint.Name = "ColorThemeHint"
+ThemeHint.Size = UDim2.new(1, -16, 0, 18)
+ThemeHint.Position = UDim2.fromOffset(8, 29)
+ThemeHint.BackgroundTransparency = 1
+ThemeHint.Text = "Choose a theme to recolor the interface."
+ThemeHint.TextColor3 = Color3.fromRGB(165, 169, 183)
+ThemeHint.TextSize = RAPSkripFunctions.textSize(9)
+ThemeHint.Font = Enum.Font.Gotham
+ThemeHint.TextXAlignment = Enum.TextXAlignment.Left
+ThemeHint.Parent = ThemeSection
+
+local ThemeButtons = {}
+local ThemeSwatches = {
+    Midnight=Color3.fromRGB(124,131,255), Ocean=Color3.fromRGB(53,189,224),
+    Emerald=Color3.fromRGB(67,214,160), Crimson=Color3.fromRGB(255,107,129),
+    Violet=Color3.fromRGB(192,132,252), Light=Color3.fromRGB(91,97,232)
+}
+for index, themeName in ipairs(ThemeNames) do
+    local column = (index - 1) % 2
+    local row = math.floor((index - 1) / 2)
+    local themeButton = Instance.new("TextButton")
+    themeButton.Name = "Theme_" .. themeName
+    themeButton.Size = UDim2.new(0.5, -12, 0, 31)
+    themeButton.Position = UDim2.fromOffset(8 + column * 145, 54 + row * 39)
+    themeButton.BackgroundColor3 = Color3.fromRGB(38, 39, 48)
+    themeButton.BorderSizePixel = 0
+    themeButton.Text = "  " .. themeName
+    themeButton.TextColor3 = Color3.fromRGB(218, 220, 230)
+    themeButton.TextSize = RAPSkripFunctions.textSize(10)
+    themeButton.Font = Enum.Font.GothamMedium
+    themeButton.TextXAlignment = Enum.TextXAlignment.Left
+    themeButton.AutoButtonColor = false
+    themeButton.Parent = ThemeSection
+    local themeCorner = Instance.new("UICorner")
+    themeCorner.CornerRadius = UDim.new(0, 6)
+    themeCorner.Parent = themeButton
+    local swatch = Instance.new("Frame")
+    swatch.Name = "ColorSwatch"
+    swatch.Size = UDim2.fromOffset(12, 12)
+    swatch.Position = UDim2.new(1, -20, 0.5, -6)
+    swatch.BackgroundColor3 = ThemeSwatches[themeName]
+    swatch.BorderSizePixel = 0
+    swatch.Parent = themeButton
+    local swatchCorner = Instance.new("UICorner")
+    swatchCorner.CornerRadius = UDim.new(1, 0)
+    swatchCorner.Parent = swatch
+    ThemeButtons[themeName] = themeButton
+end
+
+local function applyColorTheme(themeName)
+    local palette = ThemePalette[themeName] or ThemePalette.Midnight
+    SelectedColorTheme = ThemePalette[themeName] and themeName or "Midnight"
+    for _, object in ipairs(Gui:GetDescendants()) do
+        if object:IsA("GuiObject") then
+            local bg = object.BackgroundColor3
+            if object.BackgroundTransparency < 1 then
+                if object == Main or object == Content or object == Content1 or object == Content2 then
+                    object.BackgroundColor3 = palette.bg
+                elseif object:IsA("Frame") and (bg.R < 0.22 and bg.G < 0.22 and bg.B < 0.25) then
+                    object.BackgroundColor3 = palette.panel
+                elseif bg.R < 0.3 and bg.G < 0.3 and bg.B < 0.35 then
+                    object.BackgroundColor3 = palette.card
+                end
+            end
+            if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
+                local tc = object.TextColor3
+                if tc.R > 0.68 and tc.G > 0.68 and tc.B > 0.68 then
+                    object.TextColor3 = palette.text
+                elseif tc.R > 0.48 and tc.G > 0.48 and tc.B > 0.48 and tc.R < 0.82 then
+                    object.TextColor3 = palette.muted
+                end
+            end
+            if object:IsA("TextButton") and (string.find(object.Name, "Theme_") or string.find(object.Name, "Toggle")) then
+                object.BackgroundColor3 = palette.accent
+            end
+        end
+    end
+    for name, button in pairs(ThemeButtons) do
+        local selected = name == SelectedColorTheme
+        button.BackgroundColor3 = selected and palette.accent or palette.card
+        button.TextColor3 = palette.text
+    end
+end
+for themeName, themeButton in pairs(ThemeButtons) do
+    themeButton.MouseButton1Click:Connect(function()
+        applyColorTheme(themeName)
+        RAPSkripFunctions.saveConfig()
+    end)
+end
 
 local ProgressTitle = Instance.new("TextLabel")
 ProgressTitle.Name = "ProgressTitle"
@@ -4285,6 +4462,11 @@ end)
 SettingsButton.MouseButton1Click:Connect(function()
     RAPSkripFunctions.showPage(SettingsPage)
     RAPSkripFunctions.updateActivePageButton(SettingsButton)
+end)
+
+-- Apply the saved theme after the interface has been created.
+task.defer(function()
+    applyColorTheme(SelectedColorTheme or "Midnight")
 end)
 
 Minimize.MouseButton1Click:Connect(function()
