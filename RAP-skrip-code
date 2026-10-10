@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.31"
+local ver = "TEST v8.32"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -607,13 +607,132 @@ ProgressContent2.ClipsDescendants = false
 ProgressContent2.Visible = false
 ProgressContent2.Parent = Content2
 
+-- Progress page controls (UI scaffolding only; automation logic will be added later).
+local ProgressUI = {}
+
+local function createProgressSection(name, titleText, y, height)
+    local section = Instance.new("Frame")
+    section.Name = name
+    section.Size = UDim2.new(1, -10, 0, height)
+    section.Position = UDim2.fromOffset(5, y)
+    section.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
+    section.BorderSizePixel = 0
+    section.Parent = ProgressContent2
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 7)
+    corner.Parent = section
+
+    local title = Instance.new("TextLabel")
+    title.Name = "Title"
+    title.Size = UDim2.new(1, -16, 0, 20)
+    title.Position = UDim2.fromOffset(8, 5)
+    title.BackgroundTransparency = 1
+    title.Text = titleText
+    title.TextColor3 = Color3.fromRGB(205, 207, 218)
+    title.TextSize = RAPSkripFunctions.textSize(11)
+    title.Font = Enum.Font.GothamSemibold
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = section
+    return section
+end
+
+local function createProgressStatus(parent, name, text, y)
+    local status = Instance.new("TextLabel")
+    status.Name = name
+    status.Size = UDim2.new(1, -100, 0, 20)
+    status.Position = UDim2.fromOffset(8, y)
+    status.BackgroundTransparency = 1
+    status.Text = "● " .. text
+    status.TextColor3 = Color3.fromRGB(170, 174, 188)
+    status.TextSize = RAPSkripFunctions.textSize(10)
+    status.Font = Enum.Font.GothamMedium
+    status.TextXAlignment = Enum.TextXAlignment.Left
+    status.Parent = parent
+    return status
+end
+
+local function createProgressToggle(parent, name, y, statusLabel, statusText)
+    local toggle = Instance.new("TextButton")
+    toggle.Name = name
+    toggle.Size = UDim2.fromOffset(62, 25)
+    toggle.Position = UDim2.new(1, -70, 0, y)
+    toggle.BackgroundColor3 = Color3.fromRGB(48, 49, 59)
+    toggle.BorderSizePixel = 0
+    toggle.Text = "OFF"
+    toggle.TextColor3 = Color3.fromRGB(218, 220, 228)
+    toggle.TextSize = RAPSkripFunctions.textSize(10)
+    toggle.Font = Enum.Font.GothamBold
+    toggle.AutoButtonColor = false
+    toggle.Active = true
+    toggle.Selectable = true
+    toggle.Parent = parent
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = toggle
+
+    local enabled = false
+    toggle.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        toggle.Text = enabled and "ON" or "OFF"
+        toggle.BackgroundColor3 = enabled and Color3.fromRGB(55, 105, 72) or Color3.fromRGB(48, 49, 59)
+        statusLabel.Text = enabled and ("● UI ONLY — " .. statusText) or "● IDLE"
+        statusLabel.TextColor3 = enabled and Color3.fromRGB(184, 205, 176) or Color3.fromRGB(170, 174, 188)
+    end)
+    return toggle
+end
+
+local LuckSection = createProgressSection("AutoBuyLuckSection", "Auto Buy Luck MAX", 145, 66)
+ProgressUI.LuckStatus = createProgressStatus(LuckSection, "LuckStatus", "IDLE", 29)
+ProgressUI.LuckToggle = createProgressToggle(LuckSection, "AutoBuyLuckToggle", 25, ProgressUI.LuckStatus, "VISUAL PREVIEW")
+
+local FusionSection = createProgressSection("AutoFusionSection", "Auto Fusion", 220, 118)
+ProgressUI.FusionStatus = createProgressStatus(FusionSection, "FusionStatus", "IDLE", 29)
+ProgressUI.FusionToggle = createProgressToggle(FusionSection, "AutoFusionToggle", 25, ProgressUI.FusionStatus, "VISUAL PREVIEW")
+
+local FusionFilterLabel = Instance.new("TextLabel")
+FusionFilterLabel.Name = "FusionFilterLabel"
+FusionFilterLabel.Size = UDim2.new(1, -16, 0, 17)
+FusionFilterLabel.Position = UDim2.fromOffset(8, 55)
+FusionFilterLabel.BackgroundTransparency = 1
+FusionFilterLabel.Text = "Pet-name filter (comma-separated)"
+FusionFilterLabel.TextColor3 = Color3.fromRGB(183, 186, 199)
+FusionFilterLabel.TextSize = RAPSkripFunctions.textSize(9)
+FusionFilterLabel.Font = Enum.Font.GothamMedium
+FusionFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
+FusionFilterLabel.Parent = FusionSection
+
+local FusionFilterInput = Instance.new("TextBox")
+FusionFilterInput.Name = "FusionPetNameFilter"
+FusionFilterInput.Size = UDim2.new(1, -16, 0, 27)
+FusionFilterInput.Position = UDim2.fromOffset(8, 76)
+FusionFilterInput.BackgroundColor3 = Color3.fromRGB(38, 39, 48)
+FusionFilterInput.BorderSizePixel = 0
+FusionFilterInput.ClearTextOnFocus = false
+FusionFilterInput.PlaceholderText = "e.g. Cat, Dragon, ..."
+FusionFilterInput.Text = ""
+FusionFilterInput.PlaceholderColor3 = Color3.fromRGB(135, 139, 153)
+FusionFilterInput.TextColor3 = Color3.fromRGB(218, 220, 230)
+FusionFilterInput.TextSize = RAPSkripFunctions.textSize(10)
+FusionFilterInput.Font = Enum.Font.Gotham
+FusionFilterInput.TextXAlignment = Enum.TextXAlignment.Left
+FusionFilterInput.Parent = FusionSection
+local FusionFilterCorner = Instance.new("UICorner")
+FusionFilterCorner.CornerRadius = UDim.new(0, 5)
+FusionFilterCorner.Parent = FusionFilterInput
+local FusionFilterPadding = Instance.new("UIPadding")
+FusionFilterPadding.PaddingLeft = UDim.new(0, 7)
+FusionFilterPadding.PaddingRight = UDim.new(0, 7)
+FusionFilterPadding.Parent = FusionFilterInput
+
 local ProgressTitle = Instance.new("TextLabel")
 ProgressTitle.Name = "ProgressTitle"
 ProgressTitle.Size = UDim2.new(1, -10, 0, 25)
 ProgressTitle.Position = UDim2.fromOffset(5, 0)
 ProgressTitle.BackgroundTransparency = 1
-ProgressTitle.Text = "Session Progress"
-ProgressTitle.TextColor3 = Color3.fromRGB(240, 240, 245)
+ProgressTitle.Text = "Progress & Automation"
+ProgressTitle.TextColor3 = Color3.fromRGB(224, 226, 235)
 ProgressTitle.TextSize = RAPSkripFunctions.textSize(15)
 ProgressTitle.Font = Enum.Font.GothamBold
 ProgressTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -623,7 +742,7 @@ local ProgressCard = Instance.new("Frame")
 ProgressCard.Name = "ProgressCard"
 ProgressCard.Size = UDim2.new(1, -10, 0, 100)
 ProgressCard.Position = UDim2.fromOffset(5, 32)
-ProgressCard.BackgroundColor3 = Color3.fromRGB(29, 29, 36)
+ProgressCard.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
 ProgressCard.BorderSizePixel = 0
 ProgressCard.Parent = ProgressContent2
 local ProgressCardCorner = Instance.new("UICorner")
@@ -636,7 +755,7 @@ ProgressRuntimeLabel.Size = UDim2.new(1, -16, 0, 20)
 ProgressRuntimeLabel.Position = UDim2.fromOffset(8, 8)
 ProgressRuntimeLabel.BackgroundTransparency = 1
 ProgressRuntimeLabel.Text = "Runtime: 00:00:00"
-ProgressRuntimeLabel.TextColor3 = Color3.fromRGB(190, 190, 200)
+ProgressRuntimeLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
 ProgressRuntimeLabel.TextSize = RAPSkripFunctions.textSize(11)
 ProgressRuntimeLabel.Font = Enum.Font.GothamMedium
 ProgressRuntimeLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -648,7 +767,7 @@ ProgressHatchedLabel.Size = UDim2.new(1, -16, 0, 20)
 ProgressHatchedLabel.Position = UDim2.fromOffset(8, 34)
 ProgressHatchedLabel.BackgroundTransparency = 1
 ProgressHatchedLabel.Text = "Eggs hatched: 0"
-ProgressHatchedLabel.TextColor3 = Color3.fromRGB(190, 190, 200)
+ProgressHatchedLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
 ProgressHatchedLabel.TextSize = RAPSkripFunctions.textSize(11)
 ProgressHatchedLabel.Font = Enum.Font.Gotham
 ProgressHatchedLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -660,7 +779,7 @@ ProgressDepositedLabel.Size = UDim2.new(1, -16, 0, 20)
 ProgressDepositedLabel.Position = UDim2.fromOffset(8, 60)
 ProgressDepositedLabel.BackgroundTransparency = 1
 ProgressDepositedLabel.Text = "Auto Pickup deposits: 0"
-ProgressDepositedLabel.TextColor3 = Color3.fromRGB(190, 190, 200)
+ProgressDepositedLabel.TextColor3 = Color3.fromRGB(205, 207, 218)
 ProgressDepositedLabel.TextSize = RAPSkripFunctions.textSize(11)
 ProgressDepositedLabel.Font = Enum.Font.Gotham
 ProgressDepositedLabel.TextXAlignment = Enum.TextXAlignment.Left
