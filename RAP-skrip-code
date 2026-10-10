@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.34"
+local ver = "TEST v8.35"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -709,6 +709,7 @@ FusionFilterLabel.Font = Enum.Font.GothamMedium
 FusionFilterLabel.TextXAlignment = Enum.TextXAlignment.Left
 FusionFilterLabel.Parent = FusionSection
 
+(function()
 local FusionPetNames = {"Cat", "Dog", "Dragon", "Bunny", "Fox"}
 local SelectedFusionPet = "Cat"
 local FusionFilterButton = Instance.new("TextButton")
@@ -767,6 +768,7 @@ FusionFilterButton.MouseButton1Click:Connect(function()
     FusionFilterMenu.Visible = not FusionFilterMenu.Visible
 end)
 
+(function()
 -- Settings page: dynamic color themes (selection is saved with the existing config).
 local ThemeNames = {"Midnight", "Ocean", "Emerald", "Crimson", "Violet", "Light"}
 local ThemePalette = {
@@ -902,6 +904,14 @@ for themeName, themeButton in pairs(ThemeButtons) do
         RAPSkripFunctions.saveConfig()
     end)
 end
+
+
+task.defer(function()
+    applyColorTheme(SelectedColorTheme or "Midnight")
+end)
+end)()
+
+end)()
 
 local ProgressTitle = Instance.new("TextLabel")
 ProgressTitle.Name = "ProgressTitle"
@@ -4462,11 +4472,6 @@ end)
 SettingsButton.MouseButton1Click:Connect(function()
     RAPSkripFunctions.showPage(SettingsPage)
     RAPSkripFunctions.updateActivePageButton(SettingsButton)
-end)
-
--- Apply the saved theme after the interface has been created.
-task.defer(function()
-    applyColorTheme(SelectedColorTheme or "Midnight")
 end)
 
 Minimize.MouseButton1Click:Connect(function()
