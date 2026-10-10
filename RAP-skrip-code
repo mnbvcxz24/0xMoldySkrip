@@ -1,4 +1,4 @@
-local ver = "TEST v8.41"
+local ver = "TEST v8.42"
 local RAPSkripFunctions = {}
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -3260,6 +3260,7 @@ waitForDroppedEgg=function(eggName,previousUUIDs,dropPosition,timeout)
     RAPSkripFunctions.AddDebug("[AUTO ERROR] New dropped egg not found")
     return nil
 end
+;(function()
 local GameMessageEvent=game:GetService("ReplicatedStorage").Remotes.Reusable.GameMessage
 
 GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
@@ -3282,6 +3283,7 @@ GameMessageEvent.OnClientEvent:Connect(function(message,_,data)
         RAPSkripFunctions.AddDebug("[AUTO MAGMA DIP] Already dipped / failed detected")
     end
 end)
+end)()
 
 if VolcanoDipResultEvent and VolcanoDipResultEvent:IsA("RemoteEvent") then
     VolcanoDipResultEvent.OnClientEvent:Connect(function(result)
