@@ -1,7 +1,7 @@
 --==================================================
 -- 1. VERSION
 --==================================================
-local ver = "TEST v8.36"
+local ver = "TEST v8.37"
 local RAPSkripFunctions = {}
 --==================================================
 -- 2. SERVICES
@@ -770,14 +770,13 @@ end)
 
 ;(function()
 -- Settings page: dynamic color themes (selection is saved with the existing config).
-local ThemeNames = {"Midnight", "Ocean", "Emerald", "Crimson", "Violet", "Light"}
+local ThemeNames = {"Midnight", "Ocean", "Emerald", "Crimson", "Violet"}
 local ThemePalette = {
     Midnight = {bg=Color3.fromRGB(17,19,24), panel=Color3.fromRGB(29,32,41), card=Color3.fromRGB(37,40,50), accent=Color3.fromRGB(124,131,255), text=Color3.fromRGB(241,242,247), muted=Color3.fromRGB(190,194,208)},
     Ocean = {bg=Color3.fromRGB(16,26,34), panel=Color3.fromRGB(25,42,54), card=Color3.fromRGB(31,52,66), accent=Color3.fromRGB(53,189,224), text=Color3.fromRGB(234,248,252), muted=Color3.fromRGB(183,211,220)},
     Emerald = {bg=Color3.fromRGB(16,27,24), panel=Color3.fromRGB(28,43,37), card=Color3.fromRGB(35,54,46), accent=Color3.fromRGB(67,214,160), text=Color3.fromRGB(239,250,244), muted=Color3.fromRGB(185,216,201)},
     Crimson = {bg=Color3.fromRGB(32,19,22), panel=Color3.fromRGB(48,32,37), card=Color3.fromRGB(60,39,45), accent=Color3.fromRGB(255,107,129), text=Color3.fromRGB(255,240,242), muted=Color3.fromRGB(225,190,197)},
     Violet = {bg=Color3.fromRGB(25,19,34), panel=Color3.fromRGB(40,32,54), card=Color3.fromRGB(51,40,68), accent=Color3.fromRGB(192,132,252), text=Color3.fromRGB(247,240,255), muted=Color3.fromRGB(208,190,226)},
-    Light = {bg=Color3.fromRGB(241,243,248), panel=Color3.fromRGB(255,255,255), card=Color3.fromRGB(230,233,242), accent=Color3.fromRGB(91,97,232), text=Color3.fromRGB(32,35,51), muted=Color3.fromRGB(82,87,105)}
 }
 local ThemeTitle = Instance.new("TextLabel")
 ThemeTitle.Name = "ThemeTitle"
@@ -797,7 +796,7 @@ ThemeSection.Size = UDim2.new(1, -10, 0, 186)
 ThemeSection.Position = UDim2.fromOffset(5, 32)
 ThemeSection.BackgroundColor3 = Color3.fromRGB(29, 30, 38)
 ThemeSection.BorderSizePixel = 0
-ThemeSection.Parent = SettingsContent2
+ThemeSection.Parent = SettingsPage
 local ThemeSectionCorner = Instance.new("UICorner")
 ThemeSectionCorner.CornerRadius = UDim.new(0, 7)
 ThemeSectionCorner.Parent = ThemeSection
@@ -830,7 +829,7 @@ local ThemeButtons = {}
 local ThemeSwatches = {
     Midnight=Color3.fromRGB(124,131,255), Ocean=Color3.fromRGB(53,189,224),
     Emerald=Color3.fromRGB(67,214,160), Crimson=Color3.fromRGB(255,107,129),
-    Violet=Color3.fromRGB(192,132,252), Light=Color3.fromRGB(91,97,232)
+    Violet=Color3.fromRGB(192,132,252)
 }
 for index, themeName in ipairs(ThemeNames) do
     local column = (index - 1) % 2
@@ -838,7 +837,7 @@ for index, themeName in ipairs(ThemeNames) do
     local themeButton = Instance.new("TextButton")
     themeButton.Name = "Theme_" .. themeName
     themeButton.Size = UDim2.new(0.5, -12, 0, 31)
-    themeButton.Position = UDim2.fromOffset(8 + column * 145, 54 + row * 39)
+    themeButton.Position = UDim2.new(column * 0.5, column == 0 and 8 or 4, 0, 54 + row * 39)
     themeButton.BackgroundColor3 = Color3.fromRGB(38, 39, 48)
     themeButton.BorderSizePixel = 0
     themeButton.Text = "  " .. themeName
@@ -995,6 +994,12 @@ local ProgressPage = RAPSkripFunctions.createPage()
 local ESPPage = RAPSkripFunctions.createPage()
 local DebugPage = RAPSkripFunctions.createPage()
 local SettingsPage = RAPSkripFunctions.createPage()
+
+-- Keep the new Progress controls inside Content1's page, not the side Content2 panel.
+local progressLuckSection = ProgressContent2:FindFirstChild("AutoBuyLuckSection")
+local progressFusionSection = ProgressContent2:FindFirstChild("AutoFusionSection")
+if progressLuckSection then progressLuckSection.Parent = ProgressPage end
+if progressFusionSection then progressFusionSection.Parent = ProgressPage end
 
 RAPSkripFunctions.showPage = function(page)
     AutoPage.Visible = false
