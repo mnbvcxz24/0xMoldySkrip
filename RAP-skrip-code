@@ -1988,12 +1988,7 @@ AntiAFKCorner.CornerRadius = UDim.new(0, 6)
 AntiAFKCorner.Parent = AntiAFKButton
 
 RAPSkripFunctions.updateAntiAFKButton = function()
-    AntiAFKButton.Text =
-        AntiAFKEnabled and "ON" or "OFF"
-    AntiAFKButton.BackgroundColor3 =
-        AntiAFKEnabled
-        and Color3.fromRGB(55, 120, 75)
-        or Color3.fromRGB(45, 45, 53)
+    RAPSkripFunctions.styleToggle(AntiAFKButton, AntiAFKEnabled)
 end
 
 AntiAFKButton.MouseButton1Click:Connect(function()
@@ -2070,19 +2065,11 @@ player.Idled:Connect(function()
 end)
 
 RAPSkripFunctions.setAntiAFK = function(enabled)
-    AntiAFKEnabled = enabled
-
-    if AntiAFKEnabled then
-        RAPSkripFunctions.styleToggle(AntiAFKToggle, true)
-        AntiAFKStatus.Text = "● ACTIVE"
-        AntiAFKStatus.TextColor3 = Color3.fromRGB(120, 210, 135)
-        RAPSkripFunctions.AddDebug("[ANTI AFK] Enabled")
-    else
-        RAPSkripFunctions.styleToggle(AntiAFKToggle, false)
-        AntiAFKStatus.Text = "● IDLE"
-        AntiAFKStatus.TextColor3 = Color3.fromRGB(150, 150, 158)
-        RAPSkripFunctions.AddDebug("[ANTI AFK] Disabled")
-    end
+    AntiAFKEnabled = not not enabled
+    RAPSkripFunctions.updateAntiAFKButton()
+    RAPSkripFunctions.AddDebug(
+        AntiAFKEnabled and "[ANTI AFK] Enabled" or "[ANTI AFK] Disabled"
+    )
 end
 RAPSkripFunctions.getActiveEggs = function()
     local ServerData =
