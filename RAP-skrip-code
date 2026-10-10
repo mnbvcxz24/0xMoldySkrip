@@ -1,4 +1,4 @@
-local ver = "TEST v8.39"
+local ver = "TEST v8.40"
 local RAPSkripFunctions = {}
 local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
@@ -1824,7 +1824,7 @@ ScanButton.MouseButton1Click:Connect(function()
                 end
             end
             RAPSkripFunctions.AddDebug("Egg: "..tostring(selectedName))
-            RAPSkripFunctions.AddDebug("Weight: "..tostring(selectedWeight))
+            RAPSkripFunctions.AddDebug("Weight: "..(selectedWeight~=nil and tostring(selectedWeight) or "N/A"))
             RAPSkripFunctions.AddDebug("Selected Count: "..tostring(counts[selectedName] or 0))
         end
         RAPSkripFunctions.AddDebug("Total Active Eggs: "..tostring(#eggs))
@@ -1832,7 +1832,7 @@ ScanButton.MouseButton1Click:Connect(function()
             local eggName=egg:GetAttribute("Egg")
             if eggName and SelectedEggs[eggName] then
                 local position=egg:GetAttribute("Position")
-                RAPSkripFunctions.AddDebug(tostring(eggName).." | Position Type: "..typeof(position))
+                RAPSkripFunctions.AddDebug(tostring(eggName).." | Position Type: "..(position~=nil and typeof(position) or "unavailable"))
             end
         end
         RAPSkripFunctions.AddDebug("========== SCAN COMPLETE ==========")
