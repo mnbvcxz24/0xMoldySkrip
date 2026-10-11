@@ -2987,7 +2987,7 @@ else
 end
 
 ;(function()
-    local moduleUrl = "https://raw.githubusercontent.com/mnbvcxz24/0xMoldySkrip/refs/heads/modular/autoplace/RAP-AutoPlace.lua"
+    local moduleUrl = "https://raw.githubusercontent.com/mnbvcxz24/0xMoldySkrip/refs/heads/main/RAP-AutoPlace.lua"
     local ok, result = pcall(function()
         local source = game:HttpGet(moduleUrl)
         local factory, compileError = loadstring(source)
