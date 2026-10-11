@@ -3316,17 +3316,8 @@ else
     RAPSkripFunctions.AddDebug("[AUTO ERROR] EggPickup remote not found")
 end
 
-ConfigSaveButton.MouseButton1Click:Connect(function()
-    RAPSkripFunctions.saveConfig()
-    ConfigSaveButton.Text="SAVED"
-    ConfigSaveButton.BackgroundColor3=Color3.fromRGB(55,120,75)
-    task.delay(1.5,function()
-        if ConfigSaveButton then
-            ConfigSaveButton.Text="SAVE"
-            ConfigSaveButton.BackgroundColor3=Color3.fromRGB(45,45,53)
-        end
-    end)
-end)
+-- ConfigSaveButton is not created in this build.
+-- Avoid connecting an event to a nil reference; config saves through existing settings callbacks.
 
 AutoExecuteButton.MouseButton1Click:Connect(function()
     local content='loadstring(game:HttpGet("https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/rap-skrip"))()'
