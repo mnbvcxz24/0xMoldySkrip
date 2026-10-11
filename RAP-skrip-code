@@ -3319,22 +3319,8 @@ end
 -- ConfigSaveButton is not created in this build.
 -- Avoid connecting an event to a nil reference; config saves through existing settings callbacks.
 
-AutoExecuteButton.MouseButton1Click:Connect(function()
-    local content='loadstring(game:HttpGet("https://raw.githubusercontent.com/mnbvcxz24/0xMoldyDeltaScripts/refs/heads/main/rap-skrip"))()'
-    local success,err=pcall(function()
-        if makefolder and isfolder and not isfolder("RAPSkrip") then
-            makefolder("RAPSkrip")
-        end
-        writefile("RAPSkrip/rap_skrip_test.txt",content)
-    end)
-    if success then
-        AutoExecuteStatus.Text="Created: rap_skrip_test.txt"
-        RAPSkripFunctions.AddDebug("[AUTOEXEC] rap_skrip_test.txt created")
-    else
-        AutoExecuteStatus.Text="Failed: "..tostring(err)
-        RAPSkripFunctions.AddDebug("[AUTOEXEC ERROR] "..tostring(err))
-    end
-end)
+-- AutoExecuteButton and AutoExecuteStatus are not created in this build.
+-- Removed the orphaned handler to prevent a nil MouseButton1Click runtime error.
 
 Header.InputBegan:Connect(function(input)
     if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
